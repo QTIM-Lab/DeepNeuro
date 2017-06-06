@@ -16,11 +16,7 @@ notifications:
 
 script: 
   - "python ./deepneuro/package_test.py"
-
-# command to run tests
-# script: 
-#   - "python ./tests/initial_test.py"
-#   - travis-sphinx --nowarn --source=sphinx build
+  - travis-sphinx --nowarn
     
-# after_success:
-#   - travis-sphinx deploy
+after_success:
+  - travis-sphinx deploy
