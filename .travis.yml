@@ -14,6 +14,9 @@ install:
 notifications:
   slack: qtim:jp1UTPVP5wscM2R6eyFHJIb4
 
+script: 
+  - "python ./deepneuro/package_test.py"
+
 # command to run tests
 # script: 
 #   - "python ./tests/initial_test.py"
