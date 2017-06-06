@@ -16,7 +16,7 @@ notifications:
 
 script: 
   - "python ./deepneuro/package_test.py"
-  - travis-sphinx --nowarn
+  - travis-sphinx --nowarn build
     
 after_success:
   - travis-sphinx deploy
