@@ -15,7 +15,7 @@ notifications:
   slack: qtim:jp1UTPVP5wscM2R6eyFHJIb4
 
 script: 
-  - "python ./deepneuro/package_test.py"
+  - "python ./deepneuro/testing/package_test.py"
   - travis-sphinx --nowarn build
     
 after_success:
