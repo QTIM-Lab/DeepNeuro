@@ -7,7 +7,7 @@ Submodules
 deepneuro\.package\_test module
 -------------------------------
 
-.. automodule:: deepneuro.package_test
+.. automodule:: deepneuro.util
     :members:
     :undoc-members:
     :show-inheritance:
