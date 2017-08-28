@@ -7,14 +7,8 @@ Welcome to DeepNeuro's documentation!
 =====================================
 
 .. toctree::
-    :maxdepth: 4
-    
-    deepneuro
 
-.. automodule:: deepneuro
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    deepneuro
 
 Indices and tables
 ==================

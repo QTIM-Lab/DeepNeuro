@@ -1,17 +1,14 @@
 deepneuro package
 =================
 
-Submodules
-----------
+Subpackages
+-----------
 
-deepneuro\.package\_test module
--------------------------------
+.. toctree::
 
-.. automodule:: deepneuro.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+    deepneuro.models
+    deepneuro.testing
+    deepneuro.train
 
 Module contents
 ---------------
