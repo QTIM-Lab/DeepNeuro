@@ -1,7 +1,6 @@
 """A test module for automatic documentation purposes
 """
 
-import deepneuro
 
 def test_function():
 
@@ -20,6 +19,7 @@ def test_function():
     """
 
     return
+
 
 if __name__ == '__main__':
     test_function()
