@@ -1,9 +1,13 @@
 
 from deepneuro.models.unet import UNet
+from deepneuro.models.train import train_model
+
 
 def train_model():
 
     model = UNet()
+
+    train_model(model, 'SkullStrip_TestModel.h5')
 
     print model
 

@@ -79,4 +79,4 @@ def step_decay(epoch, initial_learning_rate, drop, epochs_drop):
         Returns the value of the function at epoch.
     """
     
-    return initial_lrate * math.pow(drop, math.floor((1 + epoch) / float(epochs_drop)))
+    return initial_learning_rate * math.pow(drop, math.floor((1 + epoch) / float(epochs_drop)))

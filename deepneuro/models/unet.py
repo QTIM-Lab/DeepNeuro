@@ -6,10 +6,10 @@ from model import DeepNeuroModel, UpConvolution
 
 from keras.engine import Model
 from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization
-from keras.optimizers import Adam, Nadam
+from keras.optimizers import Nadam
 from keras.layers.merge import concatenate
 
-from cost_functions import dice_coef_loss
+from cost_functions import dice_coef_loss, dice_coef
 
 
 class UNet(DeepNeuroModel):
@@ -58,7 +58,7 @@ class UNet(DeepNeuroModel):
                 left_outputs += [Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(self.inputs)]
                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
             else:
-                left_outputs[level] = MaxPooling3D(pool_size=self.pool_size)(left_outputs[level-1])
+                left_outputs[level] = MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])
                 left_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
 
@@ -75,7 +75,7 @@ class UNet(DeepNeuroModel):
             filter_num = int(self.max_filter / (2 ^ (level)) / self.downsize_filters_factor)
 
             if level > 0:
-                right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level-1])]
+                right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level - 1])]
                 right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=4)
                 right_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
                 right_outputs[level] = Conv3D(int(filter_num / 2), self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
@@ -96,17 +96,17 @@ class UNet(DeepNeuroModel):
 
         if self.output_type == 'regression':
             self.model = Model(inputs=self.inputs, outputs=output_layer)
-            self.model.compile(optimizer=Nadam(lr=initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
+            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-        if self.output_type == 'binary_label' or self.num_outputs > 1: 
+        if self.output_type == 'binary_label' or self.num_outputs > 1:
             act = Activation('sigmoid')(output_layer)
-            self.model = Model(inputs=inputs, outputs=act)
-            self.model.compile(optimizer=Nadam(lr=initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+            self.model = Model(inputs=self.inputs, outputs=act)
+            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-        if self.output_type == 'categorical_label' or self.num_outputs > 1: 
+        if self.output_type == 'categorical_label' or self.num_outputs > 1:
             act = Activation('softmax')(output_layer)
-            self.model = Model(inputs=inputs, outputs=act)
-            self.model.compile(optimizer=Nadam(lr=initial_learning_rate), loss='categorical_crossentropy',
+            self.model = Model(inputs=self.inputs, outputs=act)
+            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
                           metrics=['categorical_accuracy'])
 
-        return model
+        return self.model
