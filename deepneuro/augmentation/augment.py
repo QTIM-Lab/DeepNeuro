@@ -26,29 +26,28 @@ class AugmentationGroup(object):
 
 class Augmentation(object):
 
-    def __init__(self):
+    def __init__(self, data_groups=None, multiplier=None, total=None):
 
         # Note: total feature is as of yet unimplemented..
 
-        self.multiplier = None
-        self.total = None
+        self.multiplier = multiplier
+        self.total = total
+
         self.output_shape = None
-
-        self.data_groups = {}
-
         self.initialization = False
         self.iteration = 0
 
+        self.data_groups = {data_group: None for data_group in data_groups}
+
         return
 
-    def augment(self, input_data):
+    def augment(self):
 
-        return input_data
+        return None
 
     def initialize_augmentation(self):
 
         if not self.initialization:
-
             self.initialization = True
 
     def iterate(self):
@@ -102,23 +101,23 @@ class GaussianNoise(Augmentation):
 
 class Flip_Rotate_2D(Augmentation):
 
-    def __init__(self, flip=True, rotate=True):
+    def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
 
         # Get rid of these with super??
-        self.multiplier = None
-        self.total = None
-        self.output_shape = None
+        self.multiplier = multiplier
+        self.total = total
+        self.flip = flip
+        self.rotate = rotate
 
+        self.output_shape = None
         self.initialization = False
         self.iteration = 0
 
-        self.data_groups = {}
+        self.data_groups = {data_group: None for data_group in data_groups}
 
-        self.flip = flip
-        self.rotate = rotate
+        # TODO: This is incredibly over-elaborate, return to fix.
         self.transforms_list = []
 
-        # TODO: Incredibly over-elaborate, return to fix.
         if self.flip:
             self.flip_list = [False, True]
         else:
@@ -130,6 +129,8 @@ class Flip_Rotate_2D(Augmentation):
             self.rotations_90 = [0]
 
         self.available_transforms = np.array(np.meshgrid(self.flip_list, self.rotations_90)).T.reshape(-1,2)
+        self.total_transforms = self.available_transforms.shape[0]
+        print self.available_transforms
 
     def initialize_augmentation(self):
 
@@ -141,18 +142,16 @@ class Flip_Rotate_2D(Augmentation):
 
         super(Flip_Rotate_2D, self).iterate()
 
-    def augment(self, input_data):
+    def augment(self):
 
-        if self.available_transforms[self.iteration % 8, 0]:
-            # print 'FLIPPED'
+        for data_group in self.data_groups:
+            pass
+
+        if self.available_transforms[self.iteration % self.total_transforms, 0]:
             input_data = np.flip(input_data, 2)
-        # else:
-            # print 'NOT FLIPPED'
 
-        if self.available_transforms[self.iteration % 8, 1] > 0:
-            input_data = np.rot90(input_data, self.available_transforms[self.iteration % 8, 1])
-
-        return input_data
+        if self.available_transforms[self.iteration % self.total_transforms, 1]:
+            input_data = np.rot90(input_data, self.available_transforms[self.iteration % self.total_transforms, 1])
 
 # class ArbitraryRotate3D(Augmentation):
 

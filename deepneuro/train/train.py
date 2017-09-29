@@ -9,7 +9,7 @@ from functools import partial
 from keras.callbacks import ModelCheckpoint, CSVLogger, LearningRateScheduler
 
 
-def train_model_keras(model, model_filepath, training_generator, n_epochs, steps_per_epoch=10, validation_generator=None, validation_steps=None, initial_learning_rate=.01, learning_rate_drop=None, learning_rate_epochs=None):
+def train_model_keras(model, model_filepath, training_generator, n_epochs, steps_per_epoch=10, validation_generator=None, step_per_validation=None, initial_learning_rate=.01, learning_rate_drop=None, epochs_drop=None):
     
     """ A wrapper script for training keras models.
     
@@ -27,22 +27,22 @@ def train_model_keras(model, model_filepath, training_generator, n_epochs, steps
             Number of steps in each epoch.
         validation_generator : function
             Generator for streaming validation data.
-        validation_steps : int
+        step_per_validation : int
             Number of steps to yield from validation generator.
         initial_learning_rate : float
             Initial learning rate, if applicable.
         learning_rate_drop : float
-            Percentage drop in learning rate every learning_rate_epochs.
-        learning_rate_epochs : float
-            Learning rate drops by multiplying by learning_rate_drop every learning_rate_epochs.
+            Percentage drop in learning rate every epochs_drop.
+        epochs_drop : float
+            Learning rate drops by multiplying by learning_rate_drop every epochs_drop.
     """
 
-    model.fit_generator(generator=training_generator, steps_per_epoch=steps_per_epoch, epochs=n_epochs, validation_data=validation_generator, validation_steps=validation_steps, pickle_safe=True, callbacks=get_keras_callbacks(model_filepath, initial_learning_rate=initial_learning_rate, learning_rate_drop=learning_rate_drop, learning_rate_epochs=learning_rate_epochs))
+    model.fit_generator(generator=training_generator, steps_per_epoch=steps_per_epoch, epochs=n_epochs, validation_data=validation_generator, validation_steps=step_per_validation, pickle_safe=True, callbacks=get_keras_callbacks(model_filepath, initial_learning_rate=initial_learning_rate, learning_rate_drop=learning_rate_drop, epochs_drop=epochs_drop))
 
     model.save(model_filepath)
 
 
-def get_keras_callbacks(model_file, initial_learning_rate, learning_rate_drop, learning_rate_epochs, logging_dir="."):
+def get_keras_callbacks(model_file, initial_learning_rate, learning_rate_drop, epochs_drop, logging_dir="."):
     
     """ A wrapper for generating keras callbacks.
 
@@ -55,9 +55,9 @@ def get_keras_callbacks(model_file, initial_learning_rate, learning_rate_drop, l
         initial_learning_rate : float
             Initial learning rate, if applicable.
         learning_rate_drop : float
-            Percentage drop in learning rate every learning_rate_epochs.
-        learning_rate_epochs : float
-            Learning rate drops by multiplying by learning_rate_drop every learning_rate_epochs.
+            Percentage drop in learning rate every epochs_drop.
+        epochs_drop : float
+            Learning rate drops by multiplying by learning_rate_drop every epochs_drop.
         logging_dir : str, optional
             The directory where log files are saved.
         
@@ -69,7 +69,7 @@ def get_keras_callbacks(model_file, initial_learning_rate, learning_rate_drop, l
 
     model_checkpoint = ModelCheckpoint(model_file, monitor="loss", save_best_only=True)
     logger = CSVLogger(os.path.join(logging_dir, "training.log"))
-    scheduler = LearningRateScheduler(partial(step_decay, initial_learning_rate=initial_learning_rate, drop=learning_rate_drop, epochs_drop=learning_rate_epochs))
+    scheduler = LearningRateScheduler(partial(step_decay, initial_learning_rate=initial_learning_rate, drop=learning_rate_drop, epochs_drop=epochs_drop))
     return [model_checkpoint, logger, scheduler]
 
 
@@ -78,5 +78,5 @@ def step_decay(epoch, initial_learning_rate, drop, epochs_drop):
     """ A simple function to decrease initial_learning_rate by drop every epochs_drop.
         Returns the value of the function at epoch.
     """
-    
+
     return initial_learning_rate * math.pow(drop, math.floor((1 + epoch) / float(epochs_drop)))

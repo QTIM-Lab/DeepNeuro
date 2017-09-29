@@ -1,3 +1,10 @@
+# DeepNeuro ignores
+*.h5
+*.nii.gz
+*.nii
+*.dcm
+*.IMA
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

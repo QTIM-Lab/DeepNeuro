@@ -2,17 +2,19 @@ from __future__ import division
 
 import os
 import glob
-
 import numpy as np
 import tables
 import nibabel as nib
 
-from image_utils import nifti_2_numpy
-from deepneuro.augmentation.augment import Augmentation, AugmentationGroup
+from deepneuro.augmentation.augment import Augmentation, Copy
+
+# from image_utils import nifti_2_numpy
+
 
 class DataCollection(object):
 
-    def __init__(self, data_directory, modality_dict, spreadsheet_dict=None, value_dict=None, case_list=None, augmentations=None, brainmask_dir=None, roimask_dir=None, patch_shape=None):
+
+    def __init__(self, data_directory, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
 
         # Input vars
         self.data_directory = os.path.abspath(data_directory)
@@ -20,6 +22,7 @@ class DataCollection(object):
         self.spreadsheet_dict = spreadsheet_dict
         self.value_dict = value_dict
         self.case_list = case_list
+        self.verbose = False
 
         # Special behavior for augmentations
         self.augmentations = []
@@ -30,15 +33,47 @@ class DataCollection(object):
         self.data_shape = None
         self.data_shape_augment = None
 
-        # TEMPORARY
-        self.brainmask_dir = brainmask_dir
-        self.roimask_dir = roimask_dir
 
-        # Data-Checking, e.g. duplicate data keys, data_shape
-        self.patch_shape = patch_shape
+    def fill_data_groups(self):
 
-    def verify_data_shape(self):
-        return
+        if self.verbose:
+            print 'Gathering image data from...', self.data_directory
+
+        # TODO: Add section for spreadsheets.
+        # TODO: Add section for values.
+
+        # Create DataGroups for this DataCollection.
+        for modality_group in self.modality_dict:
+            if modality_group not in self.data_groups.keys():
+                self.data_groups[modality_group] = DataGroup(modality_group)
+
+        # Iterate through directories..
+        for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
+
+            # If a predefined case list is provided, only choose these cases.
+            if self.case_list is not None:
+                if os.path.basename(subject_dir) not in self.case_list:
+                    continue
+
+            # Search for modality files, and skip those missing with files modalities.
+            for data_group, modality_labels in self.modality_dict.iteritems():
+
+                modality_group_files = []
+                for modality in modality_labels:
+                    target_file = glob.glob(os.path.join(subject_dir, modality))
+                    if len(target_file) == 1:
+                        modality_group_files.append(target_file[0])
+                    else:
+                        print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
+                        if len(target_file) == 0:
+                            print 'No file found.'
+                        else:
+                            print 'Multiple files found.'
+                        break
+
+                if len(modality_group_files) == len(modality_labels):
+                    self.data_groups[modality_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
+                    self.cases.append(os.path.abspath(subject_dir))
 
     def append_augmentation(self, augmentation_group, data_groups=None):
 
@@ -53,84 +88,22 @@ class DataCollection(object):
 
         return
 
-    def fill_data_groups(self):
 
-        print 'Gathering image data from...', self.data_directory
-
-        #####
-        # TODO: Add section for spreadsheets.
-        # TODO: Add section for values.
-        #####
-
-        # Imaging modalities added.
-
-        for modality_group in self.modality_dict:
-
-            # print modality_group
-            if modality_group not in self.data_groups.keys():
-                self.data_groups[modality_group] = DataGroup(modality_group)
-
-        for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
-
-            self.cases.append(os.path.abspath(subject_dir))
-
-            for modality_group in self.modality_dict:
-
-                if self.case_list is not None:
-                    if os.path.basename(subject_dir) not in self.case_list:
-                        continue
-
-                modality_group_files = []
-
-                for modality in self.modality_dict[modality_group]:
-                    target_file = glob.glob(os.path.join(subject_dir, modality))
-                    try:
-                        modality_group_files.append(target_file[0])
-                    except:
-                        print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
-                        break
-
-                if len(modality_group_files) == len(self.modality_dict[modality_group]):
-                    self.data_groups[modality_group].add_case(tuple(modality_group_files), os.path.abspath(subject_dir))
-
-    def append_data_to_file(self, input_hdf5, data_groups=None, save_masks=False, store_masks=True):
-
-        if data_groups is None:
-            data_groups = self.data_groups.keys()
-
-        if output_filepath is None:
-            output_filepath = os.path.join(self.data_directory, 'data.hdf5')
-
-        # Create Data File
-        try:
-            hdf5_file = create_hdf5_file(output_filepath, data_groups, self, save_masks, store_masks)
-        except Exception as e:
-            os.remove(output_filepath)
-            raise e
-
-        self.write_image_data_to_storage(data_groups, save_masks, store_masks)
-
-        hdf5_file.close()
-
-        return
-
-    def write_data_to_file(self, output_filepath=None, data_groups=None, save_masks=False, store_masks=True):
+    def write_data_to_file(self, output_filepath=None, data_group_labels=None):
 
         """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
-
-            TODO: Integrate mask code into whole DataCollection object.
         """
 
-
-        if data_groups is None:
-            data_groups = self.data_groups.keys()
-
+        # Sanitize Inputs
+        if data_group_labels is None:
+            data_group_labels = self.data_groups.keys()
         if output_filepath is None:
             output_filepath = os.path.join(self.data_directory, 'data.hdf5')
 
         # Create Data File
         try:
-            hdf5_file = create_hdf5_file(output_filepath, data_groups, self, save_masks, store_masks)
+            # Passing self is sketchy here.
+            hdf5_file = create_hdf5_file(output_filepath, data_group_labels, self)
         except Exception as e:
             os.remove(output_filepath)
             raise e
@@ -140,10 +113,16 @@ class DataCollection(object):
 
         hdf5_file.close()
 
-    def write_image_data_to_storage(self, data_groups, save_masks=False, store_masks=True):
+
+    def write_image_data_to_storage(self, data_group_labels, repeat=1):
 
         """ Some of the syntax around data groups can be cleaned up in this function.
         """
+
+        return
+
+
+    def data_generator(self, data_group_labels, yield_data_only=False):
 
         # Write data
         data_group_objects = [self.data_groups[label] for label in data_groups]
@@ -151,11 +130,11 @@ class DataCollection(object):
         # Will cases always be ordered..?
         for case_idx, case_name in enumerate(self.cases):
 
-            print 'Working on image.. ', case_idx, 'in', case_name
+            if self.verbose:
+                print 'Working on image.. ', case_idx, 'in', case_name
+                print '\n'
 
-            all_cases = {}
-
-            # Check for missing data.
+            # Check for missing data. Should probably do this before the generator.
             missing_case = False
             for data_group in data_group_objects:
 
@@ -175,9 +154,7 @@ class DataCollection(object):
                 print 'Missing case', case_name, 'in data group', missing_data_group, '. Skipping this case..'
                 continue
 
-            print '\n'
-
-            self.recursive_augmentation(data_group_objects, 0, save_masks, store_masks)
+            yield self.recursive_augmentation(data_group_objects, augmentation_num=0)
 
 
     def recursive_augmentation(self, data_groups, augmentation_num=0):
@@ -226,6 +203,7 @@ class DataCollection(object):
 
         return
 
+
 class DataGroup(object):
 
     def __init__(self, label):
@@ -257,7 +235,7 @@ class DataGroup(object):
 
         self.num_cases = 0
 
-    def add_case(self, item, case_name):
+    def add_case(self, case_name, item):
         self.data.append(item)
         self.cases.append(case_name)
         self.num_cases = len(self.data)
