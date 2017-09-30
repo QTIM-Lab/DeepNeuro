@@ -7,8 +7,7 @@ import tables
 import nibabel as nib
 
 from deepneuro.augmentation.augment import Augmentation, Copy
-
-# from image_utils import nifti_2_numpy
+from deepneuro.utilities.conversion import read_image_files
 
 
 class DataCollection(object):
@@ -51,9 +50,8 @@ class DataCollection(object):
         for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
 
             # If a predefined case list is provided, only choose these cases.
-            if self.case_list is not None:
-                if os.path.basename(subject_dir) not in self.case_list:
-                    continue
+            if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
+                continue
 
             # Search for modality files, and skip those missing with files modalities.
             for data_group, modality_labels in self.modality_dict.iteritems():
@@ -75,19 +73,41 @@ class DataCollection(object):
                     self.data_groups[modality_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
                     self.cases.append(os.path.abspath(subject_dir))
 
-    def append_augmentation(self, augmentation_group, data_groups=None):
 
-        for data_group_label in augmentation_group.augmentation_dict.keys():
-            self.data_groups[data_group_label].append_augmentation(augmentation_group.augmentation_dict[data_group_label])
+    def append_augmentation(self, augmentation, data_groups=None):
 
-            augmentation_group.augmentation_dict[data_group_label].append_data_group(self.data_groups[data_group_label])
-            augmentation_group.augmentation_dict[data_group_label].initialize_augmentation()
+        # for data_group_label in augmentation_group.augmentation_dict.keys():
+        #     self.data_groups[data_group_label].append_augmentation(augmentation_group.augmentation_dict[data_group_label])
+
+        #     augmentation_group.augmentation_dict[data_group_label].append_data_group(self.data_groups[data_group_label])
+        #     augmentation_group.augmentation_dict[data_group_label].initialize_augmentation()
 
         # Don't like this list method, find a more explicity way.
-        self.augmentations.append(augmentation_group)
+        self.augmentations.append(augmentation)
 
         return
 
+
+    def return_valid_cases(self, case_list=None):
+
+        if case_list == None:
+            case_list = self.cases
+
+        valid_cases = []
+        for case_name in case_list:
+
+            # This is not great code. TODO: revisit
+            missing_case = False
+            for data_label, data_group in self.data_groups.iteritems():
+                if not case_name in data_group.cases:
+                    missing_case = True
+                    break
+            if not missing_case:
+                valid_cases += case_name
+
+        return valid_cases
+
+        return
 
     def write_data_to_file(self, output_filepath=None, data_group_labels=None):
 
@@ -101,63 +121,81 @@ class DataCollection(object):
             output_filepath = os.path.join(self.data_directory, 'data.hdf5')
 
         # Create Data File
-        try:
+        # try:
             # Passing self is sketchy here.
-            hdf5_file = create_hdf5_file(output_filepath, data_group_labels, self)
-        except Exception as e:
-            os.remove(output_filepath)
-            raise e
+        # hdf5_file = create_hdf5_file(output_filepath, data_group_labels, self)
+        # except Exception as e:
+            # os.remove(output_filepath)
+            # raise e
 
         # Write data
-        self.write_image_data_to_storage(data_groups, save_masks, store_masks)
+        self.write_image_data_to_storage(data_group_labels)
 
         hdf5_file.close()
 
 
-    def write_image_data_to_storage(self, data_group_labels, repeat=1):
+    def write_image_data_to_storage(self, data_group_labels=None, case_list=None, repeat=1):
 
         """ Some of the syntax around data groups can be cleaned up in this function.
         """
 
+        # This bit of code appears everywhere. Try to see why that is.
+        if data_group_labels is None:
+            data_group_labels = self.data_groups.keys()
+
+        if case_list == None:
+            storage_cases = self.cases
+
+        storage_cases = self.return_valid_cases(storage_cases)
+
+        storage_data_generator = self.data_generator(data_group_labels, yield_data_only=False)
+
+        total_images = 1000
+        for i in xrange(total_images):
+
+            output = next(storage_data_generator)
+
+            print output
+
+            # self.data_storage.append(self.current_case)
+            # self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
+            # self.affine_storage.append(self.base_affine[:][np.newaxis])
+
         return
 
 
-    def data_generator(self, data_group_labels, yield_data_only=False):
+    def data_generator(self, data_group_labels, yield_data_only=True):
 
-        # Write data
-        data_group_objects = [self.data_groups[label] for label in data_groups]
+        if data_group_labels is None:
+            data_group_labels = self.data_groups.keys()
+        data_groups = [self.data_groups[label] for label in data_group_labels]
 
-        # Will cases always be ordered..?
         for case_idx, case_name in enumerate(self.cases):
+
+            print case_idx
 
             if self.verbose:
                 print 'Working on image.. ', case_idx, 'in', case_name
                 print '\n'
 
-            # Check for missing data. Should probably do this before the generator.
-            missing_case = False
-            for data_group in data_group_objects:
+            for data_group in data_groups:
 
-                try:
-                    case_index = data_group.cases.index(case_name)
-                except:
-                    missing_case = True
-                    missing_data_group = data_group.label
-                    break
+                print data_group.label
+                print data_group.data
 
-                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[case_index], return_affine=True)
+                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[case_idx], return_affine=True)
                 data_group.base_case = data_group.base_case[:][np.newaxis]
                 data_group.base_casename = case_name
                 data_group.current_case = data_group.base_case
 
-            if missing_case:
-                print 'Missing case', case_name, 'in data group', missing_data_group, '. Skipping this case..'
-                continue
+            recrusive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-            yield self.recursive_augmentation(data_group_objects, augmentation_num=0)
+            augmentation_num
+            for i in xrange(augmentation_num):
+                yield self.recursive_augmentation(data_group_objects, augmentation_num=0)
 
 
-    def recursive_augmentation(self, data_groups, augmentation_num=0):
+    def recursive_augmentation(self, data_groups, augmentation_num=0, yield_data_only=True):
 
         """ This function baldly reveals my newness at recursion..
         """
@@ -166,9 +204,8 @@ class DataCollection(object):
 
         if augmentation_num == len(self.augmentations):
 
-            for data_group in data_groups:
-                data_group.write_to_storage(store_masks)
-            return
+            # Blatantly obnoxious dict comprehension
+            yield {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
 
         else:
 
@@ -323,7 +360,8 @@ def create_hdf5_file(output_filepath, data_groups, data_collection, save_masks=F
         modalities = data_group.get_modalities()
 
         if num_cases == 0:
-            raise FileNotFoundError('WARNING: No cases found. Cannot write to file.')
+            # raise FileNotFoundError('WARNING: No cases found. Cannot write to file.')
+            fd = dg
 
         # Input data has multiple 'channels' i.e. modalities.
         data_shape = tuple([0, modalities] + list(output_shape))
@@ -339,19 +377,6 @@ def create_hdf5_file(output_filepath, data_groups, data_collection, save_masks=F
             data_group.brainmask_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_group.label, 'brainmask']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
 
     return hdf5_file
-
-def read_image_files(image_files, return_affine=False):
-
-    image_list = []
-    for i, image_file in enumerate(image_files):
-        image_list.append(nifti_2_numpy(image_file))
-
-    # This is a little clunky.
-    if return_affine:
-        # This assumes all images share an affine matrix.
-        return np.stack([image for image in image_list]), nib.load(image_files[0]).affine
-    else:
-        return np.stack([image for image in image_list])
 
 def save_masked_indice_list(input_data, brainmask_outputpath, roimask_outputpath=None, ground_truth_data=None, patch_shape=(16,16,16), mask_value=0):
 

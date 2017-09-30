@@ -37,6 +37,8 @@ class Augmentation(object):
         self.initialization = False
         self.iteration = 0
 
+        self.total_iterations = multiplier
+
         self.data_groups = {data_group: None for data_group in data_groups}
 
         return
@@ -87,6 +89,8 @@ class GaussianNoise(Augmentation):
         self.initialization = False
         self.iteration = 0
 
+        self.total_iterations = multiplier
+
         self.data_groups = {}
 
         self.sigma = sigma
@@ -112,6 +116,8 @@ class Flip_Rotate_2D(Augmentation):
         self.output_shape = None
         self.initialization = False
         self.iteration = 0
+
+        self.total_iterations = multiplier
 
         self.data_groups = {data_group: None for data_group in data_groups}
 

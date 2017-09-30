@@ -17,16 +17,16 @@ def train_Segment_GBM(data_directory):
                                         'ground_truth': ['*full_edemamask_pp.*']}
 
     # Create a Data Collection
-    # training_data_collection = DataCollection(data_directory, modality_dict)
-    # training_data_collection.fill_data_groups()
+    training_data_collection = DataCollection(data_directory, modality_dict)
+    training_data_collection.fill_data_groups()
 
     # # Specify Augmentations
     flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'], multiplier=2)
     # patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_extraction_conditions=[], data_groups=['input_modalities', 'ground_truth'], multiplier=2)
 
     # # Append Augmentations to Data
-    # for augmentation in [flip_augmentation, patch_augmentation]:
-    #     training_data_collection.append_augmentation(augmentation)
+    for augmentation in [flip_augmentation]:
+        training_data_collection.append_augmentation(augmentation)
 
 
     # training_data_collection.append_augmentation(flip_augmentation_group)
@@ -47,7 +47,39 @@ def train_Segment_GBM(data_directory):
     # else:
     #     print 'Validation data not available, training without validation data.'
 
+def nested_yield_1():
+
+    gen = nested_yield_2()
+
+    x = 0
+    while x < 100:
+        print 'start of gen'
+        print next(gen)
+        x += 1
+
+def nested_yield_2():
+
+    gen = nested_yield_3()
+
+    while True:
+        print 'top of yield 2'
+        yield next(gen)
+        print 'bottom of yield 2'
+
+def nested_yield_3():
+
+    x = 0
+    while True:
+        print 'top of yield 3'
+        yield x
+        print 'bottom of yield 3'
+        x = x + 1
+
+    return
+
 if __name__ == '__main__':
+
+    # nested_yield_1()
 
     data_directory = '/mnt/jk489/sharedfolder/BRATS2017/Train'
 
