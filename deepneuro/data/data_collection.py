@@ -6,9 +6,10 @@ import numpy as np
 import tables
 import nibabel as nib
 
+from qtim_tools.qtim_utilities.format_util import convert_input_2_numpy
+
 from deepneuro.augmentation.augment import Augmentation, Copy
 from deepneuro.utilities.conversion import read_image_files
-
 
 class DataCollection(object):
 
@@ -25,9 +26,10 @@ class DataCollection(object):
 
         # Special behavior for augmentations
         self.augmentations = []
-        self.cases = []
+        self.multiplier = 1
 
         # Empty vars
+        self.cases = []
         self.data_groups = {}
         self.data_shape = None
         self.data_shape_augment = None
@@ -74,16 +76,42 @@ class DataCollection(object):
                     self.cases.append(os.path.abspath(subject_dir))
 
 
-    def append_augmentation(self, augmentation, data_groups=None):
+    def append_augmentation(self, augmentations, multiplier=None):
 
-        # for data_group_label in augmentation_group.augmentation_dict.keys():
-        #     self.data_groups[data_group_label].append_augmentation(augmentation_group.augmentation_dict[data_group_label])
+        # TODO: Add checks for unequal multiplier, or take multiplier specification out of the hands of individual augmentations.
+        # TODO: Add checks for incompatible augmentations. Maybe make this whole thing better in general..
 
-        #     augmentation_group.augmentation_dict[data_group_label].append_data_group(self.data_groups[data_group_label])
-        #     augmentation_group.augmentation_dict[data_group_label].initialize_augmentation()
+        if type(augmentations) is not list:
+            augmentations = [augmentations]
 
-        # Don't like this list method, find a more explicit way.
-        self.augmentations.append(augmentation)
+        augmented_data_groups = []
+        for augmentation in augmentations:
+            for data_group_label in augmentation.data_groups.keys():
+                augmented_data_groups += [data_group_label]
+
+        # Unspecified data groups will be copied along.
+        unaugmented_data_groups = [data_group for data_group in self.data_groups.keys() if data_group not in augmented_data_groups]
+        if unaugmented_data_groups != []:
+            augmentations += [Copy(data_groups=unaugmented_data_groups)]
+
+        for augmentation in augmentations:
+            for data_group_label in augmentation.data_groups.keys():
+                augmentation.set_multiplier(multiplier)
+                augmentation.append_data_group(self.data_groups[data_group_label])
+
+        # This is so bad.
+        for augmentation in augmentations:
+            for data_group_label in augmentation.data_groups.keys():
+                augmentation.initialize_augmentation()
+                if augmentation.output_shape is not None:
+                    self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
+
+        # The total iterations variable allows for "total" augmentations later on.
+        # For example, "augment until 5000 images is reached"
+        total_iterations = multiplier
+        self.multiplier *= multiplier
+
+        self.augmentations.append({'augmentation': augmentations, 'iterations': total_iterations})
 
         return
 
@@ -109,10 +137,51 @@ class DataCollection(object):
 
         return
 
-    def write_data_to_file(self, output_filepath=None, data_group_labels=None):
+
+    def create_hdf5_file(self, output_filepath, data_group_labels=None, case_list=None):
+
+        if data_group_labels is None:
+            data_group_labels = self.data_groups.keys()
+
+        # Investigate hdf5 files.
+        hdf5_file = tables.open_file(output_filepath, mode='w')
+
+        # Investigate this line.
+        # Compression levels = complevel. No compression = 0
+        # Compression library = Method of compresion.
+        filters = tables.Filters(complevel=5, complib='blosc')
+
+        for data_label, data_group in self.data_groups.iteritems():
+
+            num_cases = len(self.cases) * self.multiplier
+
+            if num_cases == 0:
+                raise FileNotFoundError('WARNING: No cases found. Cannot write to file.')
+
+            if data_group.output_shape is None:
+                output_shape = data_group.get_shape()
+            else:
+                output_shape = data_group.output_shape
+                
+            # Add batch dimension
+            data_shape = tuple([0] + list(output_shape))
+
+            data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
+
+            # Naming convention is bad here, TODO, think about this.
+            data_group.casename_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'casenames']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
+            data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'affines']), tables.Float32Atom(), shape=(0,4,4), filters=filters, expectedrows=num_cases)
+
+        return hdf5_file
+
+
+    def write_data_to_file(self, output_filepath=None, case_list=None, data_group_labels=None):
 
         """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
         """
+
+        if case_list == None:
+            case_list = self.cases
 
         # Sanitize Inputs
         if data_group_labels is None:
@@ -123,55 +192,43 @@ class DataCollection(object):
         # Create Data File
         # try:
             # Passing self is sketchy here.
-        # hdf5_file = create_hdf5_file(output_filepath, data_group_labels, self)
+        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels, case_list=case_list)
         # except Exception as e:
             # os.remove(output_filepath)
             # raise e
 
         # Write data
-        self.write_image_data_to_storage(data_group_labels)
+        self.write_image_data_to_storage(data_group_labels, case_list=case_list)
 
         hdf5_file.close()
 
 
     def write_image_data_to_storage(self, data_group_labels=None, case_list=None, repeat=1):
 
-        """ Some of the syntax around data groups can be cleaned up in this function.
-        """
+        storage_cases = self.return_valid_cases(case_list)
 
-        # This bit of code appears everywhere. Try to see why that is.
-        if data_group_labels is None:
-            data_group_labels = self.data_groups.keys()
+        storage_data_generator = self.data_generator(data_group_labels, cases=storage_cases, yield_data=False)
 
-        if case_list == None:
-            storage_cases = self.cases
+        for i in xrange(self.multiplier * len(case_list)):
 
-        storage_cases = self.return_valid_cases(storage_cases)
-
-        storage_data_generator = self.data_generator(data_group_labels, cases=storage_cases, yield_data_only=False)
-
-        total_images = 1000
-
-        for i in xrange(total_images):
-
-            print 'Getting next output..'
             output = next(storage_data_generator)
 
-            print output
-            print 'Finished grabbing output!'
-
-            # self.data_storage.append(self.current_case)
-            # self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
-            # self.affine_storage.append(self.base_affine[:][np.newaxis])
+            for data_group_label in data_group_labels:
+                self.data_groups[data_group_label].write_to_storage()
 
         return
 
+    # @profile
+    def data_generator(self, data_group_labels, cases=None, yield_data=True):
 
-    def data_generator(self, data_group_labels, cases=None, yield_data_only=True):
-
+        # Referencing to data groups is a little wonky here, TODO: clean up
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
         data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+            if len(self.augmentations) != 0:
+                data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
 
         if cases is None:
             cases = self.cases
@@ -183,70 +240,59 @@ class DataCollection(object):
 
             for data_group in data_groups:
 
-                # These two lines are terrible, TODO: rewrite
-                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[data_group.cases.index(case_name)], return_affine=True)
-                data_group.base_case = data_group.base_case[:][np.newaxis]
+                # This is messy code. TODO: return to conditional below. Suspicious data has been laoded twice.
+                if case_name != data_group.base_casename:
+                    data_group.base_case, data_group.base_affine = read_image_files(data_group.data[data_group.cases.index(case_name)], return_affine=True)
+                    data_group.base_case = data_group.base_case[:][np.newaxis]
+                    data_group.base_casename = case_name
 
-                data_group.base_casename = case_name
-                data_group.current_case = data_group.base_case
+                if len(self.augmentations) != 0:
+                    data_group.augmentation_cases[0] = data_group.base_case
 
             recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-            augmentation_num = 5
-            for i in xrange(augmentation_num):
-                yield next(recursive_augmentation_generator)
+            for i in xrange(self.multiplier):
+                generate_data = next(recursive_augmentation_generator)
 
+                if yield_data:
+                    yield tuple([data_group.augmentation_cases[-1] for data_group in data_groups])
+                else:
+                    yield True
 
-    def recursive_augmentation(self, data_groups, augmentation_num=0, yield_data_only=True):
-
-        """ This function baldly reveals my newness at recursion..
-        """
-        # Write data
-        print 'BEGIN RECURSION FOR AUGMENTATION NUM', augmentation_num
+    @profile
+    def recursive_augmentation(self, data_groups, augmentation_num=0):
 
         if augmentation_num == len(self.augmentations):
 
-            # Blatantly obnoxious dict comprehension
-            if not yield_data_only:
-                yield {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
-            else:
-                yield tuple([data_group.current_case for data_group in data_groups])
+            yield True
         
         else:
 
+            # print 'BEGIN RECURSION FOR AUGMENTATION NUM', augmentation_num
+
             current_augmentation = self.augmentations[augmentation_num]
 
-            for iteration in xrange(current_augmentation.total_iterations):
+            for iteration in xrange(current_augmentation['iterations']):
 
-                for subaugmentation in current_augmentation:
+                for subaugmentation in current_augmentation['augmentation']:
 
-                    subaugmentation.augment()
-
-                    # data_group.current_case = data_group.augmentation_cases[augmentation_num]
-                    # data_group.augmentation_num += 1
-
-                self.recursive_augmentation(data_groups, augmentation_num+1)
-
-                print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num+1
-
-                for data_group in data_groups:
-                    if augmentation_num == 0:
-                        data_group.current_case = data_group.base_case
-                    else:
-                        data_group.current_case = data_group.augmentation_cases[augmentation_num - 1]
-
-
-                for subaugmentation in current_augmentation:
-
+                    subaugmentation.augment(augmentation_num=augmentation_num)
                     subaugmentation.iterate()
 
-        for data_group in data_groups:
-            data_group.augmentation_num -= 1
+                lower_recursive_generator = self.recursive_augmentation(data_groups, augmentation_num + 1)
 
-        return
+                # Why did I do this
+                sub_augmentation_iterations = self.multiplier
+                for i in xrange(augmentation_num+1):
+                    sub_augmentation_iterations /= self.augmentations[i]['iterations']
+                for i in xrange(int(sub_augmentation_iterations)):
+                    yield next(lower_recursive_generator)
+
+            # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
 
 
 class DataGroup(object):
+
 
     def __init__(self, label):
 
@@ -261,179 +307,49 @@ class DataGroup(object):
         self.base_affine = None
 
         self.augmentation_cases = []
-        self.current_case = None
-
-        self.augmentation_num = -1
 
         self.data_storage = None
         self.casename_storage = None
         self.affine_storage = None
 
-        # TEMPORARY
-        self.roimask_storage = None
-        self.brainmask_storage = None
-        self.roimask_outputpath = None
-        self.brainmask_outputpath = None
-
         self.num_cases = 0
+        self.output_shape = None
+
 
     def add_case(self, case_name, item):
         self.data.append(item)
         self.cases.append(case_name)
         self.num_cases = len(self.data)
 
-    def append_augmentation(self, augmentation):
-        self.augmentations.append(augmentation)
-        self.augmentation_cases.append([])
-
-    def get_augment_num_shape(self):
-
-        output_num = len(self.data)
-        output_shape = self.get_shape()
-
-        # Get output size for list of augmentations.
-        for augmentation in self.augmentations:
-
-            # Error Catching
-            if augmentation.total is None and augmentation.multiplier is None:
-                continue
-
-            # If multiplier goes over "total", use total
-            if augmentation.total is None:
-                output_num *= augmentation.multiplier
-            elif ((num_cases * augmentation.multiplier) - num_cases) > augmentation.total:
-                output_num += augmentation.total
-            else:
-                output_num *= augmentation.multiplier
-
-            # Get output shape, if it changes
-            if augmentation.output_shape is not None:
-                output_shape = augmentation.output_shape
-
-        return output_num, output_shape
 
     def get_shape(self):
 
         # TODO: Add support for non-nifti files.
         # Also this is not good. Perhaps specify shape in input?
 
-        if self.data == []:
-            return (0,)
+        if self.output_shape is None:
+            if self.data == []:
+                return (0,)
+            else:
+                return convert_input_2_numpy(self.data[0][0]).shape + (len(self.data[0]),)
         else:
-            return nifti_2_numpy(self.data[0][0]).shape
+            return self.output_shape
+
 
     def get_modalities(self):
+
         if self.data == []:
             return 0
         else:
             return len(self.data[0])
 
-    def augment(self, input_data):
 
-        output_data = [input_data]
+    # @profile
+    def write_to_storage(self):
 
-        for augmentatation in self.augmentations:
-
-            output_data = augmentation.augment(input_data)
-
-        return output_data
-
-    def write_to_storage(self, store_masks=True):
-        self.data_storage.append(self.current_case)
+        self.data_storage.append(self.augmentation_cases[-1])
         self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
         self.affine_storage.append(self.base_affine[:][np.newaxis])
-
-        if store_masks:
-            self.roimask_storage.append(np.array(self.roimask_outputpath)[np.newaxis][np.newaxis])
-            self.brainmask_storage.append(np.array(self.brainmask_outputpath)[np.newaxis][np.newaxis])
-
-def create_hdf5_file(output_filepath, data_groups, data_collection, save_masks=False, store_masks=True):
-
-    # Investigate hdf5 files.
-    hdf5_file = tables.open_file(output_filepath, mode='w')
-
-    # Investigate this line.
-    # Compression levels = complevel. No compression = 0
-    # Compression library = Method of compresion.
-    filters = tables.Filters(complevel=5, complib='blosc')
-
-    for data_group_label in data_groups:
-
-        data_group = data_collection.data_groups[data_group_label]
-
-        num_cases, output_shape = data_group.get_augment_num_shape()
-        modalities = data_group.get_modalities()
-
-        if num_cases == 0:
-            # raise FileNotFoundError('WARNING: No cases found. Cannot write to file.')
-            fd = dg
-
-        # Input data has multiple 'channels' i.e. modalities.
-        data_shape = tuple([0, modalities] + list(output_shape))
-
-        data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_group.label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
-
-        # Naming convention is sketchy here, TODO, think about this.
-        data_group.casename_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_group.label, 'casenames']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
-        data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_group.label, 'affines']), tables.Float32Atom(), shape=(0,4,4), filters=filters, expectedrows=num_cases)
-
-        if store_masks:
-            data_group.roimask_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_group.label, 'roimask']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
-            data_group.brainmask_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_group.label, 'brainmask']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
-
-    return hdf5_file
-
-def save_masked_indice_list(input_data, brainmask_outputpath, roimask_outputpath=None, ground_truth_data=None, patch_shape=(16,16,16), mask_value=0):
-
-    input_data = np.squeeze(input_data[:,0,...])
-    ground_truth_data = np.squeeze(ground_truth_data)
-    data_shape = input_data.shape
-
-    nonzero_idx = input_data != mask_value
-    nontumor_idx = ground_truth_data == mask_value
-
-    brain_idx = np.asarray(np.where(np.logical_and(nonzero_idx, nontumor_idx))).T
-    brain_idx = remove_invalid_idx(brain_idx, data_shape, patch_shape)
-
-    tumor_idx = np.asarray(np.where(ground_truth_data > mask_value)).T
-    tumor_idx = remove_invalid_idx(tumor_idx, data_shape, patch_shape)
-
-    np.save(brainmask_outputpath, brain_idx)
-    np.save(roimask_outputpath, tumor_idx)
-
-    # return brain_idx, tumor_idx
-
-def remove_invalid_idx(orignal_idx, shape, patch_size):
-
-    idx1 = (orignal_idx + patch_size[0]/2)[:,0] < shape[0]
-    idx2 = (orignal_idx + patch_size[1]/2)[:,1] < shape[1]
-    idx3 = (orignal_idx + patch_size[2]/2)[:,2] < shape[2]
-    idx4 = (orignal_idx - patch_size[0]/2)[:,0] >= 0
-    idx5 = (orignal_idx - patch_size[1]/2)[:,1] >= 0
-    idx6 = (orignal_idx - patch_size[2]/2)[:,2] >= 0
-
-    valid = idx1 & idx2 & idx3 & idx4 & idx5 & idx6
-
-    return orignal_idx[np.where(valid)[0],:]
-
-def generate_idx(patient_dir,patch_size):
-    os.chdir(patient_dir)
-    seg = np.round(nib.load('seg_pp.nii.gz').get_data())
-    FLAIR = np.round(nib.load('FLAIR_pp.nii.gz').get_data())
-    
-    nontumor_idx = np.asarray(np.where(seg==0)).T
-    nonbackground_idx = np.asarray(np.nonzero(FLAIR)).T
-    #normbrain = intersection of nontumor_idx and nonbackground_idx
-    aset = set([tuple(x) for x in nontumor_idx])
-    bset = set([tuple(x) for x in nonbackground_idx])
-    normbrain_idx = np.array([x for x in aset & bset])
-    valid_normbrain_idx = remove_invalid_idx(normbrain_idx,FLAIR.shape,patch_size)                     
-    
-    tumor_idx = np.asarray(np.where(seg>0)).T
-    valid_tumor_idx = remove_invalid_idx(tumor_idx,FLAIR.shape,patch_size)
-    
-    np.save('normbrain_idx',valid_normbrain_idx)
-    np.save('tumor_idx',valid_tumor_idx)
 
 if __name__ == '__main__':
     pass

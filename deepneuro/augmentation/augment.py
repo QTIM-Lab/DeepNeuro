@@ -1,30 +1,7 @@
 import numpy as np
 
-class AugmentationGroup(object):
-
-    # Add reset method.
-
-    def __init__(self, augmentation_dict=None, multiplier=None, total=None, output_shape=None):
-
-        self.iteration = 0
-
-        self.multiplier = multiplier
-        self.total = total
-        self.output_shape = output_shape
-
-        # For now...
-        self.total_iterations = multiplier
-
-        if augmentation_dict is None:
-            self.augmentation_dict = []
-        else:
-            self.augmentation_dict = augmentation_dict
-            for key in augmentation_dict:
-                augmentation_dict[key].multiplier = multiplier
-                augmentation_dict[key].total = total
-
-
 class Augmentation(object):
+
 
     def __init__(self, data_groups=None, multiplier=None, total=None):
 
@@ -43,14 +20,23 @@ class Augmentation(object):
 
         return
 
-    def augment(self):
 
-        return None
+    def set_multiplier(self, multiplier):
+
+        self.multiplier = multiplier
+        self.total_iterations = multiplier
+
+    def augment(self, augmentation_num=0):
+
+        for label, data_group in self.data_groups.iteritems():
+
+            data_group.augmentation_cases[augmentation_num+1] = augmentation_cases[augmentation_num]
 
     def initialize_augmentation(self):
 
         if not self.initialization:
             self.initialization = True
+
 
     def iterate(self):
 
@@ -60,6 +46,11 @@ class Augmentation(object):
         self.iteration += 1
         if self.iteration == self.multiplier:
             self.iteration = 0
+            self.reset()
+
+    def reset(self):
+        return
+
 
     def append_data_group(self, data_group):
         self.data_groups[data_group.label] = data_group
@@ -74,34 +65,6 @@ class Copy(Augmentation):
         self.output_shape = patch_shape
 
         self.data_groups = {}
-
-# class Shuffle_Values(Augmentation):
-
-class GaussianNoise(Augmentation):
-
-    def __init__(self, sigma=.5):
-
-        # Get rid of these with super??
-        self.multiplier = None
-        self.total = None
-        self.output_shape = patch_shape
-
-        self.initialization = False
-        self.iteration = 0
-
-        self.total_iterations = multiplier
-
-        self.data_groups = {}
-
-        self.sigma = sigma
-
-    def iterate(self):
-
-        super(Flip_Rotate, self).iterate()
-
-    def augment(self, input_data):
-
-        return input_data
 
 class Flip_Rotate_2D(Augmentation):
 
@@ -148,45 +111,47 @@ class Flip_Rotate_2D(Augmentation):
 
         super(Flip_Rotate_2D, self).iterate()
 
-    def augment(self):
+    def augment(self, augmentation_num=0):
 
-        for data_group in self.data_groups:
-            return {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
-            pass
+        print 'flippin'
 
-        if self.available_transforms[self.iteration % self.total_transforms, 0]:
-            input_data = np.flip(input_data, 2)
+        for label, data_group in self.data_groups.iteritems():
 
-        if self.available_transforms[self.iteration % self.total_transforms, 1]:
-            input_data = np.rot90(input_data, self.available_transforms[self.iteration % self.total_transforms, 1])
+            if self.available_transforms[self.iteration % self.total_transforms, 0]:
+                data_group.augmentation_cases[augmentation_num+1] = np.flip(data_group.augmentation_cases[augmentation_num], 1)
+            else:
+                data_group.augmentation_cases[augmentation_num+1] = data_group.augmentation_cases[augmentation_num]
 
-# class ArbitraryRotate3D(Augmentation):
-
-# class SplitDimension(Augmentation):
+            if self.available_transforms[self.iteration % self.total_transforms, 1]:
+                data_group.augmentation_cases[augmentation_num+1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, 1])
 
 class ExtractPatches(Augmentation):
 
-    def __init__(self, patch_shape, patch_extraction_conditions):
+    def __init__(self, patch_shape, patch_extraction_conditions, data_groups=None):
 
         # Get rid of these with super??
         self.multiplier = None
         self.total = None
-        self.output_shape = patch_shape
+        self.output_shape = None
+
+        self.data_groups = {data_group: None for data_group in data_groups}
 
         self.initialization = False
         self.iteration = 0
 
-        self.data_groups = {}
-
         self.patch_shape = patch_shape
         self.patch_extraction_conditions = patch_extraction_conditions
+        self.patches = None
         self.patch_corner = None
+        self.patch_slice = None
+
 
     def initialize_augmentation(self):
 
         if not self.initialization:
 
-            self.condition_list = [-1] * (self.multiplier)
+            # A weird way to proportionally divvy up patch conditions
+            self.condition_list = [None] * (self.multiplier)
             if self.patch_extraction_conditions is not None:
                 start_idx = 0
                 for condition_idx, patch_extraction_condition in enumerate(self.patch_extraction_conditions):
@@ -194,35 +159,31 @@ class ExtractPatches(Augmentation):
                     self.condition_list[start_idx:end_idx] = [condition_idx]*(end_idx-start_idx)
                     start_idx = end_idx
 
+            self.output_shape = {}
+            for label, data_group in self.data_groups.iteritems():
+                self.output_shape[label] = self.patch_shape + (data_group.get_shape()[-1],)
+
             self.initialization = True
 
     def iterate(self):
 
         super(ExtractPatches, self).iterate()
 
-        if self.iteration != 0:
-            self.generate_patch_corner()
-        else:
-            self.patch_corner = None
+        self.generate_patch_corner()
 
-    def augment(self, input_data):
+
+    def augment(self, augmentation_num=0):
 
         # Any more sensible way to deal with this case?
         if self.patch_corner == None:
-            self.generate_patch_corner()
+            self.generate_patch_corner(augmentation_num)
 
-        # This is repetitive. How to pre-allocate this data?
-        patch_slice = [slice(None)] + [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(self.patch_corner)]
-        output_data = input_data[patch_slice]
-        pad_dims = [(0,0), (0,0)]
-        for idx, dim in enumerate(output_data.shape[2:]):
-            pad_dims += [(0, self.patch_shape[idx]-dim)]
+        for label, data_group in self.data_groups.iteritems():
 
-        output_data = np.lib.pad(output_data, tuple(pad_dims), 'edge')
+            # A bit lengthy. Also unnecessarily rebuffers patches
+            data_group.augmentation_cases[augmentation_num + 1] = self.patches[label]
 
-        return output_data
-
-    def generate_patch_corner(self):
+    def generate_patch_corner(self, augmentation_num=0):
 
         """ Think about how one could to this, say, with 3D and 4D volumes at the same time.
             Also, patching across the modality dimension..? Interesting..
@@ -236,36 +197,68 @@ class ExtractPatches(Augmentation):
 
         # Hmm... How to make corner search process dimension-agnostic.
         leader_data_group = self.data_groups[data_group_labels[0]]
-        data_shape = leader_data_group.current_case.shape
+        data_shape = leader_data_group.augmentation_cases[augmentation_num].shape
 
         while not acceptable_patch:
 
-            corner = [np.random.randint(0, max_dim) for max_dim in data_shape[2:]]
-            patch_slice = [slice(None)] + [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)]
+            corner = [np.random.randint(0, max_dim) for max_dim in data_shape[1:-1]]
+            patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
 
-            patches = {}
+            self.patches = {}
 
             # Pad edge patches.
             for key in self.data_groups:
-                patches[key] = self.data_groups[key].current_case[patch_slice]
-                patch = patches[key] 
+                self.patches[key] = self.data_groups[key].augmentation_cases[augmentation_num][patch_slice]
 
                 pad_dims = [(0,0), (0,0)]
-                for idx, dim in enumerate(patch.shape[2:]):
+                for idx, dim in enumerate(self.patches[key] .shape[1:-1]):
                     pad_dims += [(0, self.patch_shape[idx]-dim)]
 
-                patch = np.lib.pad(patch, tuple(pad_dims), 'edge')
+                self.patches[key]  = np.lib.pad(self.patches[key] , tuple(pad_dims), 'edge')
 
             if self.condition_list[self.iteration] is not None and self.condition_list[self.iteration] > -1:
-                acceptable_patch = self.patch_extraction_conditions[self.condition_list[self.iteration]][0](patches)
+                acceptable_patch = self.patch_extraction_conditions[self.condition_list[self.iteration]][0](self.patches)
             else:
                 acceptable_patch = True
 
         print self.patch_extraction_conditions[self.condition_list[self.iteration]][0]
 
         self.patch_corner = corner
+        self.patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(self.patch_corner)] + [slice(None)]
 
         return
+
+# class Shuffle_Values(Augmentation):
+
+# class ArbitraryRotate3D(Augmentation):
+
+# class SplitDimension(Augmentation):
+
+class GaussianNoise(Augmentation):
+
+    def __init__(self, sigma=.5):
+
+        # Get rid of these with super??
+        self.multiplier = None
+        self.total = None
+        self.output_shape = patch_shape
+
+        self.initialization = False
+        self.iteration = 0
+
+        self.total_iterations = multiplier
+
+        self.data_groups = {}
+
+        self.sigma = sigma
+
+    def iterate(self):
+
+        super(Flip_Rotate, self).iterate()
+
+    def augment(self, input_data):
+
+        return input_data
 
 if __name__ == '__main__':
     pass

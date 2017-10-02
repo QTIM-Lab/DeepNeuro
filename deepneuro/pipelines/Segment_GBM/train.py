@@ -21,16 +21,22 @@ def train_Segment_GBM(data_directory):
     training_data_collection.fill_data_groups()
 
     # # Specify Augmentations
-    flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'], multiplier=2)
-    # patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_extraction_conditions=[], data_groups=['input_modalities', 'ground_truth'], multiplier=2)
+    flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'])
+    training_data_collection.append_augmentation(flip_augmentation, multiplier=2)
 
-    # # Append Augmentations to Data
-    for augmentation in [flip_augmentation]:
-        training_data_collection.append_augmentation(augmentation)
+    # Threshold Functions
+    def background_patch(patch):
+        return float((patch['input_modalities'] == 0).sum()) / patch['input_modalities'].size == 1
+    def brain_patch(patch):
+        return float((patch['input_modalities'] != 0).sum()) / patch['input_modalities'].size > .5 and float((patch['ground_truth'] == 1).sum()) / patch['ground_truth'].size < .5
+    def roi_patch(patch):
+        return float((patch['ground_truth'] == 1).sum()) / patch['ground_truth'].size > .5
 
+    patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_extraction_conditions=[[brain_patch, .3], [roi_patch, .7]], data_groups=['input_modalities', 'ground_truth'])
+    training_data_collection.append_augmentation(patch_augmentation, multiplier=6)
 
     # training_data_collection.append_augmentation(flip_augmentation_group)
-    training_data_collection.write_data_to_file()
+    training_data_collection.write_data_to_file('./test.h5')
 
     # if config['validation_dir'] is not None and config['hdf5_validation'] is not None:
     #     # Validation - with patch augmentation
