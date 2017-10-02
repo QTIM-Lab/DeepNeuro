@@ -136,7 +136,7 @@ class Flip_Rotate_2D(Augmentation):
 
         self.available_transforms = np.array(np.meshgrid(self.flip_list, self.rotations_90)).T.reshape(-1,2)
         self.total_transforms = self.available_transforms.shape[0]
-        print self.available_transforms
+
 
     def initialize_augmentation(self):
 
@@ -151,6 +151,7 @@ class Flip_Rotate_2D(Augmentation):
     def augment(self):
 
         for data_group in self.data_groups:
+            return {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
             pass
 
         if self.available_transforms[self.iteration % self.total_transforms, 0]:

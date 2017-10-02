@@ -17,7 +17,7 @@ def train_Segment_GBM(data_directory):
                                         'ground_truth': ['*full_edemamask_pp.*']}
 
     # Create a Data Collection
-    training_data_collection = DataCollection(data_directory, modality_dict)
+    training_data_collection = DataCollection(data_directory, modality_dict, verbose=True)
     training_data_collection.fill_data_groups()
 
     # # Specify Augmentations

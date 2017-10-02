@@ -21,7 +21,7 @@ class DataCollection(object):
         self.spreadsheet_dict = spreadsheet_dict
         self.value_dict = value_dict
         self.case_list = case_list
-        self.verbose = False
+        self.verbose = verbose
 
         # Special behavior for augmentations
         self.augmentations = []
@@ -70,7 +70,7 @@ class DataCollection(object):
                         break
 
                 if len(modality_group_files) == len(modality_labels):
-                    self.data_groups[modality_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
+                    self.data_groups[data_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
                     self.cases.append(os.path.abspath(subject_dir))
 
 
@@ -82,7 +82,7 @@ class DataCollection(object):
         #     augmentation_group.augmentation_dict[data_group_label].append_data_group(self.data_groups[data_group_label])
         #     augmentation_group.augmentation_dict[data_group_label].initialize_augmentation()
 
-        # Don't like this list method, find a more explicity way.
+        # Don't like this list method, find a more explicit way.
         self.augmentations.append(augmentation)
 
         return
@@ -96,14 +96,14 @@ class DataCollection(object):
         valid_cases = []
         for case_name in case_list:
 
-            # This is not great code. TODO: revisit
+            # This is terrible code. TODO: rewrite.
             missing_case = False
             for data_label, data_group in self.data_groups.iteritems():
                 if not case_name in data_group.cases:
                     missing_case = True
                     break
             if not missing_case:
-                valid_cases += case_name
+                valid_cases += [case_name]
 
         return valid_cases
 
@@ -148,14 +148,17 @@ class DataCollection(object):
 
         storage_cases = self.return_valid_cases(storage_cases)
 
-        storage_data_generator = self.data_generator(data_group_labels, yield_data_only=False)
+        storage_data_generator = self.data_generator(data_group_labels, cases=storage_cases, yield_data_only=False)
 
         total_images = 1000
+
         for i in xrange(total_images):
 
+            print 'Getting next output..'
             output = next(storage_data_generator)
 
             print output
+            print 'Finished grabbing output!'
 
             # self.data_storage.append(self.current_case)
             # self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
@@ -164,35 +167,34 @@ class DataCollection(object):
         return
 
 
-    def data_generator(self, data_group_labels, yield_data_only=True):
+    def data_generator(self, data_group_labels, cases=None, yield_data_only=True):
 
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
         data_groups = [self.data_groups[label] for label in data_group_labels]
 
-        for case_idx, case_name in enumerate(self.cases):
+        if cases is None:
+            cases = self.cases
 
-            print case_idx
+        for case_idx, case_name in enumerate(cases):
 
             if self.verbose:
-                print 'Working on image.. ', case_idx, 'in', case_name
-                print '\n'
+                print 'Working on image.. ', case_idx, 'at', case_name
 
             for data_group in data_groups:
 
-                print data_group.label
-                print data_group.data
-
-                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[case_idx], return_affine=True)
+                # These two lines are terrible, TODO: rewrite
+                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[data_group.cases.index(case_name)], return_affine=True)
                 data_group.base_case = data_group.base_case[:][np.newaxis]
+
                 data_group.base_casename = case_name
                 data_group.current_case = data_group.base_case
 
-            recrusive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+            recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-            augmentation_num
+            augmentation_num = 5
             for i in xrange(augmentation_num):
-                yield self.recursive_augmentation(data_group_objects, augmentation_num=0)
+                yield next(recursive_augmentation_generator)
 
 
     def recursive_augmentation(self, data_groups, augmentation_num=0, yield_data_only=True):
@@ -205,21 +207,23 @@ class DataCollection(object):
         if augmentation_num == len(self.augmentations):
 
             # Blatantly obnoxious dict comprehension
-            yield {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
-
+            if not yield_data_only:
+                yield {data_group.label: {'data': data_group.current_case, 'affine': data_group.base_affine, 'casename': data_group.base_casename} for data_group in data_groups}
+            else:
+                yield tuple([data_group.current_case for data_group in data_groups])
+        
         else:
 
-            for iteration in xrange(self.augmentations[augmentation_num].total_iterations):
+            current_augmentation = self.augmentations[augmentation_num]
 
-                for data_group in data_groups:
+            for iteration in xrange(current_augmentation.total_iterations):
 
-                    if augmentation_num == 0:
-                        data_group.augmentation_cases[augmentation_num] = self.augmentations[augmentation_num].augmentation_dict[data_group.label].augment(data_group.base_case)
-                    else:
-                        data_group.augmentation_cases[augmentation_num] = self.augmentations[augmentation_num].augmentation_dict[data_group.label].augment(data_group.augmentation_cases[augmentation_num-1])
+                for subaugmentation in current_augmentation:
 
-                    data_group.current_case = data_group.augmentation_cases[augmentation_num]
-                    data_group.augmentation_num += 1
+                    subaugmentation.augment()
+
+                    # data_group.current_case = data_group.augmentation_cases[augmentation_num]
+                    # data_group.augmentation_num += 1
 
                 self.recursive_augmentation(data_groups, augmentation_num+1)
 
@@ -232,8 +236,9 @@ class DataCollection(object):
                         data_group.current_case = data_group.augmentation_cases[augmentation_num - 1]
 
 
-                for data_group in data_groups:        
-                    self.augmentations[augmentation_num].augmentation_dict[data_group.label].iterate()
+                for subaugmentation in current_augmentation:
+
+                    subaugmentation.iterate()
 
         for data_group in data_groups:
             data_group.augmentation_num -= 1
