@@ -61,50 +61,7 @@ def train_Segment_GBM(data_directory):
     # Define training generators
     training_generator = None
 
-    
-
-    # # Create a new model if necessary. Preferably, load an existing one.
-    # if not config["overwrite_model"] and os.path.exists(config["model_file"]):
-    #     print 'Loading old model...'
-    #     model = load_old_model(config["model_file"])
-    # else:
-    #     model = u_net_3d(input_shape=(len(modality_dict['input_modalities']),) + config['patch_shape'], output_shape=(len(modality_dict['ground_truth']),) + config['patch_shape'], downsize_filters_factor=config['downsize_filters_factor'], initial_learning_rate=config['initial_learning_rate'], regression=config['regression'], num_outputs=(len(modality_dict['ground_truth'])))
-
-
-
-def nested_yield_1():
-
-    gen = nested_yield_2()
-
-    x = 0
-    while x < 100:
-        print 'start of gen'
-        print next(gen)
-        x += 1
-
-def nested_yield_2():
-
-    gen = nested_yield_3()
-
-    while True:
-        print 'top of yield 2'
-        yield next(gen)
-        print 'bottom of yield 2'
-
-def nested_yield_3():
-
-    x = 0
-    while True:
-        print 'top of yield 3'
-        yield x
-        print 'bottom of yield 3'
-        x = x + 1
-
-    return
-
 if __name__ == '__main__':
-
-    # nested_yield_1()
 
     data_directory = '/mnt/jk489/sharedfolder/BRATS2017/Train'
 
