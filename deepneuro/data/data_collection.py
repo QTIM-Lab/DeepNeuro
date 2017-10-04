@@ -73,7 +73,8 @@ class DataCollection(object):
 
                 if len(modality_group_files) == len(modality_labels):
                     self.data_groups[data_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
-                    self.cases.append(os.path.abspath(subject_dir))
+
+            self.cases.append(os.path.abspath(subject_dir))
 
 
     def append_augmentation(self, augmentations, multiplier=None):
@@ -135,20 +136,13 @@ class DataCollection(object):
 
         return valid_cases
 
-        return
-
 
     def create_hdf5_file(self, output_filepath, data_group_labels=None, case_list=None):
 
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
 
-        # Investigate hdf5 files.
         hdf5_file = tables.open_file(output_filepath, mode='w')
-
-        # Investigate this line.
-        # Compression levels = complevel. No compression = 0
-        # Compression library = Method of compresion.
         filters = tables.Filters(complevel=5, complib='blosc')
 
         for data_label, data_group in self.data_groups.iteritems():
@@ -259,7 +253,7 @@ class DataCollection(object):
                 else:
                     yield True
 
-    @profile
+    # @profile
     def recursive_augmentation(self, data_groups, augmentation_num=0):
 
         if augmentation_num == len(self.augmentations):
@@ -271,6 +265,9 @@ class DataCollection(object):
             # print 'BEGIN RECURSION FOR AUGMENTATION NUM', augmentation_num
 
             current_augmentation = self.augmentations[augmentation_num]
+
+            for subaugmentation in current_augmentation['augmentation']:
+                subaugmentation.reset(augmentation_num=augmentation_num)
 
             for iteration in xrange(current_augmentation['iterations']):
 
@@ -285,6 +282,7 @@ class DataCollection(object):
                 sub_augmentation_iterations = self.multiplier
                 for i in xrange(augmentation_num+1):
                     sub_augmentation_iterations /= self.augmentations[i]['iterations']
+
                 for i in xrange(int(sub_augmentation_iterations)):
                     yield next(lower_recursive_generator)
 

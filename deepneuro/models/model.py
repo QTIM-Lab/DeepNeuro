@@ -11,7 +11,7 @@ from deepneuro.models.cost_functions import cost_function_dict
 
 class DeepNeuroModel(object):
     
-    def __init__(self, input_shape=(1, 32, 32, 32), input_tensor=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
+    def __init__(self, input_shape=(32, 32, 32, 1), input_tensor=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
 
         """ A model object with some basic parameters that can be added to in the load() method. Each child of
             this class should be able to build and store a model composed of tensors, as well as convert an input

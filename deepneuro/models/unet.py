@@ -41,6 +41,8 @@ class UNet(DeepNeuroModel):
         
         """ A basic implementation of the U-Net proposed in https://arxiv.org/abs/1505.04597
         
+            TODO: specify optimizer
+
             Returns
             -------
             Keras model or tensor

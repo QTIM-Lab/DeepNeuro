@@ -46,11 +46,9 @@ class Augmentation(object):
         self.iteration += 1
         if self.iteration == self.multiplier:
             self.iteration = 0
-            self.reset()
 
-    def reset(self):
+    def reset(self, augmentation_num):
         return
-
 
     def append_data_group(self, data_group):
         self.data_groups[data_group.label] = data_group
@@ -127,7 +125,7 @@ class Flip_Rotate_2D(Augmentation):
 
 class ExtractPatches(Augmentation):
 
-    def __init__(self, patch_shape, patch_extraction_conditions, data_groups=None):
+    def __init__(self, patch_shape, patch_region_conditions=None, patch_extraction_conditions=None, data_groups=None):
 
         # Get rid of these with super??
         self.multiplier = None
@@ -141,22 +139,33 @@ class ExtractPatches(Augmentation):
 
         self.patch_shape = patch_shape
         self.patch_extraction_conditions = patch_extraction_conditions
+        self.patch_region_conditions = patch_region_conditions
+        self.patch_regions = []
         self.patches = None
         self.patch_corner = None
         self.patch_slice = None
-
 
     def initialize_augmentation(self):
 
         if not self.initialization:
 
-            # A weird way to proportionally divvy up patch conditions
+            # A weird way to proportionally divvy up patch conditions.
+            # TODO: Rewrite
             self.condition_list = [None] * (self.multiplier)
+            self.region_list = [None] * (self.multiplier)
+
             if self.patch_extraction_conditions is not None:
                 start_idx = 0
                 for condition_idx, patch_extraction_condition in enumerate(self.patch_extraction_conditions):
                     end_idx = start_idx + int(np.ceil(patch_extraction_condition[1]*self.multiplier))
                     self.condition_list[start_idx:end_idx] = [condition_idx]*(end_idx-start_idx)
+                    start_idx = end_idx
+
+            if self.patch_region_conditions is not None:
+                start_idx = 0
+                for condition_idx, patch_region_condition in enumerate(self.patch_region_conditions):
+                    end_idx = start_idx + int(np.ceil(patch_region_condition[1]*self.multiplier))
+                    self.region_list[start_idx:end_idx] = [condition_idx]*(end_idx-start_idx)
                     start_idx = end_idx
 
             self.output_shape = {}
@@ -171,11 +180,19 @@ class ExtractPatches(Augmentation):
 
         self.generate_patch_corner()
 
+    def reset(self, augmentation_num=0):
+
+        region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in self.data_groups.keys()}
+        for region_condition in self.patch_region_conditions:
+            print 'Extracting region for..', region_condition
+            self.patch_regions += [np.where(region_condition[0](region_input_data))]
+
+        return
 
     def augment(self, augmentation_num=0):
 
         # Any more sensible way to deal with this case?
-        if self.patch_corner == None:
+        if self.patches is None:
             self.generate_patch_corner(augmentation_num)
 
         for label, data_group in self.data_groups.iteritems():
@@ -199,9 +216,38 @@ class ExtractPatches(Augmentation):
         leader_data_group = self.data_groups[data_group_labels[0]]
         data_shape = leader_data_group.augmentation_cases[augmentation_num].shape
 
-        while not acceptable_patch:
+        if self.patch_regions == []:
+            while not acceptable_patch:
 
-            corner = [np.random.randint(0, max_dim) for max_dim in data_shape[1:-1]]
+                corner = [np.random.randint(0, max_dim) for max_dim in data_shape[1:-1]]
+                patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
+
+                self.patches = {}
+
+                # Pad edge patches.
+                for key in self.data_groups:
+                    self.patches[key] = self.data_groups[key].augmentation_cases[augmentation_num][patch_slice]
+
+                    pad_dims = [(0,0)]
+                    for idx, dim in enumerate(self.patches[key].shape[1:-1]):
+                        pad_dims += [(0, self.patch_shape[idx]-dim)]
+                    pad_dims += [(0,0)]
+
+                    self.patches[key]  = np.lib.pad(self.patches[key] , tuple(pad_dims), 'edge')
+
+                if self.condition_list[self.iteration] is not None:
+                    acceptable_patch = self.patch_extraction_conditions[self.condition_list[self.iteration]][0](self.patches)
+                else:
+                    acceptable_patch = True
+                    print self.patch_extraction_conditions[self.condition_list[self.iteration]][0]
+
+        else:
+            region = self.patch_regions[self.region_list[self.iteration]]
+            corner_idx = np.random.randint(len(region[0]))
+
+            # TODO: adjust for non-3D data
+            corner = [d[corner_idx] for d in region][1:-1]
+
             patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
 
             self.patches = {}
@@ -210,21 +256,14 @@ class ExtractPatches(Augmentation):
             for key in self.data_groups:
                 self.patches[key] = self.data_groups[key].augmentation_cases[augmentation_num][patch_slice]
 
-                pad_dims = [(0,0), (0,0)]
-                for idx, dim in enumerate(self.patches[key] .shape[1:-1]):
+                pad_dims = [(0,0)]
+                for idx, dim in enumerate(self.patches[key].shape[1:-1]):
                     pad_dims += [(0, self.patch_shape[idx]-dim)]
+                pad_dims += [(0,0)]
 
                 self.patches[key]  = np.lib.pad(self.patches[key] , tuple(pad_dims), 'edge')
 
-            if self.condition_list[self.iteration] is not None and self.condition_list[self.iteration] > -1:
-                acceptable_patch = self.patch_extraction_conditions[self.condition_list[self.iteration]][0](self.patches)
-            else:
-                acceptable_patch = True
-
-        print self.patch_extraction_conditions[self.condition_list[self.iteration]][0]
-
-        self.patch_corner = corner
-        self.patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(self.patch_corner)] + [slice(None)]
+            print self.patch_region_conditions[self.region_list[self.iteration]][0]
 
         return
 
