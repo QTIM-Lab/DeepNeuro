@@ -14,10 +14,11 @@ from deepneuro.utilities.conversion import read_image_files
 class DataCollection(object):
 
 
-    def __init__(self, data_directory, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
+    def __init__(self, data_directory = None, data_storage=None, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
 
         # Input vars
-        self.data_directory = os.path.abspath(data_directory)
+        self.data_directory = data_directory
+        self.data_storage = data_storage
         self.modality_dict = modality_dict
         self.spreadsheet_dict = spreadsheet_dict
         self.value_dict = value_dict
@@ -30,6 +31,7 @@ class DataCollection(object):
 
         # Empty vars
         self.cases = []
+        self.total_cases = 0
         self.data_groups = {}
         self.data_shape = None
         self.data_shape_augment = None
@@ -37,44 +39,61 @@ class DataCollection(object):
 
     def fill_data_groups(self):
 
-        if self.verbose:
-            print 'Gathering image data from...', self.data_directory
+        if self.data_directory is not None:
 
-        # TODO: Add section for spreadsheets.
-        # TODO: Add section for values.
+            if self.verbose:
+                print 'Gathering image data from...', self.data_directory
 
-        # Create DataGroups for this DataCollection.
-        for modality_group in self.modality_dict:
-            if modality_group not in self.data_groups.keys():
-                self.data_groups[modality_group] = DataGroup(modality_group)
+            # TODO: Add section for spreadsheets.
+            # TODO: Add section for values.
 
-        # Iterate through directories..
-        for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
+            # Create DataGroups for this DataCollection.
+            for modality_group in self.modality_dict:
+                if modality_group not in self.data_groups.keys():
+                    self.data_groups[modality_group] = DataGroup(modality_group)
 
-            # If a predefined case list is provided, only choose these cases.
-            if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
-                continue
+            # Iterate through directories..
+            for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
 
-            # Search for modality files, and skip those missing with files modalities.
-            for data_group, modality_labels in self.modality_dict.iteritems():
+                # If a predefined case list is provided, only choose these cases.
+                if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
+                    continue
 
-                modality_group_files = []
-                for modality in modality_labels:
-                    target_file = glob.glob(os.path.join(subject_dir, modality))
-                    if len(target_file) == 1:
-                        modality_group_files.append(target_file[0])
-                    else:
-                        print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
-                        if len(target_file) == 0:
-                            print 'No file found.'
+                # Search for modality files, and skip those missing with files modalities.
+                for data_group, modality_labels in self.modality_dict.iteritems():
+
+                    modality_group_files = []
+                    for modality in modality_labels:
+                        target_file = glob.glob(os.path.join(subject_dir, modality))
+                        if len(target_file) == 1:
+                            modality_group_files.append(target_file[0])
                         else:
-                            print 'Multiple files found.'
-                        break
+                            print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
+                            if len(target_file) == 0:
+                                print 'No file found.'
+                            else:
+                                print 'Multiple files found.'
+                            break
 
-                if len(modality_group_files) == len(modality_labels):
-                    self.data_groups[data_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
+                    if len(modality_group_files) == len(modality_labels):
+                        self.data_groups[data_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
 
-            self.cases.append(os.path.abspath(subject_dir))
+                self.cases.append(os.path.abspath(subject_dir))
+
+            self.total_cases = len(self.cases)
+
+        elif self.data_storage is not None:
+
+            # Placeholder methods for class iterator.
+            for data_group in self.data_storage.iter_classes:
+                self.data_groups[data_group.name] = DataGroup(data_group.name)
+                self.data_groups[data_group.name].data = data_group.storage
+                self.data_groups[data_group.name].cases = xrange(data_group.size)
+                self.data_groups[data_group.name].case_num = data_group.size
+                self.total_cases = data_group.size
+
+        else:
+            print 'No directory or data storage file specified. No data groups can be created.'
 
 
     def append_augmentation(self, augmentations, multiplier=None):
@@ -117,27 +136,26 @@ class DataCollection(object):
         return
 
 
-    def return_valid_cases(self, case_list=None):
-
-        if case_list == None:
-            case_list = self.cases
+    def return_valid_cases(self, data_group_labels):
 
         valid_cases = []
-        for case_name in case_list:
+        for case_name in self.cases:
 
             # This is terrible code. TODO: rewrite.
             missing_case = False
             for data_label, data_group in self.data_groups.iteritems():
+                if data_label not in data_group_labels:
+                    continue
                 if not case_name in data_group.cases:
                     missing_case = True
                     break
             if not missing_case:
                 valid_cases += [case_name]
 
-        return valid_cases
+        return valid_cases, len(valid_cases)
 
 
-    def create_hdf5_file(self, output_filepath, data_group_labels=None, case_list=None):
+    def create_hdf5_file(self, output_filepath, data_group_labels=None):
 
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
@@ -169,13 +187,10 @@ class DataCollection(object):
         return hdf5_file
 
 
-    def write_data_to_file(self, output_filepath=None, case_list=None, data_group_labels=None):
+    def write_data_to_file(self, output_filepath=None, data_group_labels=None):
 
         """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
         """
-
-        if case_list == None:
-            case_list = self.cases
 
         # Sanitize Inputs
         if data_group_labels is None:
@@ -186,24 +201,29 @@ class DataCollection(object):
         # Create Data File
         # try:
             # Passing self is sketchy here.
-        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels, case_list=case_list)
+        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
         # except Exception as e:
             # os.remove(output_filepath)
             # raise e
 
         # Write data
-        self.write_image_data_to_storage(data_group_labels, case_list=case_list)
+        self.write_image_data_to_storage(data_group_labels)
 
         hdf5_file.close()
 
 
-    def write_image_data_to_storage(self, data_group_labels=None, case_list=None, repeat=1):
+    def write_image_data_to_storage(self, data_group_labels=None, repeat=1):
 
-        storage_cases = self.return_valid_cases(case_list)
+        # This is very shady. Currently trying to reconcile between loading data from a
+        # directory and loading data from an hdf5.
+        if self.data_directory is not None:
+            storage_cases, total_cases = self.return_valid_cases(case_list, data_group_label)
+        else:
+            storage_cases, total_cases = self.cases, self.total_cases
 
         storage_data_generator = self.data_generator(data_group_labels, cases=storage_cases, yield_data=False)
 
-        for i in xrange(self.multiplier * len(case_list)):
+        for i in xrange(self.multiplier * total_cases):
 
             output = next(storage_data_generator)
 
@@ -213,7 +233,7 @@ class DataCollection(object):
         return
 
     # @profile
-    def data_generator(self, data_group_labels, cases=None, yield_data=True):
+    def data_generator(self, data_group_labels, case_list=None, yield_data=True):
 
         # Referencing to data groups is a little wonky here, TODO: clean up
         if data_group_labels is None:
@@ -224,21 +244,19 @@ class DataCollection(object):
             if len(self.augmentations) != 0:
                 data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
 
-        if cases is None:
-            cases = self.cases
+        if case_list = None:
+            case_list = self.cases
 
-        for case_idx, case_name in enumerate(cases):
+        for case_idx, case_name in enumerate(case_list):
 
             if self.verbose:
                 print 'Working on image.. ', case_idx, 'at', case_name
 
             for data_group in data_groups:
 
-                # This is messy code. TODO: return to conditional below. Suspicious data has been laoded twice.
-                if case_name != data_group.base_casename:
-                    data_group.base_case, data_group.base_affine = read_image_files(data_group.data[data_group.cases.index(case_name)], return_affine=True)
-                    data_group.base_case = data_group.base_case[:][np.newaxis]
-                    data_group.base_casename = case_name
+                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[case_name], return_affine=True)
+                data_group.base_case = data_group.base_case[:][np.newaxis]
+                data_group.base_casename = case_name
 
                 if len(self.augmentations) != 0:
                     data_group.augmentation_cases[0] = data_group.base_case
@@ -296,8 +314,9 @@ class DataGroup(object):
 
         self.label = label
         self.augmentations = []
-        self.data = []
+        self.data = {}
         self.cases = []
+        self.case_num = 0
 
         # TODO: More distinctive naming for "base" and "current" cases.
         self.base_case = None
@@ -310,15 +329,12 @@ class DataGroup(object):
         self.casename_storage = None
         self.affine_storage = None
 
-        self.num_cases = 0
         self.output_shape = None
 
 
     def add_case(self, case_name, item):
-        self.data.append(item)
+        self.data[case_name] = item
         self.cases.append(case_name)
-        self.num_cases = len(self.data)
-
 
     def get_shape(self):
 
@@ -333,7 +349,6 @@ class DataGroup(object):
         else:
             return self.output_shape
 
-
     def get_modalities(self):
 
         if self.data == []:
@@ -341,6 +356,8 @@ class DataGroup(object):
         else:
             return len(self.data[0])
 
+    def get_data(self):
+        return
 
     # @profile
     def write_to_storage(self):
