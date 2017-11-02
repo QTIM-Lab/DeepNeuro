@@ -73,6 +73,7 @@ class Flip_Rotate_2D(Augmentation):
         self.total = total
         self.flip = flip
         self.rotate = rotate
+        self.flip_axis = 1
 
         self.output_shape = None
         self.initialization = False
@@ -103,6 +104,13 @@ class Flip_Rotate_2D(Augmentation):
 
         if not self.initialization:
 
+            for label, data_group in self.data_groups.iteritems():
+                # Dealing with the time dimension.
+                if len(data_group.get_shape()) < 5:
+                    self.flip_axis = 1
+                else:
+                    self.flip_axis = -4
+
             self.initialization = True
 
     def iterate(self):
@@ -116,12 +124,12 @@ class Flip_Rotate_2D(Augmentation):
         for label, data_group in self.data_groups.iteritems():
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
-                data_group.augmentation_cases[augmentation_num+1] = np.flip(data_group.augmentation_cases[augmentation_num], 1)
+                data_group.augmentation_cases[augmentation_num+1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
             else:
                 data_group.augmentation_cases[augmentation_num+1] = data_group.augmentation_cases[augmentation_num]
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
-                data_group.augmentation_cases[augmentation_num+1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, 1])
+                data_group.augmentation_cases[augmentation_num+1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis])
 
 class ExtractPatches(Augmentation):
 
@@ -136,6 +144,8 @@ class ExtractPatches(Augmentation):
 
         self.initialization = False
         self.iteration = 0
+
+        self.leading_dims = {}
 
         self.patch_shape = patch_shape
         self.patch_extraction_conditions = patch_extraction_conditions
@@ -170,7 +180,18 @@ class ExtractPatches(Augmentation):
 
             self.output_shape = {}
             for label, data_group in self.data_groups.iteritems():
-                self.output_shape[label] = self.patch_shape + (data_group.get_shape()[-1],)
+
+                # Might consider doing more flexible patch shapes in the future. E.g. -- different
+                # time segments, but the same ground_truth patch.
+
+                # This leading dims business needs to be redone.
+
+                if len(data_group.get_shape()) < 6:
+                    self.leading_dims[label] = 0
+                    self.output_shape[label] = self.patch_shape + (data_group.get_shape()[-1],)
+                else:
+                    self.leading_dims[label] = len(data_group.get_shape()) - 5
+                    self.output_shape[label] = (data_group.get_shape()[1],) + self.patch_shape + (data_group.get_shape()[-1],)
 
             self.initialization = True
 
@@ -220,7 +241,7 @@ class ExtractPatches(Augmentation):
             while not acceptable_patch:
 
                 corner = [np.random.randint(0, max_dim) for max_dim in data_shape[1:-1]]
-                patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
+                patch_slice = [slice(None)]*self.leading_dims + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
 
                 self.patches = {}
 
@@ -246,18 +267,19 @@ class ExtractPatches(Augmentation):
             corner_idx = np.random.randint(len(region[0]))
 
             # TODO: adjust for non-3D data
-            corner = [d[corner_idx] for d in region][1:-1]
-
-            patch_slice = [slice(None)] + [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
+            corner = [d[corner_idx] for d in region][:-1]
 
             self.patches = {}
 
             # Pad edge patches.
             for key in self.data_groups:
+
+                patch_slice = [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
+                
                 self.patches[key] = self.data_groups[key].augmentation_cases[augmentation_num][patch_slice]
 
-                pad_dims = [(0,0)]
-                for idx, dim in enumerate(self.patches[key].shape[1:-1]):
+                pad_dims = []
+                for idx, dim in enumerate(self.patches[key].shape[0:-1]):
                     pad_dims += [(0, self.patch_shape[idx]-dim)]
                 pad_dims += [(0,0)]
 

@@ -7,6 +7,7 @@ import tables
 import nibabel as nib
 
 from qtim_tools.qtim_utilities.format_util import convert_input_2_numpy
+from qtim_tools.qtim_utilities.nifti_util import check_image_2d
 
 from deepneuro.augmentation.augment import Augmentation, Copy
 from deepneuro.utilities.conversion import read_image_files
@@ -51,6 +52,7 @@ class DataCollection(object):
             for modality_group in self.modality_dict:
                 if modality_group not in self.data_groups.keys():
                     self.data_groups[modality_group] = DataGroup(modality_group)
+                    self.data_groups[modality_group].source = 'directory'
 
             # Iterate through directories..
             for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
@@ -84,13 +86,30 @@ class DataCollection(object):
 
         elif self.data_storage is not None:
 
-            # Placeholder methods for class iterator.
-            for data_group in self.data_storage.iter_classes:
-                self.data_groups[data_group.name] = DataGroup(data_group.name)
-                self.data_groups[data_group.name].data = data_group.storage
-                self.data_groups[data_group.name].cases = xrange(data_group.size)
-                self.data_groups[data_group.name].case_num = data_group.size
-                self.total_cases = data_group.size
+            if self.verbose:
+                print 'Gathering image metadata from...', self.data_storage
+
+            open_hdf5 = tables.open_file(self.data_storage, "r")
+
+            for data_group in open_hdf5.root._f_iter_nodes():
+                if '_affines' not in data_group.name and '_casenames' not in data_group.name:
+                    if 'mask' in data_group.name:
+                        continue
+                    self.data_groups[data_group.name] = DataGroup(data_group.name)
+                    self.data_groups[data_group.name].data = data_group
+                    
+                    # Affines and Casenames. Also not great praxis.
+                    self.data_groups[data_group.name].data_affines = getattr(open_hdf5.root, data_group.name + '_affines')
+                    self.data_groups[data_group.name].data_casenames = getattr(open_hdf5.root, data_group.name + '_casenames')
+
+                    # Unsure if .source is needed. Convenient for now.
+                    self.data_groups[data_group.name].source = 'storage'
+
+                    # There's some double-counting here. TODO: revise, chop down one or the other.
+                    self.data_groups[data_group.name].cases = xrange(data_group.shape[0])
+                    self.data_groups[data_group.name].case_num = data_group.shape[0]
+                    self.total_cases = data_group.shape[0]
+                    self.cases = range(data_group.shape[0])
 
         else:
             print 'No directory or data storage file specified. No data groups can be created.'
@@ -135,6 +154,15 @@ class DataCollection(object):
 
         return
 
+    def clear_augmentations(self):
+
+        # This function is basically a memory leak. Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
 
     def return_valid_cases(self, data_group_labels):
 
@@ -165,18 +193,16 @@ class DataCollection(object):
 
         for data_label, data_group in self.data_groups.iteritems():
 
-            num_cases = len(self.cases) * self.multiplier
+            num_cases = self.total_cases * self.multiplier
 
             if num_cases == 0:
-                raise FileNotFoundError('WARNING: No cases found. Cannot write to file.')
+                raise Exception('WARNING: No cases found. Cannot write to file.')
 
-            if data_group.output_shape is None:
-                output_shape = data_group.get_shape()
-            else:
-                output_shape = data_group.output_shape
-                
+            output_shape = data_group.get_shape()
+
             # Add batch dimension
-            data_shape = tuple([0] + list(output_shape))
+            print output_shape, data_label
+            data_shape = (0,) + output_shape
 
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
 
@@ -200,7 +226,6 @@ class DataCollection(object):
 
         # Create Data File
         # try:
-            # Passing self is sketchy here.
         hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
         # except Exception as e:
             # os.remove(output_filepath)
@@ -217,11 +242,11 @@ class DataCollection(object):
         # This is very shady. Currently trying to reconcile between loading data from a
         # directory and loading data from an hdf5.
         if self.data_directory is not None:
-            storage_cases, total_cases = self.return_valid_cases(case_list, data_group_label)
+            storage_cases, total_cases = self.return_valid_cases(data_group_labels)
         else:
             storage_cases, total_cases = self.cases, self.total_cases
 
-        storage_data_generator = self.data_generator(data_group_labels, cases=storage_cases, yield_data=False)
+        storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
         for i in xrange(self.multiplier * total_cases):
 
@@ -233,43 +258,67 @@ class DataCollection(object):
         return
 
     # @profile
-    def data_generator(self, data_group_labels, case_list=None, yield_data=True):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
 
         # Referencing to data groups is a little wonky here, TODO: clean up
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
         data_groups = [self.data_groups[label] for label in data_group_labels]
 
-        for data_group in data_groups:
-            if len(self.augmentations) != 0:
+        if len(self.augmentations) != 0:
+            for data_group in data_groups:
                 data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
 
-        if case_list = None:
+        if case_list is None:
             case_list = self.cases
 
-        for case_idx, case_name in enumerate(case_list):
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
 
-            if self.verbose:
-                print 'Working on image.. ', case_idx, 'at', case_name
+        while True:
 
-            for data_group in data_groups:
+            np.random.shuffle(case_list)
 
-                data_group.base_case, data_group.base_affine = read_image_files(data_group.data[case_name], return_affine=True)
-                data_group.base_case = data_group.base_case[:][np.newaxis]
-                data_group.base_casename = case_name
+            for case_idx, case_name in enumerate(case_list):
 
-                if len(self.augmentations) != 0:
-                    data_group.augmentation_cases[0] = data_group.base_case
+                if self.verbose and verbose:
+                    print 'Working on image.. ', case_idx, 'at', case_name
 
-            recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+                for data_group in data_groups:
 
-            for i in xrange(self.multiplier):
-                generate_data = next(recursive_augmentation_generator)
+                    data_group.base_case, data_group.base_affine = data_group.get_data(index=case_name, return_affine=True)
+                    
+                    # Temporary HDF5 code. Think about how make simpler.
+                    if data_group.source == 'directory':
+                        data_group.base_casename = case_name
+                    elif data_group.source == 'storage':
+                        data_group.base_casename = data_group.data_casenames[case_name][0]
 
-                if yield_data:
-                    yield tuple([data_group.augmentation_cases[-1] for data_group in data_groups])
-                else:
-                    yield True
+                    if len(self.augmentations) != 0:
+                        data_group.augmentation_cases[0] = data_group.base_case
+
+                recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+
+                for i in xrange(self.multiplier):
+                    generate_data = next(recursive_augmentation_generator)
+
+                    if yield_data:
+                        # TODO: Do this without if-statement and for loop?
+                        for data_idx, data_group in enumerate(data_groups):
+                            if len(self.augmentations) == 0:
+                                data_batch[data_idx].append(data_group.base_case[0])
+                            else:
+                                data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
+                        if len(data_batch[0]) == batch_size:
+                            # More strange indexing behavior. Shape inconsistency to be resolved.
+                            yield tuple([np.stack(data_list) for data_list in data_batch])
+                            data_batch = [[] for data_group in data_groups]
+                    else:
+                        yield True
+
+            if not perpetual:
+                yield None
+                break
 
     # @profile
     def recursive_augmentation(self, data_groups, augmentation_num=0):
@@ -318,6 +367,11 @@ class DataGroup(object):
         self.cases = []
         self.case_num = 0
 
+        # HDF5 variables
+        self.source = None
+        self.data_casenames = None
+        self.data_affines = None
+
         # TODO: More distinctive naming for "base" and "current" cases.
         self.base_case = None
         self.base_casename = None
@@ -330,6 +384,7 @@ class DataGroup(object):
         self.affine_storage = None
 
         self.output_shape = None
+        self.base_shape = None
 
 
     def add_case(self, case_name, item):
@@ -342,12 +397,18 @@ class DataGroup(object):
         # Also this is not good. Perhaps specify shape in input?
 
         if self.output_shape is None:
-            if self.data == []:
+            if self.data == {}:
                 return (0,)
+            elif self.base_shape is None:
+                if self.source == 'directory':
+                    self.base_shape = read_image_files(self.data.values()[0]).shape
+                elif self.source == 'storage':
+                    self.base_shape = self.data[0].shape
+                self.output_shape = self.base_shape
             else:
-                return convert_input_2_numpy(self.data[0][0]).shape + (len(self.data[0]),)
-        else:
-            return self.output_shape
+                return None
+        
+        return self.output_shape
 
     def get_modalities(self):
 
@@ -356,13 +417,26 @@ class DataGroup(object):
         else:
             return len(self.data[0])
 
-    def get_data(self):
-        return
+    def get_data(self, index, return_affine):
+
+        if self.source == 'directory':
+            return read_image_files(self.data[index], return_affine)
+        elif self.source == 'storage':
+            if return_affine:
+                return self.data[index][:][np.newaxis], self.data_affines[index]
+            else:
+                return self.data[index][:][np.newaxis]
+
+        return None
 
     # @profile
     def write_to_storage(self):
 
-        self.data_storage.append(self.augmentation_cases[-1])
+        if len(self.augmentation_cases) == 0:
+            self.data_storage.append(self.base_case[np.newaxis])
+        else:
+            self.data_storage.append(self.augmentation_cases[-1][np.newaxis])
+
         self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
         self.affine_storage.append(self.base_affine[:][np.newaxis])
 

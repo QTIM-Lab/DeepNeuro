@@ -54,18 +54,18 @@ class UNet(DeepNeuroModel):
 
         for level in xrange(self.depth):
 
-            filter_num = int(self.max_filter / (2 ^ (self.depth - level)) / self.downsize_filters_factor)
+            filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
 
             if level == 0:
                 left_outputs += [Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(self.inputs)]
                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
             else:
-                left_outputs[level] = MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])
+                left_outputs += [MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])]
                 left_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
 
-            if self.dropout is not None:
-                left_outputs[level] = Dropout(0.5)(left_outputs[level])
+            if self.dropout is not None and self.dropout != 0:
+                left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
 
             if self.batch_norm:
                 left_outputs[level] = BatchNormalization()(left_outputs[level])
@@ -74,7 +74,7 @@ class UNet(DeepNeuroModel):
 
         for level in xrange(self.depth):
 
-            filter_num = int(self.max_filter / (2 ^ (level)) / self.downsize_filters_factor)
+            filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
 
             if level > 0:
                 right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level - 1])]
@@ -84,11 +84,11 @@ class UNet(DeepNeuroModel):
             else:
                 continue
 
-            if self.dropout is not None:
-                left_outputs[level] = Dropout(self.dropout)(right_outputs[level])
+            if self.dropout is not None and self.dropout != 0:
+                right_outputs[level] = Dropout(self.dropout)(right_outputs[level])
 
             if self.batch_norm:
-                left_outputs[level] = BatchNormalization()(right_outputs[level])
+                right_outputs[level] = BatchNormalization()(right_outputs[level])
 
         output_layer = Conv3D(int(self.num_outputs), (1, 1, 1))(right_outputs[-1])
 
