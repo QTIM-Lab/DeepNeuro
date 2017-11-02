@@ -101,7 +101,12 @@ def train_Segment_GBM(data_directory, val_data_directory):
         testing_data_collection = DataCollection(data_storage=testing_data, verbose=True)
         testing_data_collection.fill_data_groups()
 
-        prediction = ModelPatchesInference(testing_data_collection, inputs=['input_modalities'], output_filename='deepneuro.nii.gz', batch_size=200, patch_overlaps=1)
+        testing_parameters = {'inputs': ['input_modalities'], 
+                        'output_filename': 'deepneuro.nii.gz',
+                        'batch_size': 200,
+                        'patch_overlaps': 1}
+
+        prediction = ModelPatchesInference(testing_data_collection, **testing_parameters)
 
         unet_model.append_output([prediction])
         unet_model.generate_outputs()
