@@ -133,7 +133,7 @@ class Flip_Rotate_2D(Augmentation):
 
 class ExtractPatches(Augmentation):
 
-    def __init__(self, patch_shape, patch_region_conditions=None, patch_extraction_conditions=None, data_groups=None):
+    def __init__(self, patch_shape, patch_region_conditions=None, patch_extraction_conditions=None, patch_dimensions={}, data_groups=None):
 
         # Get rid of these with super??
         self.multiplier = None
@@ -150,10 +150,14 @@ class ExtractPatches(Augmentation):
         self.patch_shape = patch_shape
         self.patch_extraction_conditions = patch_extraction_conditions
         self.patch_region_conditions = patch_region_conditions
+        self.patch_dimensions = patch_dimensions
         self.patch_regions = []
         self.patches = None
         self.patch_corner = None
         self.patch_slice = None
+
+        self.input_shape = {}
+        self.output_shape = {}
 
     def initialize_augmentation(self):
 
@@ -178,20 +182,15 @@ class ExtractPatches(Augmentation):
                     self.region_list[start_idx:end_idx] = [condition_idx]*(end_idx-start_idx)
                     start_idx = end_idx
 
-            self.output_shape = {}
             for label, data_group in self.data_groups.iteritems():
-
-                # Might consider doing more flexible patch shapes in the future. E.g. -- different
-                # time segments, but the same ground_truth patch.
-
-                # This leading dims business needs to be redone.
-
-                if len(data_group.get_shape()) < 6:
-                    self.leading_dims[label] = 0
-                    self.output_shape[label] = self.patch_shape + (data_group.get_shape()[-1],)
-                else:
-                    self.leading_dims[label] = len(data_group.get_shape()) - 5
-                    self.output_shape[label] = (data_group.get_shape()[1],) + self.patch_shape + (data_group.get_shape()[-1],)
+                self.input_shape[label] = data_group.get_shape()
+                if label not in self.patch_dimensions.keys():
+                    # If no provided patch dimensions, just presume the format is [batch, patch_dimensions, channel]
+                    self.patch_dimensions[label] = [-2 - x for x in xrange(len(self.input_shape[label]) - 1)]
+                # This is a little goofy.
+                self.output_shape[label] = np.array(self.input_shape[label])
+                self.output_shape[label][self.patch_dimensions[label]] = list(self.patch_shape)
+                self.output_shape[label] = tuple(self.output_shape[label])
 
             self.initialization = True
 
@@ -238,6 +237,7 @@ class ExtractPatches(Augmentation):
         data_shape = leader_data_group.augmentation_cases[augmentation_num].shape
 
         if self.patch_regions == []:
+            # Currently non-functional, non-masked based sampling.
             while not acceptable_patch:
 
                 corner = [np.random.randint(0, max_dim) for max_dim in data_shape[1:-1]]
@@ -266,24 +266,32 @@ class ExtractPatches(Augmentation):
             region = self.patch_regions[self.region_list[self.iteration]]
             corner_idx = np.random.randint(len(region[0]))
 
-            # TODO: adjust for non-3D data
-            corner = [d[corner_idx] for d in region][:-1]
-
             self.patches = {}
 
             # Pad edge patches.
-            for key in self.data_groups:
+            for label, data_group in self.data_groups.iteritems():
 
-                patch_slice = [slice(corner_dim, corner_dim+self.patch_shape[idx], 1) for idx, corner_dim in enumerate(corner)] + [slice(None)]
+                # TODO: Some redundancy here
+                corner = np.array([d[corner_idx] for d in region])[self.patch_dimensions[label]]
+
+                patch_slice = [slice(None)] * len(self.input_shape[label])
+                # Will run into problems with odd-shaped patches.
+                for idx, patch_dim in enumerate(self.patch_dimensions[label]):
+                    patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx]/2), corner[idx] + self.patch_shape[idx]/2, 1)
                 
-                self.patches[key] = self.data_groups[key].augmentation_cases[augmentation_num][patch_slice]
+                self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
 
-                pad_dims = []
-                for idx, dim in enumerate(self.patches[key].shape[0:-1]):
-                    pad_dims += [(0, self.patch_shape[idx]-dim)]
-                pad_dims += [(0,0)]
+                # More complicated padding needed for center-voxel based patches.
+                pad_dims = [(0,0)] * len(self.patches[label].shape)
+                for idx, patch_dim in enumerate(self.patch_dimensions[label]):
+                    pad = [0,0]
+                    if corner[idx] > self.input_shape[label][patch_dim] - self.patch_shape[idx]/2:
+                        pad[1] = self.patch_shape[idx]/2 - (self.input_shape[label][patch_dim] - corner[idx])
+                    if corner[idx] < self.patch_shape[idx]/2:
+                        pad[0] = self.patch_shape[idx]/2 - corner[idx]
+                    pad_dims[patch_dim] = tuple(pad)
 
-                self.patches[key]  = np.lib.pad(self.patches[key] , tuple(pad_dims), 'edge')
+                self.patches[label] = np.lib.pad(self.patches[label] , tuple(pad_dims), 'edge')
 
             print self.patch_region_conditions[self.region_list[self.iteration]][0]
 

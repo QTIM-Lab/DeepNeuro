@@ -22,12 +22,12 @@ def train_Segment_GBM(data_directory, val_data_directory):
     ['*FLAIR_pp.*', '*T2_pp.*', '*T1_pp.*', '*T1post_pp.*'],
     'ground_truth': ['*full_edemamask_pp.*']}
 
-    load_data = False
+    load_data = True
     train_model = False
     load_test_data = True
     predict = True
 
-    training_data = './wholetumor_predict_patches_test2.h5'
+    training_data = './wholetumor_predict_patches_test3.h5'
     model_file = 'wholetumor_segnet-58-0.38.h5'
     testing_data = './brats_test_case.h5'
 
@@ -45,8 +45,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return data['ground_truth'] == 1
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_region_conditions=[[roi_region, 1]], data_groups=['input_modalities', 'ground_truth'])
-        training_data_collection.append_augmentation(patch_augmentation, multiplier=2)
+        patch_augmentation = ExtractPatches(patch_shape=(72,72,72), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'])
+        training_data_collection.append_augmentation(patch_augmentation, multiplier=200)
 
         # Add left-right flips
         flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'])
@@ -114,7 +114,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = ''
+    data_directory = '/mnt/jk489/sharedfolder/BRATS2017/Train'
     val_data_directory = ''
 
-    train_Segment_GBM(val_data_directory, val_data_directory)
+    train_Segment_GBM(data_directory, val_data_directory)
