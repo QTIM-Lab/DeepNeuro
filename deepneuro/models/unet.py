@@ -50,6 +50,8 @@ class UNet(DeepNeuroModel):
                 this will return a Keras model.
         """
 
+        print self.inputs.get_shape()
+
         left_outputs = []
 
         for level in xrange(self.depth):
@@ -100,12 +102,12 @@ class UNet(DeepNeuroModel):
             self.model = Model(inputs=self.inputs, outputs=output_layer)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-        if self.output_type == 'binary_label' or self.num_outputs > 1:
+        if self.output_type == 'binary_label':
             act = Activation('sigmoid')(output_layer)
             self.model = Model(inputs=self.inputs, outputs=act)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-        if self.output_type == 'categorical_label' or self.num_outputs > 1:
+        if self.output_type == 'categorical_label':
             act = Activation('softmax')(output_layer)
             self.model = Model(inputs=self.inputs, outputs=act)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',

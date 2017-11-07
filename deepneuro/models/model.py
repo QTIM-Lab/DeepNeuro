@@ -153,7 +153,7 @@ class DeepNeuroModel(object):
 
             self.model.fit_generator(generator=training_data_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=validation_data_generator, validation_steps=validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
 
-        self.model.save(output_model_filepath)
+        # self.model.save(output_model_filepath)
 
     def append_output(self, outputs):
 

@@ -2,7 +2,7 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 from deepneuro.data.data_collection import DataCollection
 from deepneuro.augmentation.augment import Flip_Rotate_2D, ExtractPatches
@@ -22,14 +22,14 @@ def train_Segment_GBM(data_directory, val_data_directory):
     ['*phantom*'],
     'ground_truth': ['*ktrans*']}
 
-    load_data = True
-    train_model = True
-    load_test_data = True
+    load_data = False
+    train_model = False
+    load_test_data = False
     predict = True
 
-    training_data = './dce_mri_ktrans_training.h5'
-    model_file = 'ktrans_net.h5'
-    testing_data = './dce_mri_ktrans_testing.h5'
+    training_data = './dce_mri_ktrans_training_884_1.h5'
+    model_file = 'ktrans_net_884_1_3layer_conv_separated_sym.h5'
+    testing_data = './dce_mri_ktrans_testing_884_1.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -59,9 +59,9 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
     # Define model parameters
     model_parameters = {'input_shape': (65, 8, 8, 4, 1),
-                    'downsize_filters_factor': 1,
+                    'downsize_filters_factor': 4,
                     'pool_size': (2, 2, 2), 
-                    'filter_shape': (2, 2, 2), 
+                    'filter_shape': (3, 3, 3), 
                     'dropout': .1, 
                     'batch_norm': True, 
                     'initial_learning_rate': 0.000001, 
@@ -76,17 +76,17 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
     # Create U-Net
     if train_model:
-        unet_model = UNet(**model_parameters)
-        plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
+        timenet_model = TimeNet(**model_parameters)
+        plot_model(timenet_model.model, to_file='timenet_model.png', show_shapes=True)
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
-                        'output_model_filepath': 'wholetumor_segnet-{epoch:02d}-{loss:.2f}.h5',
-                        'training_batch_size': 2,
+                        'output_model_filepath': model_file,
+                        'training_batch_size': 32,
                         'num_epochs': 100,
                         'training_steps_per_epoch': 200,
-                        'save_best_only': False}
-        unet_model.train(training_data_collection, **training_parameters)
+                        'save_best_only': True}
+        timenet_model.train(training_data_collection, **training_parameters)
     else:
-        unet_model = load_old_model(model_file)
+        timenet_model = load_old_model(model_file)
 
     # Load testing data..
     if not os.path.exists(testing_data) or load_test_data:
@@ -103,12 +103,13 @@ def train_Segment_GBM(data_directory, val_data_directory):
         testing_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': 'deepneuro.nii.gz',
                         'batch_size': 200,
-                        'patch_overlaps': 1}
+                        'patch_overlaps': 8,
+                        'output_patch_shape': (6,6,2,1)}
 
         prediction = ModelPatchesInference(testing_data_collection, **testing_parameters)
 
-        unet_model.append_output([prediction])
-        unet_model.generate_outputs()
+        timenet_model.append_output([prediction])
+        timenet_model.generate_outputs()
 
 
 if __name__ == '__main__':

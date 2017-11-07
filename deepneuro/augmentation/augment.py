@@ -30,13 +30,12 @@ class Augmentation(object):
 
         for label, data_group in self.data_groups.iteritems():
 
-            data_group.augmentation_cases[augmentation_num+1] = augmentation_cases[augmentation_num]
+            data_group.augmentation_cases[augmentation_num+1] = data_group.augmentation_cases[augmentation_num]
 
     def initialize_augmentation(self):
 
         if not self.initialization:
             self.initialization = True
-
 
     def iterate(self):
 
@@ -55,14 +54,19 @@ class Augmentation(object):
 
 class Copy(Augmentation):
 
-    def __init__(self, patch_shape, patch_extraction_conditions):
+    def __init__(self, data_groups=None, multiplier=None, total=None):
 
         # Get rid of these with super??
-        self.multiplier = None
-        self.total = None
-        self.output_shape = patch_shape
+        self.multiplier = multiplier
+        self.total = total
 
-        self.data_groups = {}
+        self.output_shape = None
+        self.initialization = False
+        self.iteration = 0
+
+        self.total_iterations = multiplier
+
+        self.data_groups = {data_group: None for data_group in data_groups}
 
 class Flip_Rotate_2D(Augmentation):
 
@@ -202,6 +206,7 @@ class ExtractPatches(Augmentation):
 
     def reset(self, augmentation_num=0):
 
+        self.patch_regions = []
         region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in self.data_groups.keys()}
         for region_condition in self.patch_region_conditions:
             print 'Extracting region for..', region_condition
@@ -264,6 +269,11 @@ class ExtractPatches(Augmentation):
 
         else:
             region = self.patch_regions[self.region_list[self.iteration]]
+
+            # TODO: Make errors like these more ubiquitous.
+            if len(region[0]) == 0:
+                raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
+
             corner_idx = np.random.randint(len(region[0]))
 
             self.patches = {}
@@ -279,14 +289,16 @@ class ExtractPatches(Augmentation):
                 for idx, patch_dim in enumerate(self.patch_dimensions[label]):
                     patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx]/2), corner[idx] + self.patch_shape[idx]/2, 1)
                 
-                self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
+                input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
 
+                self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
+                
                 # More complicated padding needed for center-voxel based patches.
                 pad_dims = [(0,0)] * len(self.patches[label].shape)
                 for idx, patch_dim in enumerate(self.patch_dimensions[label]):
                     pad = [0,0]
-                    if corner[idx] > self.input_shape[label][patch_dim] - self.patch_shape[idx]/2:
-                        pad[1] = self.patch_shape[idx]/2 - (self.input_shape[label][patch_dim] - corner[idx])
+                    if corner[idx] > input_shape[patch_dim] - self.patch_shape[idx]/2:
+                        pad[1] = self.patch_shape[idx]/2 - (input_shape[patch_dim] - corner[idx])
                     if corner[idx] < self.patch_shape[idx]/2:
                         pad[0] = self.patch_shape[idx]/2 - corner[idx]
                     pad_dims[patch_dim] = tuple(pad)
@@ -297,37 +309,145 @@ class ExtractPatches(Augmentation):
 
         return
 
-# class Shuffle_Values(Augmentation):
+class MaskData(Augmentation):
 
-# class ArbitraryRotate3D(Augmentation):
-
-# class SplitDimension(Augmentation):
-
-class GaussianNoise(Augmentation):
-
-    def __init__(self, sigma=.5):
+    def __init__(self, data_groups=None, multiplier=None, total=None, mask_axis={}, num_masked=1, masked_value=-10, random_sample=True):
 
         # Get rid of these with super??
-        self.multiplier = None
-        self.total = None
-        self.output_shape = patch_shape
+        self.multiplier = multiplier
+        self.total = total
 
+        # Add functionality for masking multiples axes.
+        self.mask_axis = mask_axis
+        self.num_masked = num_masked
+        self.masked_value = -10
+        self.random_sample = random_sample
+
+        self.input_shape = {}
+
+        self.output_shape = None
         self.initialization = False
         self.iteration = 0
 
         self.total_iterations = multiplier
 
-        self.data_groups = {}
+        self.data_groups = {data_group: None for data_group in data_groups}
+        self.augmentation_string = '_mask_'
 
-        self.sigma = sigma
+    def initialize_augmentation(self):
+
+        if not self.initialization:
+
+            for label, data_group in self.data_groups.iteritems():
+                self.input_shape[label] = data_group.get_shape()
+                if label not in self.mask_axis.keys():
+                    self.mask_axis[label] = np.arange(self.input_shape[label][-1])
+                else:
+                    self.mask_axis[label] = np.arange(self.input_shape[label][self.mask_axis[label]])
+
+            self.initialization = True
 
     def iterate(self):
 
-        super(Flip_Rotate, self).iterate()
+        super(MaskData, self).iterate()
 
-    def augment(self, input_data):
+    def augment(self, augmentation_num=0):
 
-        return input_data
+        for label, data_group in self.data_groups.iteritems():
+
+            if self.random_sample:
+                channels = np.random.choice(self.mask_axis[label], self.num_masked, replace=False)
+            else:
+                idx = [x % len(self.mask_axis[label]) for x in xrange(self.iteration, self.iteration + self.num_masked)]
+                channels = self.mask_axis[label][idx]
+
+            # Currently only works if applied to channels; revisit
+            masked_data = np.copy(data_group.augmentation_cases[augmentation_num])
+            masked_data[...,channels] = self.masked_value
+            data_group.augmentation_cases[augmentation_num+1] = masked_data
+            data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(channels).strip('[]').replace(' ', '')
+
+class Downsample(Augmentation):
+
+    def __init__(self, data_groups=None, multiplier=None, total=None, channel=0, axes={}, factor=2, num_downsampled=1, random_sample=True):
+
+        # Get rid of these with super??
+        self.multiplier = multiplier
+        self.total = total
+
+        # A lot of this functionality is vague and messy, revisit
+        self.channel = channel
+        self.axes = axes
+        self.factor = factor
+        self.random_sample = random_sample
+        self.num_downsampled = num_downsampled
+
+        self.input_shape = {}
+
+        self.output_shape = None
+        self.initialization = False
+        self.iteration = 0
+
+        self.total_iterations = multiplier
+
+        self.data_groups = {data_group: None for data_group in data_groups}
+        self.augmentation_string = '_resample_'
+
+        self.input_shape = {}
+
+
+    def initialize_augmentation(self):
+
+        if not self.initialization:
+
+            for label, data_group in self.data_groups.iteritems():
+                self.input_shape[label] = data_group.get_shape()
+
+            self.initialization = True
+
+    def iterate(self):
+
+        super(Downsample, self).iterate()
+
+    def augment(self, augmentation_num=0):
+
+        for label, data_group in self.data_groups.iteritems():
+
+            if self.random_sample:
+                axes = np.random.choice(self.axes[label], self.num_downsampled, replace=False)
+            else:
+                idx = [x % len(self.axes[label]) for x in xrange(self.iteration, self.iteration + self.num_downsampled)]
+                axes = self.axes[label][idx]
+
+            resampled_data = np.copy(data_group.augmentation_cases[augmentation_num])
+
+            # TODO: Put in utlitities for different amount of resampling in different dimensions
+            # This is fun, but messy, rewrite
+            static_slice = [slice(None)] * (len(self.input_shape[label]) - 1) + [slice(self.channel, self.channel + 1) ]
+            for axis in axes:
+                static_slice[axis] = slice(0, None, self.factor)
+
+            replaced_slices = [[slice(None)] * (len(self.input_shape[label]) - 1) + [slice(self.channel, self.channel + 1)] for i in xrange(self.factor - 1)]
+            for axis in axes:
+                for i in xrange(self.factor - 1):
+                    replaced_slices[i][axis] = slice(i+1, None, self.factor)
+
+            # Gross. Would be nice to find an elegant/effecient way to do this.
+            for duplicate in replaced_slices:
+                replaced_data = resampled_data[duplicate]
+                replacing_data = resampled_data[static_slice]
+                for axis in axes:
+                    if replaced_data.shape[axis] < replacing_data.shape[axis]:
+                        hedge_slice = [slice(None)] * (len(self.input_shape[label]))
+                        hedge_slice[axis] = slice(0, replaced_data.shape[axis])
+                        replacing_data = replacing_data[hedge_slice]
+
+                resampled_data[duplicate] = replacing_data
+                
+            data_group.augmentation_cases[augmentation_num+1] = resampled_data
+            print data_group.augmentation_cases[augmentation_num].shape
+            print resampled_data.shape
+            data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(self.factor) + '_' + str(axes).strip('[]').replace(' ', '')
 
 if __name__ == '__main__':
     pass

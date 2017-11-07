@@ -7,9 +7,10 @@ import numpy as np
 from model import DeepNeuroModel, UpConvolution
 
 from keras.engine import Model
-from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization, TimeDistributed, Reshape, Dense, LSTM
+from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization, TimeDistributed, Reshape, Dense, LSTM, Lambda, Permute
 from keras.optimizers import Nadam
 from keras.layers.merge import concatenate
+from keras import backend as K
 
 from cost_functions import dice_coef_loss, dice_coef
 
@@ -52,6 +53,53 @@ class TimeNet(DeepNeuroModel):
                 this will return a Keras model.
         """
 
+        # reshaped_inputs = Permute((2,3,4,5,1))(self.inputs)
+        # channel_num = self.input_shape[0] * self.input_shape[4]
+        # dense_layer = Reshape((self.input_shape[1], self.input_shape[2], self.input_shape[3], channel_num))(reshaped_inputs)
+        # # print dense_layer.get_shape()
+
+        # left_outputs = []
+
+        # for level in xrange(self.depth):
+
+        #     filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
+
+        #     if level == 0:
+        #         left_outputs += [Conv3D(256, self.filter_shape, activation=self.activation, padding=self.padding)(dense_layer)]
+        #         left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
+        #     else:
+        #         left_outputs += [MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])]
+        #         left_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
+        #         left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
+
+        #     if self.dropout is not None and self.dropout != 0:
+        #         left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
+
+        #     if self.batch_norm:
+        #         left_outputs[level] = BatchNormalization()(left_outputs[level])
+
+        # right_outputs = [left_outputs[self.depth - 1]]
+
+        # for level in xrange(self.depth):
+
+        #     filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
+
+        #     if level > 0:
+        #         right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level - 1])]
+        #         right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=4)
+        #         right_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
+        #         right_outputs[level] = Conv3D(int(filter_num / 2), self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
+        #     else:
+        #         continue
+
+        #     if self.dropout is not None and self.dropout != 0:
+        #         right_outputs[level] = Dropout(self.dropout)(right_outputs[level])
+
+        #     if self.batch_norm:
+        #         right_outputs[level] = BatchNormalization()(right_outputs[level])
+
+        # output_layer = Conv3D(int(self.num_outputs), (1, 1, 1))(right_outputs[-1])
+
         # downsample_arm = []
         # middle_arm = []
         # upsample_arm = []
@@ -90,27 +138,36 @@ class TimeNet(DeepNeuroModel):
         #     if self.batch_norm:
         #         cells[level] = TimeDistributed(BatchNormalization())(cells[level])
 
-        # layer_1 = TimeDistributed(Conv3D(32, self.filter_shape, activation=self.activation, padding=self.padding))(self.inputs)
+        rnn_filter_num = 16
+
+        layer_1 = BatchNormalization()(TimeDistributed((Conv3D(rnn_filter_num, self.filter_shape, activation=self.activation, padding=self.padding)))(self.inputs))
         # layer_2 = TimeDistributed(Conv3D(32, self.filter_shape, activation=self.activation, padding=self.padding))(layer_1)
         # layer_3 = TimeDistributed(Conv3D(1, self.filter_shape, activation=self.activation, padding=self.padding))(layer_1)
 
         # feature_layer = Reshape((self.input_shape[1], self.input_shape[2], self.input_shape[3], 64*self.input_shape[0]))(layer_1)
 
-        print self.input_shape
         rnn_feature_num = self.input_shape[1] * self.input_shape[2] * self.input_shape[3]
-        dense_layer = Reshape((self.input_shape[0], -1))(self.inputs)
-        rnn_layer = LSTM(int(rnn_feature_num*32), return_sequences=True, activation=self.activation)(dense_layer)
-        rnn_layer = LSTM(int(rnn_feature_num*16), return_sequences=True, activation=self.activation)(rnn_layer)
-        rnn_layer = LSTM(int(rnn_feature_num*8), return_sequences=True, activation=self.activation)(rnn_layer)
-        rnn_layer = LSTM(int(rnn_feature_num*4), return_sequences=True, activation=self.activation)(rnn_layer)
-        rnn_layer = LSTM(int(rnn_feature_num*2), return_sequences=True, activation=self.activation)(rnn_layer)
-        rnn_layer = LSTM(int(rnn_feature_num), return_sequences=False)(rnn_layer)
+
+        # dense_layer = Reshape((self.input_shape[0], -1))(self.inputs)
+        # rnn_layer = LSTM(int(rnn_feature_num*32), return_sequences=True, activation=self.activation)(dense_layer)
+        # rnn_layer = LSTM(int(rnn_feature_num*16), return_sequences=True, activation=self.activation)(rnn_layer)
+        # rnn_layer = LSTM(int(rnn_feature_num*8), return_sequences=True, activation=self.activation)(rnn_layer)
+        # rnn_layer = LSTM(int(rnn_feature_num*4), return_sequences=True, activation=self.activation)(rnn_layer)
+        # rnn_layer = LSTM(int(rnn_feature_num*2), return_sequences=True, activation=self.activation)(rnn_layer)
+        # rnn_layer = LSTM(int(rnn_feature_num), return_sequences=False)(rnn_layer)
+        # reformed_layer = Reshape((self.input_shape[1], self.input_shape[2], self.input_shape[3], 1))(rnn_layer)
+
+        dense_layer = Reshape((self.input_shape[0], rnn_feature_num, rnn_filter_num))(layer_1)
+        dense_layer = Permute((2,1,3))(dense_layer)
+        rnn_layer = BatchNormalization()(TimeDistributed(LSTM(80, return_sequences=True, activation=self.activation))(dense_layer))
+        rnn_layer = BatchNormalization()(TimeDistributed(LSTM(20, return_sequences=True, activation=self.activation))(rnn_layer))
+        rnn_layer = BatchNormalization()(TimeDistributed(LSTM(1, return_sequences=False, activation=self.activation))(rnn_layer))
         reformed_layer = Reshape((self.input_shape[1], self.input_shape[2], self.input_shape[3], 1))(rnn_layer)
-        
+
         # output_layer_3 = Conv3D(32, self.pool_size, activation=self.activation, padding=self.padding)(reformed_layer)
-        # output_layer_2 = Conv3D(32, self.filter_shape, activation=self.activation, padding=self.padding)(reformed_layer)
-        # output_layer_1 = Conv3D(int(self.num_outputs), (1, 1, 1))(output_layer_2)
-        output_layer = reformed_layer
+        # reformed_layer = BatchNormalization()(Conv3D(32, self.filter_shape, activation=self.activation, padding=self.padding)(reformed_layer))
+        # reformed_layer = Conv3D(int(self.num_outputs), (1, 1, 1))(reformed_layer)
+        # output_layer = reformed_layer
 
         # TODO: Brainstorm better way to specify outputs
         if self.input_tensor is not None:

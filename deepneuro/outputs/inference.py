@@ -166,16 +166,19 @@ class ModelPatchesInference(Output):
             # return of the generator.
             casename = self.data_collection.data_groups[self.inputs[0]].base_casename
             affine = self.data_collection.data_groups[self.inputs[0]].base_affine
+            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
+            print augmentation_string
 
             if self.output_directory is None:
                 output_directory = casename
             else:
                 output_directory = self.output_directory
 
-            output_filepath = os.path.join(output_directory, self.output_filename)
+            output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
+            print output_filepath
 
-            if self.verbose:
-                print 'Working on image.. ', index, 'in', self.data_collection.total_cases
+            # if self.verbose:
+                # print 'Working on image.. ', index, 'in', self.data_collection.total_cases
 
             index += 1
 
@@ -203,7 +206,7 @@ class ModelPatchesInference(Output):
         if self.pad_borders:
             # I use this three-line loop construciton a lot. Is there a more sensible way?
             input_pad_dimensions = [(0,0)] * input_data.ndim
-            output_pad_dimensions = [(0,0)] * input_data.ndim
+            output_pad_dimensions = [(0,0)] * repatched_image.ndim
             for idx, dim in enumerate(self.patch_dimensions):
                 # Might not work for odd-shaped patches; check.
                 input_pad_dimensions[dim] = (int(self.input_patch_shape[dim]/2), int(self.input_patch_shape[dim]/2))
@@ -239,11 +242,15 @@ class ModelPatchesInference(Output):
             if self.check_empty_patch:
                 corners_list = self.remove_empty_patches(input_data, corners_list)
 
+            print corners_list.shape
+
             for corner_list_idx in xrange(0, corners_list.shape[0], self.batch_size):
 
                 corner_batch = corners_list[corner_list_idx:corner_list_idx+self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
 
+                print input_patches.shape
+                print 'about to predict'
                 prediction = self.model.model.predict(input_patches)
                 print prediction.shape, 'prediction'
 
@@ -356,11 +363,11 @@ class ModelPatchesInference(Output):
 
                 save_numpy_2_nifti(self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality,...]), input_affine, output_filepath=output_filepath)
         
-            for modality in xrange(output_shape[1]):
+            for modality in xrange(output_shape[-1]):
                 if self.verbose:
-                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality), np.sum(input_data[modality,...])
-                binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality,...])
-                save_numpy_2_nifti(input_data[modality,...], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-probability'))
+                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality), np.sum(input_data[...,modality])
+                binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[...,modality])
+                save_numpy_2_nifti(input_data[...,modality], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-probability'))
                 save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-label'))
 
         return

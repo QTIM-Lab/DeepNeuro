@@ -54,8 +54,16 @@ class DataCollection(object):
                     self.data_groups[modality_group] = DataGroup(modality_group)
                     self.data_groups[modality_group].source = 'directory'
 
-            # Iterate through directories..
-            for subject_dir in sorted(glob.glob(os.path.join(self.data_directory, "*/"))):
+            # Iterate through directories.. Always looking for a better way to check optional list typing.
+            if isinstance(self.data_directory, basestring):
+                directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
+            else:
+                directory_list = []
+                for d in self.data_directory:
+                    directory_list += glob.glob(os.path.join(d, "*/"))
+                directory_list = sorted(directory_list)
+
+            for subject_dir in directory_list:
 
                 # If a predefined case list is provided, only choose these cases.
                 if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
@@ -66,7 +74,15 @@ class DataCollection(object):
 
                     modality_group_files = []
                     for modality in modality_labels:
-                        target_file = glob.glob(os.path.join(subject_dir, modality))
+
+                        # Iterate through patterns.. Always looking for a better way to check optional list typing.
+                        if isinstance(modality, basestring):
+                            target_file = glob.glob(os.path.join(subject_dir, modality))
+                        else:
+                            target_file = []
+                            for m in modality:
+                                target_file += glob.glob(os.path.join(subject_dir, m))
+
                         if len(target_file) == 1:
                             modality_group_files.append(target_file[0])
                         else:
@@ -83,6 +99,7 @@ class DataCollection(object):
                 self.cases.append(os.path.abspath(subject_dir))
 
             self.total_cases = len(self.cases)
+            print 'Found', self.total_cases, 'number of cases..'
 
         elif self.data_storage is not None:
 
@@ -140,8 +157,8 @@ class DataCollection(object):
 
         # This is so bad.
         for augmentation in augmentations:
+            augmentation.initialize_augmentation()
             for data_group_label in augmentation.data_groups.keys():
-                augmentation.initialize_augmentation()
                 if augmentation.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
 
@@ -222,7 +239,8 @@ class DataCollection(object):
         if data_group_labels is None:
             data_group_labels = self.data_groups.keys()
         if output_filepath is None:
-            output_filepath = os.path.join(self.data_directory, 'data.hdf5')
+            raise ValueError('No output_filepath provided; data cannot be written.')
+
 
         # Create Data File
         # try:
@@ -268,6 +286,7 @@ class DataCollection(object):
         if len(self.augmentations) != 0:
             for data_group in data_groups:
                 data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
+                data_group.augmentation_strings = [''] * (1 + len(self.augmentations))
 
         if case_list is None:
             case_list = self.cases
@@ -284,18 +303,22 @@ class DataCollection(object):
                 if self.verbose and verbose:
                     print 'Working on image.. ', case_idx, 'at', case_name
 
-                for data_group in data_groups:
+                try:
+                    for data_group in data_groups:
 
-                    data_group.base_case, data_group.base_affine = data_group.get_data(index=case_name, return_affine=True)
-                    
-                    # Temporary HDF5 code. Think about how make simpler.
-                    if data_group.source == 'directory':
-                        data_group.base_casename = case_name
-                    elif data_group.source == 'storage':
-                        data_group.base_casename = data_group.data_casenames[case_name][0]
+                        data_group.base_case, data_group.base_affine = data_group.get_data(index=case_name, return_affine=True)
+                        
+                        # Temporary HDF5 code. Think about how make simpler.
+                        if data_group.source == 'directory':
+                            data_group.base_casename = case_name
+                        elif data_group.source == 'storage':
+                            data_group.base_casename = data_group.data_casenames[case_name][0]
 
-                    if len(self.augmentations) != 0:
-                        data_group.augmentation_cases[0] = data_group.base_case
+                        if len(self.augmentations) != 0:
+                            data_group.augmentation_cases[0] = data_group.base_case
+                except:
+                    print 'Hit error on', case_name, 'skipping.'
+                    continue
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
@@ -378,6 +401,7 @@ class DataGroup(object):
         self.base_affine = None
 
         self.augmentation_cases = []
+        self.augmentation_strings = []
 
         self.data_storage = None
         self.casename_storage = None
