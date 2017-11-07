@@ -110,8 +110,7 @@ class DataCollection(object):
 
             for data_group in open_hdf5.root._f_iter_nodes():
                 if '_affines' not in data_group.name and '_casenames' not in data_group.name:
-                    if 'mask' in data_group.name:
-                        continue
+
                     self.data_groups[data_group.name] = DataGroup(data_group.name)
                     self.data_groups[data_group.name].data = data_group
                     
@@ -130,7 +129,6 @@ class DataCollection(object):
 
         else:
             print 'No directory or data storage file specified. No data groups can be created.'
-
 
     def append_augmentation(self, augmentations, multiplier=None):
 
@@ -270,8 +268,9 @@ class DataCollection(object):
 
             output = next(storage_data_generator)
 
-            for data_group_label in data_group_labels:
-                self.data_groups[data_group_label].write_to_storage()
+            if output:
+                for data_group_label in data_group_labels:
+                    self.data_groups[data_group_label].write_to_storage()
 
         return
 
@@ -316,8 +315,11 @@ class DataCollection(object):
 
                         if len(self.augmentations) != 0:
                             data_group.augmentation_cases[0] = data_group.base_case
+                except KeyboardInterrupt:
+                    raise
                 except:
                     print 'Hit error on', case_name, 'skipping.'
+                    yield False
                     continue
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)

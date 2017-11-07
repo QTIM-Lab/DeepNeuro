@@ -123,8 +123,6 @@ class Flip_Rotate_2D(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        print 'flippin'
-
         for label, data_group in self.data_groups.iteritems():
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
@@ -292,7 +290,7 @@ class ExtractPatches(Augmentation):
                 input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
 
                 self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
-                
+
                 # More complicated padding needed for center-voxel based patches.
                 pad_dims = [(0,0)] * len(self.patches[label].shape)
                 for idx, patch_dim in enumerate(self.patch_dimensions[label]):

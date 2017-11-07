@@ -23,7 +23,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
     'ground_truth': ['*FLAIR*']}
 
     load_data = True
-    train_model = False
+    train_model = True
     load_test_data = False
     predict = False
 
@@ -46,7 +46,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
         # Add patch augmentation
         patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0,1,2], 'input_modalities': [0,1,2]})
-        training_data_collection.append_augmentation(patch_augmentation, multiplier=50)
+        training_data_collection.append_augmentation(patch_augmentation, multiplier=1)
 
         # Write data to hdf5
         training_data_collection.write_data_to_file(training_data)

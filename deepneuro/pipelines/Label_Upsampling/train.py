@@ -56,6 +56,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
         training_data_collection = DataCollection(data_storage=training_data, verbose=True)
         training_data_collection.fill_data_groups()
 
+        print 'done!'
+
         # Add down-sampling
         mask_augmentation = Downsample(channel=0, axes={'input_modalities': [-4,-3,-2]}, factor=3, data_groups=['input_modalities'])
         training_data_collection.append_augmentation(mask_augmentation, multiplier=4)
