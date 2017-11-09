@@ -270,8 +270,14 @@ class ExtractPatches(Augmentation):
 
             # TODO: Make errors like these more ubiquitous.
             if len(region[0]) == 0:
-                raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
-
+                # raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
+                # Tempfix -- Eek
+                region = self.patch_regions[self.region_list[1]]
+            if len(region[0]) == 0:
+                print 'emergency brain region..'
+                region = np.where(self.data_groups['input_modalities'].augmentation_cases[augmentation_num] != 0)
+                self.patch_regions[self.region_list[0]] = region
+            
             corner_idx = np.random.randint(len(region[0]))
 
             self.patches = {}
@@ -365,6 +371,83 @@ class MaskData(Augmentation):
             data_group.augmentation_cases[augmentation_num+1] = masked_data
             data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(channels).strip('[]').replace(' ', '')
 
+class ChooseData(Augmentation):
+
+    def __init__(self, data_groups=None, multiplier=None, total=None, axis={}, choices=None, num_chosen=1, random_sample=True):
+
+        # Get rid of these with super??
+        self.multiplier = multiplier
+        self.total = total
+
+        # Add functionality for masking multiples axes.
+        self.axis = axis
+        self.choices = choices
+        self.num_chosen = num_chosen
+        self.random_sample = random_sample
+
+        self.input_shape = {}
+
+        self.output_shape = {}
+        self.initialization = False
+        self.iteration = 0
+
+        self.total_iterations = multiplier
+
+        self.data_groups = {data_group: None for data_group in data_groups}
+        self.augmentation_string = '_choose_'
+
+    def initialize_augmentation(self):
+
+        if not self.initialization:
+
+            self.choices = np.array(self.choices)
+
+            for label, data_group in self.data_groups.iteritems():
+                input_shape = data_group.get_shape()
+                self.output_shape[label] = np.array(input_shape)
+                self.output_shape[label][self.axis[label]] = self.num_chosen
+                self.output_shape[label] = tuple(self.output_shape[label])
+
+            self.initialization = True
+
+    def iterate(self):
+
+        super(ChooseData, self).iterate()
+
+    def augment(self, augmentation_num=0):
+
+        choice = None # This is messed up
+
+        for label, data_group in self.data_groups.iteritems():
+
+            # Wrote this function while half-asleep; revisit
+            input_data = data_group.augmentation_cases[augmentation_num]
+
+            if self.choices is None:
+                choices = np.arange(input_data.shape[self.axis[label]])
+            else:
+                choices = self.choices
+
+            if choice is None:
+                if self.random_sample:
+                    choice = np.random.choice(choices, self.num_chosen, replace=False)
+                else:
+                    idx = [x % len(choices) for x in xrange(self.iteration, self.iteration + self.num_chosen)]
+                    choice = choices[idx]
+
+            # Temporary
+            if input_data.shape[-1] == 6:
+                choice = choice.tolist()
+                choice = range(4) + choice
+
+            choice_slice = [slice(None)] * (len(input_data.shape))
+            choice_slice[self.axis[label]] = choice
+
+            # Currently only works if applied to channels; revisit
+            data_group.augmentation_cases[augmentation_num+1] = input_data[choice_slice]
+            data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(choice).strip('[]').replace(' ', '')
+
+
 class Downsample(Augmentation):
 
     def __init__(self, data_groups=None, multiplier=None, total=None, channel=0, axes={}, factor=2, num_downsampled=1, random_sample=True):
@@ -415,17 +498,17 @@ class Downsample(Augmentation):
                 axes = np.random.choice(self.axes[label], self.num_downsampled, replace=False)
             else:
                 idx = [x % len(self.axes[label]) for x in xrange(self.iteration, self.iteration + self.num_downsampled)]
-                axes = self.axes[label][idx]
+                axes = np.array(self.axes[label])[idx]
 
             resampled_data = np.copy(data_group.augmentation_cases[augmentation_num])
 
             # TODO: Put in utlitities for different amount of resampling in different dimensions
             # This is fun, but messy, rewrite
-            static_slice = [slice(None)] * (len(self.input_shape[label]) - 1) + [slice(self.channel, self.channel + 1) ]
+            static_slice = [slice(None)] * (len(resampled_data.shape) - 1) + [slice(self.channel, self.channel + 1) ]
             for axis in axes:
                 static_slice[axis] = slice(0, None, self.factor)
 
-            replaced_slices = [[slice(None)] * (len(self.input_shape[label]) - 1) + [slice(self.channel, self.channel + 1)] for i in xrange(self.factor - 1)]
+            replaced_slices = [[slice(None)] * (len(resampled_data.shape) - 1) + [slice(self.channel, self.channel + 1)] for i in xrange(self.factor - 1)]
             for axis in axes:
                 for i in xrange(self.factor - 1):
                     replaced_slices[i][axis] = slice(i+1, None, self.factor)
@@ -434,17 +517,16 @@ class Downsample(Augmentation):
             for duplicate in replaced_slices:
                 replaced_data = resampled_data[duplicate]
                 replacing_data = resampled_data[static_slice]
-                for axis in axes:
+                # Need geometric axes to reference here, currently non-functional in most cases.
+                for axis in [-4,-3,-2]:
                     if replaced_data.shape[axis] < replacing_data.shape[axis]:
-                        hedge_slice = [slice(None)] * (len(self.input_shape[label]))
+                        hedge_slice = [slice(None)] * (replacing_data.ndim)
                         hedge_slice[axis] = slice(0, replaced_data.shape[axis])
                         replacing_data = replacing_data[hedge_slice]
 
                 resampled_data[duplicate] = replacing_data
-                
-            data_group.augmentation_cases[augmentation_num+1] = resampled_data
-            print data_group.augmentation_cases[augmentation_num].shape
-            print resampled_data.shape
+
+            data_group.augmentation_cases[augmentation_num+1] = resampled_data           
             data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(self.factor) + '_' + str(axes).strip('[]').replace(' ', '')
 
 if __name__ == '__main__':

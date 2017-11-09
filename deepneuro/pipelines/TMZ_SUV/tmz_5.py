@@ -19,17 +19,17 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
     # Define input modalities to load.
     training_modality_dict = {'input_modalities': 
-    ['*FLAIR*', ['*T2SPACE*', '*T2_pp*']],
-    'ground_truth': ['*FLAIR*']}
+    ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz'], ['*MPRAGE_POST*nii.gz'], ['*MPRAGE_Pre*nii.gz'], 'DSC_GE_CBV_r_T2.nii.gz'],
+    'ground_truth': ['*SUV_r_T2_raw.nii.gz*']}
 
     load_data = False
     train_model = False
     load_test_data = True
     predict = True
 
-    training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/FLAIR_upsampling_323232.h5'
-    model_file = 'FLAIR_upsampling_323232_model.h5'
-    testing_data = './FLAIR_upsampling_323232_test_case.h5'
+    training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/TMZ_5_323232.h5'
+    model_file = 'TMZ_5_323232_model.h5'
+    testing_data = './TMZ_5_323232_test.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -42,11 +42,11 @@ def train_Segment_GBM(data_directory, val_data_directory):
         def brain_region(data):
             return (data['ground_truth'] != 1) & (data['input_modalities'] != 0)
         def roi_region(data):
-            return data['ground_truth'] == 1
+            return data['ground_truth'] >= 1.5
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0,1,2], 'input_modalities': [0,1,2]})
-        training_data_collection.append_augmentation(patch_augmentation, multiplier=70)
+        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, .5], [roi_region, .5]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0,1,2], 'input_modalities': [0,1,2]})
+        training_data_collection.append_augmentation(patch_augmentation, multiplier=2000)
 
         # Write data to hdf5
         training_data_collection.write_data_to_file(training_data)
@@ -56,16 +56,12 @@ def train_Segment_GBM(data_directory, val_data_directory):
         training_data_collection = DataCollection(data_storage=training_data, verbose=True)
         training_data_collection.fill_data_groups()
 
-        # Add down-sampling
-        mask_augmentation = Downsample(channel=0, axes={'input_modalities': [-4,-3,-2]}, factor=3, data_groups=['input_modalities'])
-        training_data_collection.append_augmentation(mask_augmentation, multiplier=4)
-
         # Add left-right flips
         flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'])
         training_data_collection.append_augmentation(flip_augmentation, multiplier=2)
 
         # Define model parameters
-        model_parameters = {'input_shape': (32, 32, 32, 2),
+        model_parameters = {'input_shape': (32, 32, 32, 5),
                         'downsize_filters_factor': 1,
                         'pool_size': (2, 2, 2), 
                         'filter_shape': (5, 5, 5), 
@@ -108,8 +104,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
         testing_data_collection.append_augmentation(flip_augmentation, multiplier=1)
 
         testing_parameters = {'inputs': ['input_modalities'], 
-                        'output_filename': 'deepneuro_upsample.nii.gz',
-                        'batch_size': 250,
+                        'output_filename': 'deepneuro_suv_5.nii.gz',
+                        'batch_size': 50,
                         'patch_overlaps': 6,
                         'output_patch_shape': (26,26,26,4)}
 
@@ -121,7 +117,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/Train'
-    val_data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/Test_Case'
+    data_directory = '/mnt/jk489/QTIM_Databank/TMZ_CLINICAL/Preprocessed/TMZ_With_Files'
+    val_data_directory = '/mnt/jk489/QTIM_Databank/TMZ_CLINICAL/Preprocessed/TMZ_Trained_On_Case'
 
     train_Segment_GBM(data_directory, val_data_directory)

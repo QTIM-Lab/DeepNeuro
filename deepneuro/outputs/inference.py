@@ -30,54 +30,124 @@ class ModelInference(Output):
 
     def execute(self, model, verbose=True):
 
+        # At present, this only works for one input, one output patch networks.
+        data_generator = self.data_collection.data_generator()
+
         # Create output directory. If not provided, output into original patient folder.
         if self.output_directory is not None:
             if not os.path.exists(self.output_directory):
                 os.makedirs(self.output_directory)
 
-        data_generator = self.data_collection.data_generator
-
-        index = -1
-        batch_num = 0
+        index = 0
+        input_data = next(data_generator)
         while input_data is not None:
 
-            input_data = next(data_generator)
             if input_data is None:
                 continue
 
             # A little bit strange to access casename this way. Maybe make it an optional
             # return of the generator.
-            casename = self.data_collection.data_groups[self.inputs].base_casename
-            affine = self.data_collection.data_groups[self.inputs].base_affine
+            casename = self.data_collection.data_groups[self.inputs[0]].base_casename
+            affine = self.data_collection.data_groups[self.inputs[0]].base_affine
+            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
 
             if self.output_directory is None:
-                output_directory = os.path.dirname(casename)
+                output_directory = casename
             else:
                 output_directory = self.output_directory
 
-            output_filepath = os.path.join(output_directory, self.output_filename)
+            output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
+            print output_filepath
+
+            index += 1
 
             # If prediction already exists, skip it. Useful if process is interrupted.
             if os.path.exists(output_filepath) and not self.replace_existing:
                 continue
 
-            index += 1
-            print 'Working on image.. ', index, 'in', self.data_collection.total_cases
+            # Temporary code. In the future, make sure code works with multiple inputs.
+            output_data = self.predict(input_data[1])
 
-            output_data = self.predict(input_data, model, batch_size=self.batch_size)
-
-            save_numpy_2_nifti(np.squeeze(output_data), self.data_collection.data_groups['ground_truth'].base_casename, self.output_filename)
-            # save_prediction(output_data, temp_filepath, input_affine=case_affine, ground_truth=case_groundtruth_data)
+            # save_numpy_2_nifti(np.squeeze(output_data), self.data_collection.data_groups['ground_truth'].base_casename + '/FLAIR_pp.nii.gz', self.output_filename)
+            self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0])
 
             input_data = next(data_generator)
 
     def predict(self, input_data, model, batch_size):
 
-        prediction = model.predict(input_patches)
+        # Vanilla prediction case is obivously not fleshed out.
+        prediction = model.predict(input_data)
 
         return prediction
 
-class ModelPatchesInference(Output):
+    def save_prediction(self, input_data, output_filepath, input_affine=None, ground_truth=None, stack_outputs=False, binarize_probability=.5):
+
+        """ This is a temporary function borrowed from qtim_ChallengePipeline. In the future, will be rewritten in a more
+            DeepNeuro way..
+        """
+
+        # If no affine, create identity affine.
+        if input_affine is None:
+            input_affine = np.eye(4)
+
+        output_shape = input_data.shape
+        input_data = np.squeeze(input_data)
+
+        # If output modalities is one, just save the output.
+        if output_shape[-1] == 1:
+            binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data)
+            if self.verbose:
+                print 'SUM OF ALL PREDICTION VOXELS', np.sum(binarized_output_data)
+            save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))
+            save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))
+            if ground_truth is not None:
+                print 'DICE COEFFICIENT', self.calculate_prediction_dice(binarized_output_data, np.squeeze(ground_truth))
+        
+        # If multiple output modalities, either stack one on top of the other (e.g. output 3 over output 2 over output 1).
+        # or output multiple volumes.
+        else:
+            if stack_outputs:
+                merge_image = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[0,...])
+                if self.verbose:
+                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY 0', np.sum(merge_image)
+                for modality_idx in xrange(1, output_shape[1]):
+                    if self.verbose:
+                        print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality_idx), np.sum(input_data[modality_idx,...])
+                    merge_image[self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality_idx,...]) == 1] = modality_idx
+
+                save_numpy_2_nifti(self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality,...]), input_affine, output_filepath=output_filepath)
+        
+            for modality in xrange(output_shape[-1]):
+                if self.verbose:
+                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality), np.sum(input_data[...,modality])
+                binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[...,modality])
+                save_numpy_2_nifti(input_data[...,modality], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-probability'))
+                save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-label'))
+
+        return
+
+    def threshold_binarize(self, input_data, threshold):
+
+        return (input_data > threshold).astype(float)
+
+    def calculate_prediction_dice(self, label_volume_1, label_volume_2):
+
+        im1 = np.asarray(label_volume_1).astype(np.bool)
+        im2 = np.asarray(label_volume_2).astype(np.bool)
+
+        if im1.shape != im2.shape:
+            raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
+
+        im_sum = im1.sum() + im2.sum()
+        if im_sum == 0:
+            return empty_score
+
+        # Compute Dice coefficient
+        intersection = np.logical_and(im1, im2)
+
+        return 2. * intersection.sum() / im_sum
+
+class ModelPatchesInference(ModelInference):
 
     def load(self, kwargs):
 
@@ -130,71 +200,21 @@ class ModelPatchesInference(Output):
 
     def execute(self):
 
-        # At present, this only works for one input, one output patch networks.
-
-        data_generator = self.data_collection.data_generator()
-
         # Determine patch shape. Currently only extends to spatial patching.
         # This leading dims business has got to have a better solution..
         self.input_patch_shape = self.model.model.layers[0].input_shape
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model.layers[-1].output_shape
 
-        print self.input_patch_shape
-        print self.output_patch_shape
+        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
+        # the input data. This is wonky.
+        self.input_shape = (None,) + self.data_collection.data_groups[self.inputs[0]].get_shape()
+        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
+        for i in xrange(len(self.patch_dimensions)):
+            self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
 
-        # Create output directory. If not provided, output into original patient folder.
-        if self.output_directory is not None:
-            if not os.path.exists(self.output_directory):
-                os.makedirs(self.output_directory)
+        super(ModelPatchesInference, self).execute()
 
-        index = 0
-        input_data = next(data_generator)
-        while input_data is not None:
-
-            if input_data is None:
-                continue
-
-            # If an image is being repatched, its output shape is not certain. We attempt to infer it from
-            # the input data. This is wonky.
-            self.input_shape = (None,) + self.data_collection.data_groups[self.inputs[0]].get_shape()
-            self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
-            for i in xrange(len(self.patch_dimensions)):
-                self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
-
-            # A little bit strange to access casename this way. Maybe make it an optional
-            # return of the generator.
-            casename = self.data_collection.data_groups[self.inputs[0]].base_casename
-            affine = self.data_collection.data_groups[self.inputs[0]].base_affine
-            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
-            print augmentation_string
-
-            if self.output_directory is None:
-                output_directory = casename
-            else:
-                output_directory = self.output_directory
-
-            output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
-            print output_filepath
-
-            # if self.verbose:
-                # print 'Working on image.. ', index, 'in', self.data_collection.total_cases
-
-            index += 1
-
-            # If prediction already exists, skip it. Useful if process is interrupted.
-            if os.path.exists(output_filepath) and not self.replace_existing:
-                continue
-
-            print output_filepath
-
-            # Temporary code. In the future, make sure code works with multiple inputs.
-            output_data = self.predict(input_data[1])
-
-            # save_numpy_2_nifti(np.squeeze(output_data), self.data_collection.data_groups['ground_truth'].base_casename + '/FLAIR_pp.nii.gz', self.output_filename)
-            self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0])
-
-            input_data = next(data_generator)
 
     def predict(self, input_data):
 
@@ -325,70 +345,3 @@ class ModelPatchesInference(Output):
             input_data[insert_slice] = insert_patch
 
         return input_data
-
-    def save_prediction(self, input_data, output_filepath, input_affine=None, ground_truth=None, stack_outputs=False, binarize_probability=.5):
-
-        """ This is a temporary function borrowed from qtim_ChallengePipeline. In the future, will be rewritten in a more
-            DeepNeuro way..
-        """
-
-        # If no affine, create identity affine.
-        if input_affine is None:
-            input_affine = np.eye(4)
-
-        output_shape = input_data.shape
-        input_data = np.squeeze(input_data)
-
-        # If output modalities is one, just save the output.
-        if output_shape[-1] == 1:
-            binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data)
-            if self.verbose:
-                print 'SUM OF ALL PREDICTION VOXELS', np.sum(binarized_output_data)
-            save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))
-            save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))
-            if ground_truth is not None:
-                print 'DICE COEFFICIENT', self.calculate_prediction_dice(binarized_output_data, np.squeeze(ground_truth))
-        
-        # If multiple output modalities, either stack one on top of the other (e.g. output 3 over output 2 over output 1).
-        # or output multiple volumes.
-        else:
-            if stack_outputs:
-                merge_image = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[0,...])
-                if self.verbose:
-                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY 0', np.sum(merge_image)
-                for modality_idx in xrange(1, output_shape[1]):
-                    if self.verbose:
-                        print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality_idx), np.sum(input_data[modality_idx,...])
-                    merge_image[self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality_idx,...]) == 1] = modality_idx
-
-                save_numpy_2_nifti(self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality,...]), input_affine, output_filepath=output_filepath)
-        
-            for modality in xrange(output_shape[-1]):
-                if self.verbose:
-                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality), np.sum(input_data[...,modality])
-                binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[...,modality])
-                save_numpy_2_nifti(input_data[...,modality], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-probability'))
-                save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-label'))
-
-        return
-
-    def threshold_binarize(self, input_data, threshold):
-
-        return (input_data > threshold).astype(float)
-
-    def calculate_prediction_dice(self, label_volume_1, label_volume_2):
-
-        im1 = np.asarray(label_volume_1).astype(np.bool)
-        im2 = np.asarray(label_volume_2).astype(np.bool)
-
-        if im1.shape != im2.shape:
-            raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
-
-        im_sum = im1.sum() + im2.sum()
-        if im_sum == 0:
-            return empty_score
-
-        # Compute Dice coefficient
-        intersection = np.logical_and(im1, im2)
-
-        return 2. * intersection.sum() / im_sum

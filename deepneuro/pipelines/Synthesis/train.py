@@ -22,8 +22,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
     ['*FLAIR*', ['*T2SPACE*', '*T2_pp*'], ['*T1_pp.*', '*MPRAGE_Pre*'], ['*T1post_pp.*', '*MPRAGE_POST*']],
     'ground_truth': ['*FLAIR*', ['*T2SPACE*', '*T2_pp*'], ['*T1_pp.*', '*MPRAGE_Pre*'], ['*T1post_pp.*', '*MPRAGE_POST*']]}
 
-    load_data = True
-    train_model = True
+    load_data = False
+    train_model = False
     load_test_data = True
     predict = True
 
@@ -85,8 +85,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
         plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
                         'output_model_filepath': model_file,
-                        'training_batch_size': 40,
-                        'num_epochs': 100,
+                        'training_batch_size': 64,
+                        'num_epochs': 1000,
                         'training_steps_per_epoch': 20}
         unet_model.train(training_data_collection, **training_parameters)
     else:
@@ -109,9 +109,9 @@ def train_Segment_GBM(data_directory, val_data_directory):
         testing_data_collection.append_augmentation(mask_augmentation, multiplier=4)
 
         testing_parameters = {'inputs': ['input_modalities'], 
-                        'output_filename': 'deepneuro.nii.gz',
+                        'output_filename': 'deepneuro_missing.nii.gz',
                         'batch_size': 250,
-                        'patch_overlaps': 12,
+                        'patch_overlaps': 6,
                         'output_patch_shape': (26,26,26,4)}
 
         prediction = ModelPatchesInference(testing_data_collection, **testing_parameters)
@@ -123,6 +123,6 @@ def train_Segment_GBM(data_directory, val_data_directory):
 if __name__ == '__main__':
 
     data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/Train'
-    val_data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/Val'
+    val_data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/Test_Case'
 
     train_Segment_GBM(data_directory, val_data_directory)
