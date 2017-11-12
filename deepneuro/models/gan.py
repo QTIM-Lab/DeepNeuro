@@ -183,15 +183,11 @@ class GAN(DeepNeuroModel):
                 this will return a Keras model.
         """
 
+        print 'ABOUT TO BUILD'
+
         self.channels = 1
 
-        if self.crop:
-            image_dims = [self.output_height, self.output_width, self.channels]
-        else:
-            image_dims = [self.input_height, self.input_width, self.channels]
-
         self.inputs = tf.placeholder(tf.float32, [self.batch_size] + list(self.inputs.get_shape()), name='real_images')
-
         self.vectors = tf.placeholder(tf.float32, [None, self.vector_size], name='vectors')
 
         self.G                  = self.generator(self.vectors)

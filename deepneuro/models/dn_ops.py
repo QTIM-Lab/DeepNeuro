@@ -4,10 +4,7 @@ import tensorflow as tf
 
 from tensorflow.python.framework import ops
 
-from utils import *
-
-
-class tf_batch_norm(object):
+class batch_norm(object):
 
     # Taken from DCGAN-tensorflow on Github. In future, rewrite for multi-backend batchnorm.
 
