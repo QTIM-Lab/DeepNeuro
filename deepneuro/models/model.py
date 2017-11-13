@@ -9,6 +9,7 @@ from keras.callbacks import ModelCheckpoint
 
 from deepneuro.models.cost_functions import cost_function_dict
 
+import tensorflow as tf
 
 class DeepNeuroModel(object):
     
@@ -218,7 +219,7 @@ def UpConvolution(deconvolution=False, pool_size=(2, 2, 2), implementation='kera
             # deconvolution not yet implemented // required from keras_contrib
 
 
-def load_old_model(model_file, implementation='keras'):
+def load_old_model(model_file, backend='keras'):
 
     """ Loading an old keras model file. A thing wrapper around load_model
         that uses DeepNeuro's custom cost functions.
@@ -239,6 +240,15 @@ def load_old_model(model_file, implementation='keras'):
         
     """
 
-    custom_objects = cost_function_dict()
+    if backend == 'keras':
+        custom_objects = cost_function_dict()
 
-    return DeepNeuroModel(model = load_model(model_file, custom_objects=custom_objects))
+        return DeepNeuroModel(model = load_model(model_file, custom_objects=custom_objects))
+
+    if backend == 'tf':
+        sess = tf.Session()    
+        #First let's load meta graph and restore weights
+        saver = tf.train.import_meta_graph(model_file)
+        saver.restore(sess,tf.train.latest_checkpoint('./'))
+        return sess
+

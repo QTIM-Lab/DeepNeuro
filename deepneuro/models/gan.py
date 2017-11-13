@@ -10,7 +10,9 @@ from keras.layers.merge import concatenate
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
 from deepneuro.models.model import DeepNeuroModel, UpConvolution
 from deepneuro.utilities.conversion import round_up
-from deepneuro.models.dn_ops import batch_norm, relu, tanh, leaky_relu, dense, reshape, sigmoid
+from deepneuro.models.dn_ops import batch_norm, relu, tanh, leaky_relu, dense, reshape, sigmoid, conv2d, deconv2d, conv3d, deconv3d
+
+from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
 
 import os
 import time
@@ -18,6 +20,7 @@ import math
 from glob import glob
 import tensorflow as tf
 import numpy as np
+import csv
 
 class GAN(DeepNeuroModel):
     
@@ -49,6 +52,9 @@ class GAN(DeepNeuroModel):
         else:
             self.vector_size = 64
 
+        self.batch_size = 32
+        self.input_shape = (64,64,8,1)
+
     def generator(self, vector):
 
         with tf.variable_scope("generator") as scope:
@@ -56,33 +62,46 @@ class GAN(DeepNeuroModel):
             convs = []
             output_shapes = []
             filter_nums = []
+            kernel_shapes = [(2,2,1), (4,4,2), (8,8,2), (8,8,2)]
 
             for level in xrange(self.depth):
 
-                # 
                 if level == 0:
-                    output_shapes += [self.output_dims]
+                    output_shapes += [list(self.input_shape[:-1])]
                     filter_nums += [self.max_filter]
                 else:
-                    output_shapes = [[round_up(dim, 2 ** level) for dim in self.output_dims]] + output_shapes
+                    output_shapes = [[round_up(dim, 2 ** level) for dim in self.input_shape[:-1]]] + output_shapes
                     filter_nums += [round_up(self.max_filter, 2 ** level)]
 
+            filter_nums[-1] = self.input_shape[-1]
+
             dense_layer = dense(vector, filter_nums[0] * np.prod(output_shapes[0]), with_w=True)
-            convs[0] = relu()(batch_norm()((reshape()(dense_layer[0], [-1, output_shapes[0] + filter_nums[0]]))))
+            convs += [leaky_relu((batch_norm()((reshape()(dense_layer[0], [-1] + output_shapes[0] + [filter_nums[0]])))))]
 
             for level in xrange(1, self.depth):
 
-                convs += [deconv2d(convs[level-1][0], [self.batch_size] + output_shapes[level] + filter_nums[level], with_w=True)]
-                
-                if self.batch_norm:
-                    convs[level][0] = batch_norm()(convs[level][0])
-
                 if level == self.depth - 1:
-                    convs[level][0] = tanh()(convs[level][0])
-                else:
-                    convs[level][0] = relu()(convs[level][0])
+                    convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level-1]], with_w=False, name='g_deconv3d_' + str(level))]
+                    convs[-1] = leaky_relu((convs[-1]))
+                    convs[-1] = batch_norm()(convs[-1])
 
-            return convs[-1][0]
+                    convs += [conv3d(convs[-1], filter_nums[level], name='g_conv3d_' + str(level), stride_size=(1,1,1))]
+                    convs[-1] = tf.scalar_mul(4, tanh()(convs[-1]))
+                else:
+                    convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level]], with_w=False, name='g_deconv3d_' + str(level))]
+                    convs[-1] = leaky_relu((convs[-1]))
+                    convs[-1] = tf.nn.dropout(convs[-1], .5)
+                    convs[-1] = batch_norm()(convs[-1])
+
+                    convs += [conv3d(convs[-1], filter_nums[level]/2, name='g_conv3d_' + str(level), padding='SAME', stride_size=(1,1,1))]
+                    convs[-1] = leaky_relu((convs[-1]))
+                    convs[-1] = tf.nn.dropout(convs[-1], .5)
+                    convs[-1] = batch_norm()(convs[-1])
+
+            for i in convs:
+                print 'GENERATOR', i
+
+            return convs[-1]
 
     def discriminator(self, image, reuse=False):
 
@@ -94,6 +113,7 @@ class GAN(DeepNeuroModel):
             convs = []
             output_shapes = []
             filter_nums = []
+            kernel_shapes = [(8,8,2), (4,4,2), (2,2,2), (2,2,1)]
 
             for level in xrange(self.depth):
 
@@ -102,73 +122,26 @@ class GAN(DeepNeuroModel):
                 else:
                     filter_nums = [round_up(self.max_filter, 2 ** level)] + filter_nums
 
-            for level in xrange(1, self.depth):
+            print image
 
-                convs += [conv2d(convs[level], self.filter_nums[level])]
+            for level in xrange(self.depth):
+
+                print 'DISCRIMINATOR', convs
+
+                if level == 0:
+                    convs += [conv3d(image, filter_nums[level], name='d_conv3d_' + str(level), kernel_size=kernel_shapes[level], padding='VALID', stride_size=(2,2,2))]
+                else:
+                    convs += [conv3d(convs[-1], filter_nums[level], name='d_conv3d_' + str(level), kernel_size=kernel_shapes[level], padding='VALID', stride_size=(2,2,2))]
                 
+                convs[-1] = leaky_relu((convs[-1]))
+
                 if self.batch_norm:
-                    convs[level] = batch_norm()(convs[level])
+                    convs[-1] = batch_norm()(convs[-1])
 
-                convs[level] = leaky_relu()(convs[level])
+            dense_layer = reshape()(convs[-1], [self.batch_size, -1])
+            dense_layer = dense(dense_layer, 1)
 
-            dense = reshape()(convs[-1], [self.batch_size, -1])
-            dense = dense()(dense, 1)
-            dense = sigmoid()(dense)
-
-            return dense
-
-    # def sampler(self, z, y=None):
-    #     with tf.variable_scope("generator") as scope:
-    #       scope.reuse_variables()
-
-    #       if not self.y_dim:
-    #         s_h, s_w = self.output_height, self.output_width
-    #         s_h2, s_w2 = conv_out_size_same(s_h, 2), conv_out_size_same(s_w, 2)
-    #         s_h4, s_w4 = conv_out_size_same(s_h2, 2), conv_out_size_same(s_w2, 2)
-    #         s_h8, s_w8 = conv_out_size_same(s_h4, 2), conv_out_size_same(s_w4, 2)
-    #         s_h16, s_w16 = conv_out_size_same(s_h8, 2), conv_out_size_same(s_w8, 2)
-
-    #         # project `z` and reshape
-    #         h0 = tf.reshape(
-    #             linear(z, self.gf_dim*8*s_h16*s_w16, 'g_h0_lin'),
-    #             [-1, s_h16, s_w16, self.gf_dim * 8])
-    #         h0 = tf.nn.relu(self.g_bn0(h0, train=False))
-
-    #         h1 = deconv2d(h0, [self.batch_size, s_h8, s_w8, self.gf_dim*4], name='g_h1')
-    #         h1 = tf.nn.relu(self.g_bn1(h1, train=False))
-
-    #         h2 = deconv2d(h1, [self.batch_size, s_h4, s_w4, self.gf_dim*2], name='g_h2')
-    #         h2 = tf.nn.relu(self.g_bn2(h2, train=False))
-
-    #         h3 = deconv2d(h2, [self.batch_size, s_h2, s_w2, self.gf_dim*1], name='g_h3')
-    #         h3 = tf.nn.relu(self.g_bn3(h3, train=False))
-
-    #         h4 = deconv2d(h3, [self.batch_size, s_h, s_w, self.c_dim], name='g_h4')
-
-    #         return tf.nn.tanh(h4)
-    #       else:
-    #         s_h, s_w = self.output_height, self.output_width
-    #         s_h2, s_h4 = int(s_h/2), int(s_h/4)
-    #         s_w2, s_w4 = int(s_w/2), int(s_w/4)
-
-    #         # yb = tf.reshape(y, [-1, 1, 1, self.y_dim])
-    #         yb = tf.reshape(y, [self.batch_size, 1, 1, self.y_dim])
-    #         z = concat([z, y], 1)
-
-    #         h0 = tf.nn.relu(self.g_bn0(linear(z, self.gfc_dim, 'g_h0_lin'), train=False))
-    #         h0 = concat([h0, y], 1)
-
-    #         h1 = tf.nn.relu(self.g_bn1(
-    #             linear(h0, self.gf_dim*2*s_h4*s_w4, 'g_h1_lin'), train=False))
-    #         h1 = tf.reshape(h1, [self.batch_size, s_h4, s_w4, self.gf_dim * 2])
-    #         h1 = conv_cond_concat(h1, yb)
-
-    #         h2 = tf.nn.relu(self.g_bn2(
-    #             deconv2d(h1, [self.batch_size, s_h2, s_w2, self.gf_dim * 2], name='g_h2'), train=False))
-    #         h2 = conv_cond_concat(h2, yb)
-
-    #         return tf.nn.sigmoid(deconv2d(h2, [self.batch_size, s_h, s_w, self.c_dim], name='g_h3'))
-
+            return sigmoid()(dense_layer), dense_layer
 
     def build_model(self):
         
@@ -183,12 +156,13 @@ class GAN(DeepNeuroModel):
                 this will return a Keras model.
         """
 
-        print 'ABOUT TO BUILD'
-
         self.channels = 1
 
-        self.inputs = tf.placeholder(tf.float32, [self.batch_size] + list(self.inputs.get_shape()), name='real_images')
+        self.inputs = tf.placeholder(tf.float32, [self.batch_size] + list(self.input_shape), name='real_images')
         self.vectors = tf.placeholder(tf.float32, [None, self.vector_size], name='vectors')
+
+        self.true_labels = tf.placeholder(tf.float32, [self.batch_size, 1], name='true_labels')
+        self.false_labels = tf.placeholder(tf.float32, [self.batch_size, 1], name='false_labels')
 
         self.G                  = self.generator(self.vectors)
         self.D, self.D_logits   = self.discriminator(self.inputs, reuse=False)
@@ -196,17 +170,21 @@ class GAN(DeepNeuroModel):
         
         # self.sampler            = self.sampler(self.z, self.y)
 
+        def gaussian_noise_layer(input_layer, std=.2):
+            noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32) 
+            return input_layer + noise
+
         def sigmoid_cross_entropy_with_logits(x, y):
             try:
                 return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, labels=y)
             except:
                 return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, targets=y)
 
-        self.d_loss_real = tf.reduce_mean(sigmoid_cross_entropy_with_logits(self.D_logits, tf.ones_like(self.D)))
-        self.d_loss_fake = tf.reduce_mean(sigmoid_cross_entropy_with_logits(self.D_logits_, tf.zeros_like(self.D_)))
+        self.d_loss_real = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits), self.true_labels))
+        self.d_loss_fake = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits_), self.false_labels))
         self.d_loss = self.d_loss_real + self.d_loss_fake
 
-        self.g_loss = tf.reduce_mean(sigmoid_cross_entropy_with_logits(self.D_logits_, tf.ones_like(self.D_)))
+        self.g_loss = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits_), self.true_labels))
 
         t_vars = tf.trainable_variables()
         self.d_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
@@ -218,49 +196,90 @@ class GAN(DeepNeuroModel):
 
     def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
 
-        self.batch_size = training_batch_size
+        with tf.Session() as sess:
 
-        if training_steps_per_epoch is None:
-            training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
+            self.sess = sess
+            self.batch_size = training_batch_size
 
-        training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
+            if training_steps_per_epoch is None:
+                training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
 
-        sample_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size))
+            training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
 
-        discriminator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.d_loss, var_list=self.d_vars)
-        generator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.g_loss, var_list=self.g_vars)
+            sample_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size))
 
-        start_time = time.time()
+            discriminator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.d_loss, var_list=self.d_vars)
+            generator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.g_loss, var_list=self.g_vars)
 
-        for epoch in xrange(num_epochs):
+            try:
+              tf.global_variables_initializer().run()
+            except:
+              tf.initialize_all_variables().run()
 
-            for batch_idx in xrange(training_steps_per_epoch):
+            start_time = time.time()
 
-                batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
-                batch_images = next(training_data_generator)
+            try:
+                    # Save output.
+                with open('loss_log.csv', 'ab') as writefile:
+                    csvfile = csv.writer(writefile, delimiter=',')
+                    csvfile.writerow(['g_loss', 'd_loss_real', 'd_loss_fake', 'd_loss'])
+                    for epoch in xrange(num_epochs):
 
-                # Update D network
-                _, summary_str = self.sess.run([discriminator_optimizer, self.d_sum], feed_dict={ self.inputs: batch_images, self.z: batch_vector })
+                        for batch_idx in xrange(training_steps_per_epoch):
 
-                # Update G network (twice to help training)
-                _, summary_str = self.sess.run([generator_optimizer, self.g_sum], feed_dict={ self.vectors: batch_vector })
-                _, summary_str = self.sess.run([generator_optimizer, self.g_sum], feed_dict={ self.vectors: batch_vector })
-          
-                errD_fake = self.d_loss_fake.eval({ self.vectors: batch_z })
-                errD_real = self.d_loss_real.eval({ self.vectors: batch_images })
-                errG = self.g_loss.eval({self.vectors: batch_vector})
+                            batch_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size)).astype(np.float32)
+                            batch_images = next(training_data_generator)[0]
 
-                if batch_idx % 50 == 0:
-                    print batch_idx
-                #     samples, d_loss, g_loss = self.sess.run([self.sampler, self.d_loss, self.g_loss],feed_dict={self.z: sample_z, self.inputs: sample_inputs})
-                #     save_images(samples, image_manifold_size(samples.shape[0]), './{}/train_{:02d}_{:04d}.png'.format(config.sample_dir, epoch, idx))
-                #     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss)) 
-              
-            print("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, batch_idx, time.time() - start_time, errD_fake+errD_real, errG))
+                            if batch_idx % 10 == 0:
+                                true = np.random.normal(0, 0.3, [self.batch_size, 1]).astype(np.float32)
+                                false = np.random.normal(0.7, 1.3, [self.batch_size, 1]).astype(np.float32)
+                            else:
+                                false = np.random.normal(0, 0.3, [self.batch_size, 1]).astype(np.float32)
+                                true = np.random.normal(0.7, 1.3, [self.batch_size, 1]).astype(np.float32)
+
+                            # Update D network
+                            _ = self.sess.run([discriminator_optimizer], feed_dict={ self.inputs: batch_images, self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
+
+                            # Update G network (twice to help training)
+                            _ = self.sess.run([generator_optimizer], feed_dict={ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
+                            # _ = self.sess.run([generator_optimizer], feed_dict={ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
+
+                            errD_fake = self.d_loss_fake.eval({ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
+                            errD_real = self.d_loss_real.eval({ self.inputs: batch_images, self.true_labels: true, self.false_labels: false})
+                            errG = self.g_loss.eval({self.vectors: batch_vector, self.true_labels: true, self.false_labels: false})
+
+                            # print 'FAKE ERR', errD_fake, 'REAL ERR', errD_real, 'G ERR', errG
+
+                            # if batch_idx % 50 == 0:
+                            #     print batch_idx
+                            #     samples, d_loss, g_loss = self.sess.run([self.sampler, self.d_loss, self.g_loss],feed_dict={self.z: sample_z, self.inputs: sample_inputs})
+                            #     save_images(samples, image_manifold_size(samples.shape[0]), './{}/train_{:02d}_{:04d}.png'.format(config.sample_dir, epoch, idx))
+                            #     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss)) 
+                          
+                        print("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, batch_idx, time.time() - start_time, errD_fake+errD_real, errG))
+                        self.save(epoch)
+                        # csvfile.writerow([errG, errD_real, errD_fake, errD_fake+errD_real])
+
+                        batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
+                        test_output = self.sess.run([self.G], feed_dict={ self.vectors: batch_vector })
+                        for i in xrange(test_output[0].shape[0]):
+                            data = test_output[0][i,...,0]
+                            save_numpy_2_nifti(data, np.eye(4), 'other_gan_test_' + str(i) + '.nii.gz')
+                            if epoch == 0:
+                                save_numpy_2_nifti(batch_images[i,...,0], np.eye(4), 'sample_patch_' + str(i) + '.nii.gz')
+
+            except KeyboardInterrupt:
+                pass
+            #     batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
+            #     test_output = self.sess.run([self.G], feed_dict={ self.vectors: batch_vector })
+            #     for i in xrange(test_output[0].shape[0]):
+            #         data = test_output[0][i,...,0]
+            #         save_numpy_2_nifti(data, np.eye(4), 'other_gan_test_' + str(i) + '.nii.gz')
+            #         save_numpy_2_nifti(data, np.eye(4), 'sample_patch_' + str(i) + '.nii.gz')
 
 
     def save(self, epoch):
-        model_name = 'DCGAN_' + str(epoch) + '.model'
+        model_name = 'DCGAN_final_small' + str(epoch) + '.model'
 
         self.saver.save(self.sess, model_name)
 

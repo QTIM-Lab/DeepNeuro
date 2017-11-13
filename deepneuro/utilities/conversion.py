@@ -6,7 +6,7 @@ import math
 from qtim_tools.qtim_utilities.format_util import convert_input_2_numpy
 
 def round_up(x, y):
-    return int(math.ceil(float(size) / float(stride)))
+    return int(math.ceil(float(x) / float(y)))
 
 def read_image_files(image_files, return_affine=False):
 
