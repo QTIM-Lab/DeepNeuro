@@ -1,7 +1,7 @@
 class Output(object):
 
 
-    def __init__(self, data_collection=None, inputs=['input_modalities'], output_directory=None, output_filename='prediction.nii.gz', batch_size=32, verbose=True, replace_existing=True, **kwargs):
+    def __init__(self, data_collection=None, inputs=['input_modalities'], output_directory=None, output_filename='prediction.nii.gz', batch_size=32, verbose=True, replace_existing=True, case=None, **kwargs):
 
         self.data_collection = data_collection
         self.inputs = inputs
@@ -13,6 +13,7 @@ class Output(object):
 
         self.replace_existing = replace_existing
         self.verbose = verbose
+        self.case = case
 
         self.load(kwargs)
 
@@ -28,5 +29,5 @@ class Output(object):
 
     def execute(self, model):
 
-        return
+        return None
 

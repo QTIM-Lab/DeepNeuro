@@ -31,7 +31,7 @@ class ModelInference(Output):
     def execute(self, model, verbose=True):
 
         # At present, this only works for one input, one output patch networks.
-        data_generator = self.data_collection.data_generator()
+        data_generator = self.data_collection.data_generator(case_list=case)
 
         # Create output directory. If not provided, output into original patient folder.
         if self.output_directory is not None:

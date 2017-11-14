@@ -74,7 +74,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
                         'padding': 'same', 
                         'implementation': 'keras',
                         'depth': 4,
-                        'max_filter': 32}
+                        'max_filter': 256}
 
         # Create U-Net
         GAN_model = GAN(**model_parameters)

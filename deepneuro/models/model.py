@@ -163,9 +163,13 @@ class DeepNeuroModel(object):
 
     def generate_outputs(self):
 
+        callbacks = []
+
         for output in self.outputs:
             output.model = self
-            output.execute()
+            callbacks += [output.execute()]
+
+        return callbacks
 
 def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={}):
 

@@ -28,15 +28,35 @@ class DataCollection(object):
 
         # Special behavior for augmentations
         self.augmentations = []
+        self.preprocessors = []
         self.multiplier = 1
 
         # Empty vars
         self.cases = []
         self.total_cases = 0
+        self.current_case = None
         self.data_groups = {}
         self.data_shape = None
         self.data_shape_augment = None
 
+    def add_case(self, case_dict, case_name=None):
+
+        # Currently only works for filepaths. Maybe add functionality for python data types, hdf5s?
+
+        # Create DataGroups for this DataCollection.
+        for modality_group in case_dict:
+            if modality_group not in self.data_groups.keys():
+                self.data_groups[modality_group] = DataGroup(modality_group)
+                self.data_groups[modality_group].source = 'directory'
+
+
+        # Search for modality files, and skip those missing with files modalities.
+        for data_group, modality_group_files in case_dict.iteritems():
+
+            self.data_groups[data_group].add_case(case_name, tuple(modality_group_files))
+        
+        self.cases.append(case_name)
+        self.total_cases = len(self.cases)
 
     def fill_data_groups(self):
 
@@ -128,7 +148,7 @@ class DataCollection(object):
                     self.cases = range(data_group.shape[0])
 
         else:
-            print 'No directory or data storage file specified. No data groups can be created.'
+            print 'No directory or data storage file specified. No data groups can be filled.'
 
     def append_augmentation(self, augmentations, multiplier=None):
 
@@ -166,6 +186,26 @@ class DataCollection(object):
         self.multiplier *= multiplier
 
         self.augmentations.append({'augmentation': augmentations, 'iterations': total_iterations})
+
+        return
+
+    def append_preprocessor(self, preprocessor):
+
+        if type(augmentations) is not list:
+            preprocessors = [preprocessors]
+
+        for preprocessor in preprocessors:
+            for data_group_label in preprocessor.data_groups:
+                preprocessor.append_data_group(self.data_groups[data_group_label])
+
+        # This is so bad.
+        for preprocessor in preprocessors:
+            preprocessor.initialize()
+            for data_group_label in preprocessor.data_groups:
+                if preprocessor.output_shape is not None:
+                    self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
+
+        self.preprocessors.append(preprocessors)
 
         return
 
@@ -274,13 +314,60 @@ class DataCollection(object):
 
         return
 
+    def get_data(self, case, data_group_labels=None, batch_size=None):
+
+        if data_group_labels is None:
+            data_groups = self.data_groups.values()
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        if len(self.augmentations) != 0:
+            for data_group in data_groups:
+                data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
+                data_group.augmentation_strings = [''] * (1 + len(self.augmentations))
+
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
+
+        if self.verbose:
+            print 'Working on image.. ', case
+
+        if case != self.current_case:
+            for data_group in data_groups:
+
+                data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+                data_group.base_casename = case_name
+                if len(self.augmentations) != 0:
+                    data_group.augmentation_cases[0] = data_group.base_case
+            self.current_case = case
+
+        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
+
+        if batch_size is None:
+            batch_size = self.multiplier
+
+        for i in xrange(batch_size):
+            generate_data = next(recursive_augmentation_generator)
+
+            # TODO: Do this without if-statement and for loop?
+            for data_idx, data_group in enumerate(data_groups):
+                if len(self.augmentations) == 0:
+                    data_batch[data_idx].append(data_group.base_case[0])
+                else:
+                    data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
+
+        return tuple([np.stack(data_list) for data_list in data_batch])
+
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
 
-        # Referencing to data groups is a little wonky here, TODO: clean up
         if data_group_labels is None:
-            data_group_labels = self.data_groups.keys()
-        data_groups = [self.data_groups[label] for label in data_group_labels]
+            data_groups = self.data_groups.values()
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
 
         if len(self.augmentations) != 0:
             for data_group in data_groups:
@@ -315,6 +402,7 @@ class DataCollection(object):
 
                         if len(self.augmentations) != 0:
                             data_group.augmentation_cases[0] = data_group.base_case
+                    self.current_case = case_name
                 except KeyboardInterrupt:
                     raise
                 except:

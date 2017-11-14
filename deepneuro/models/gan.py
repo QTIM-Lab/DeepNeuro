@@ -83,20 +83,21 @@ class GAN(DeepNeuroModel):
                 if level == self.depth - 1:
                     convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level-1]], with_w=False, name='g_deconv3d_' + str(level))]
                     convs[-1] = leaky_relu((convs[-1]))
+                    convs[-1] = tf.nn.dropout(convs[-1], .5)
                     convs[-1] = batch_norm()(convs[-1])
 
                     convs += [conv3d(convs[-1], filter_nums[level], name='g_conv3d_' + str(level), stride_size=(1,1,1))]
-                    convs[-1] = tf.scalar_mul(4, tanh()(convs[-1]))
+                    # convs[-1] = tanh()(convs[-1])
                 else:
                     convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level]], with_w=False, name='g_deconv3d_' + str(level))]
                     convs[-1] = leaky_relu((convs[-1]))
                     convs[-1] = tf.nn.dropout(convs[-1], .5)
                     convs[-1] = batch_norm()(convs[-1])
 
-                    convs += [conv3d(convs[-1], filter_nums[level]/2, name='g_conv3d_' + str(level), padding='SAME', stride_size=(1,1,1))]
-                    convs[-1] = leaky_relu((convs[-1]))
-                    convs[-1] = tf.nn.dropout(convs[-1], .5)
-                    convs[-1] = batch_norm()(convs[-1])
+                    # convs += [conv3d(convs[-1], filter_nums[level]/2, name='g_conv3d_' + str(level), padding='SAME', stride_size=(1,1,1))]
+                    # convs[-1] = leaky_relu((convs[-1]))
+                    # convs[-1] = tf.nn.dropout(convs[-1], .5)
+                    # convs[-1] = batch_norm()(convs[-1])
 
             for i in convs:
                 print 'GENERATOR', i
@@ -229,6 +230,8 @@ class GAN(DeepNeuroModel):
 
                             batch_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size)).astype(np.float32)
                             batch_images = next(training_data_generator)[0]
+
+                            # batch_images = ((batch_images - np.min(batch_images)) / (np.max(batch_images) - np.min(batch_images))) * 2 - 1
 
                             if batch_idx % 10 == 0:
                                 true = np.random.normal(0, 0.3, [self.batch_size, 1]).astype(np.float32)
