@@ -209,6 +209,23 @@ class DataCollection(object):
 
         return
 
+    def add_channel(self, input_data=None, data_group_labels=None, channel=-1,):
+        
+        if isinstance(input_data, basestring):
+            input_data = read_image_files(input_data)
+
+        if data_group_labels is None:
+            data_groups = self.data_groups.values()
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            print input_data.shape
+            print data_group.get_shape()
+
+
+
     def clear_augmentations(self):
 
         # This function is basically a memory leak. Good for loading data and then immediately
@@ -267,7 +284,6 @@ class DataCollection(object):
 
         return hdf5_file
 
-
     def write_data_to_file(self, output_filepath=None, data_group_labels=None):
 
         """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
@@ -291,7 +307,6 @@ class DataCollection(object):
         self.write_image_data_to_storage(data_group_labels)
 
         hdf5_file.close()
-
 
     def write_image_data_to_storage(self, data_group_labels=None, repeat=1):
 
@@ -335,8 +350,10 @@ class DataCollection(object):
         if case != self.current_case:
             for data_group in data_groups:
 
+                print data_group
+
                 data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
-                data_group.base_casename = case_name
+                data_group.base_casename = case
                 if len(self.augmentations) != 0:
                     data_group.augmentation_cases[0] = data_group.base_case
             self.current_case = case
@@ -355,10 +372,11 @@ class DataCollection(object):
             # TODO: Do this without if-statement and for loop?
             for data_idx, data_group in enumerate(data_groups):
                 if len(self.augmentations) == 0:
-                    data_batch[data_idx].append(data_group.base_case[0])
+                    # Return; currently broken.
+                    data_batch[data_idx].append(data_group.base_case)
                 else:
                     data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-
+                    
         return tuple([np.stack(data_list) for data_list in data_batch])
 
     # @profile
@@ -492,6 +510,7 @@ class DataGroup(object):
 
         self.augmentation_cases = []
         self.augmentation_strings = []
+        self.preprocessing_data = []
 
         self.data_storage = None
         self.casename_storage = None

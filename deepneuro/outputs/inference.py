@@ -28,50 +28,105 @@ class ModelInference(Output):
         else:
             self.ground_truth = None
 
-    def execute(self, model, verbose=True):
+        if 'output_types' in kwargs:
+            self.output_types = kwargs.get('output_types')
+        else:
+            self.output_types = ['probability', 'binary_label']
 
-        # At present, this only works for one input, one output patch networks.
-        data_generator = self.data_collection.data_generator(case_list=case)
+        if 'binarize_probability' in kwargs:
+            self.binarize_probability = kwargs.get('binarize_probability')
+        else:
+            self.binarize_probability = .5
+
+        if 'channels_first' in kwargs:
+            self.channels_first = kwargs.get('channels_first')
+        else:
+            self.channels_first = False
+
+        if 'channels_dim' in kwargs:
+            self.channels_dim = kwargs.get('channels_dim')
+        elif self.channels_first:
+            self.channels_dim = 1
+        else:
+            self.channels_dim = -1
+
+        # Replace this with a method for slicing all dimensions.
+        if 'input_channels' in kwargs:
+            self.input_channels = kwargs.get('input_channels')
+        else:
+            self.input_channels = None
+
+        self.return_objects = []
+
+    def execute(self):
 
         # Create output directory. If not provided, output into original patient folder.
         if self.output_directory is not None:
             if not os.path.exists(self.output_directory):
                 os.makedirs(self.output_directory)
 
-        index = 0
-        input_data = next(data_generator)
-        while input_data is not None:
+        if self.case is None:
 
-            if input_data is None:
-                continue
-
-            # A little bit strange to access casename this way. Maybe make it an optional
-            # return of the generator.
-            casename = self.data_collection.data_groups[self.inputs[0]].base_casename
-            affine = self.data_collection.data_groups[self.inputs[0]].base_affine
-            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
-
-            if self.output_directory is None:
-                output_directory = casename
-            else:
-                output_directory = self.output_directory
-
-            output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
-            print output_filepath
-
-            index += 1
-
-            # If prediction already exists, skip it. Useful if process is interrupted.
-            if os.path.exists(output_filepath) and not self.replace_existing:
-                continue
-
-            # Temporary code. In the future, make sure code works with multiple inputs.
-            output_data = self.predict(input_data[1])
-
-            # save_numpy_2_nifti(np.squeeze(output_data), self.data_collection.data_groups['ground_truth'].base_casename + '/FLAIR_pp.nii.gz', self.output_filename)
-            self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0])
+            # At present, this only works for one input, one output patch networks.
+            data_generator = self.data_collection.data_generator()
 
             input_data = next(data_generator)
+            while input_data is not None:
+
+                if input_data is None:
+                    continue
+
+                self.process_case(input_data)
+
+                input_data = next(data_generator)
+        else:
+            self.process_case(self.data_collection.get_data(self.case))
+
+        return self.return_objects
+
+    def process_case(self, input_data):
+
+        # A little bit strange to access casename this way. Maybe make it an optional
+        # return of the generator.
+        casename = self.data_collection.data_groups[self.inputs[0]].base_casename
+        affine = self.data_collection.data_groups[self.inputs[0]].base_affine
+
+        if self.data_collection.augmentations != []:
+            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
+        else:
+            augmentation_string = ''
+
+        if self.output_directory is None:
+            output_directory = casename
+        else:
+            output_directory = self.output_directory
+
+        output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
+
+        # If prediction already exists, skip it. Useful if process is interrupted.
+        if os.path.exists(output_filepath) and not self.replace_existing:
+            return
+
+        if self.channels_first:
+            input_data = np.swapaxes(input_data[0], 1, -1)
+        else:
+            # Temporary code. In the future, make sure code works with multiple and specific inputs.
+            input_data = input_data[0]
+
+        if self.input_channels is not None:
+            input_data = np.take(input_data, self.input_channels, self.channels_dim)
+
+        output_data = self.predict(input_data)
+
+        # Will fail for time-data.
+        if self.channels_first:
+            output_data = np.swapaxes(output_data, 1, -1)
+
+        if self.save_to_file:
+            self.return_objects.append(self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0]))
+        else:
+            self.return_objects.append(output_data)
+
 
     def predict(self, input_data, model, batch_size):
 
@@ -80,51 +135,32 @@ class ModelInference(Output):
 
         return prediction
 
-    def save_prediction(self, input_data, output_filepath, input_affine=None, ground_truth=None, stack_outputs=False, binarize_probability=.5):
+    def save_prediction(self, input_data, output_filepath, input_affine=None, ground_truth=None, stack_outputs=False):
 
         """ This is a temporary function borrowed from qtim_ChallengePipeline. In the future, will be rewritten in a more
             DeepNeuro way..
         """
 
-        # If no affine, create identity affine.
-        if input_affine is None:
-            input_affine = np.eye(4)
-
         output_shape = input_data.shape
         input_data = np.squeeze(input_data)
 
-        # If output modalities is one, just save the output.
+        return_filenames = []
+
+        # If there is only one channel, only save one file.
         if output_shape[-1] == 1:
-            binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data)
-            if self.verbose:
-                print 'SUM OF ALL PREDICTION VOXELS', np.sum(binarized_output_data)
-            save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))
-            save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))
-            if ground_truth is not None:
-                print 'DICE COEFFICIENT', self.calculate_prediction_dice(binarized_output_data, np.squeeze(ground_truth))
-        
-        # If multiple output modalities, either stack one on top of the other (e.g. output 3 over output 2 over output 1).
-        # or output multiple volumes.
+
+            if 'probability' in self.output_types:
+                return_filenames += [save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))]
+
+            if 'binary_label' in self.output_types:
+                binary_data = self.threshold_binarize(threshold=self.binarize_probability, input_data=input_data[0,...])
+                return_filenames += [save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))]
+
         else:
-            if stack_outputs:
-                merge_image = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[0,...])
-                if self.verbose:
-                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY 0', np.sum(merge_image)
-                for modality_idx in xrange(1, output_shape[1]):
-                    if self.verbose:
-                        print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality_idx), np.sum(input_data[modality_idx,...])
-                    merge_image[self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality_idx,...]) == 1] = modality_idx
+            pass
+            # Return to case for multiple outputs.
 
-                save_numpy_2_nifti(self.threshold_binarize(threshold=binarize_probability, input_data=input_data[modality,...]), input_affine, output_filepath=output_filepath)
-        
-            for modality in xrange(output_shape[-1]):
-                if self.verbose:
-                    print 'SUM OF ALL PREDICTION VOXELS, MODALITY',str(modality), np.sum(input_data[...,modality])
-                binarized_output_data = self.threshold_binarize(threshold=binarize_probability, input_data=input_data[...,modality])
-                save_numpy_2_nifti(input_data[...,modality], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-probability'))
-                save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_' + str(modality) + '-label'))
-
-        return
+        return return_filenames
 
     def threshold_binarize(self, input_data, threshold):
 
@@ -162,10 +198,7 @@ class ModelPatchesInference(ModelInference):
 
         """
 
-        if 'ground_truth' in kwargs:
-            self.ground_truth = kwargs.get('ground_truth')
-        else:
-            self.ground_truth = None
+        super(ModelPatchesInference, self).load(kwargs)
 
         if 'patch_overlaps' in kwargs:
             self.patch_overlaps = kwargs.get('patch_overlaps')
@@ -175,7 +208,11 @@ class ModelPatchesInference(ModelInference):
         if 'patch_dimensions' in kwargs:
             self.patch_dimensions = kwargs.get('patch_dimensions')
         else:
-            self.patch_dimensions = [-4,-3,-2]
+            # TODO: Set better defaults.
+            if self.channels_first:
+                self.patch_dimensions = [-3,-2,-1]
+            else:
+                self.patch_dimensions = [-4,-3,-2]
 
         # A little tricky to not refer to previous paramter as input_patch_dimensions
         if 'output_patch_dimensions' in kwargs:
@@ -208,15 +245,29 @@ class ModelPatchesInference(ModelInference):
 
         # If an image is being repatched, its output shape is not certain. We attempt to infer it from
         # the input data. This is wonky.
-        self.input_shape = (None,) + self.data_collection.data_groups[self.inputs[0]].get_shape()
+        self.input_shape = list((None,) + self.data_collection.data_groups[self.inputs[0]].get_shape())
+
+        if self.channels_first:
+            self.input_shape[self.channels_dim], self.input_shape[-1] = self.input_shape[self.channels_dim], self.input_shape[1]
+
+        if self.input_channels is not None:
+            self.input_shape[self.channels_dim] = len(self.input_channels)
+
+        print self.model.model.layers[-1].output_shape
         self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
+        print self.output_shape
+        print self.input_shape
         for i in xrange(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
+        print self.output_shape
 
         super(ModelPatchesInference, self).execute()
 
 
     def predict(self, input_data):
+
+        print self.output_shape
+        print input_data.shape
 
         repatched_image = np.zeros(self.output_shape)
 
@@ -279,8 +330,7 @@ class ModelPatchesInference(ModelInference):
             if rep_idx == 0:
                 output_data = np.copy(repatched_image)
             else:
-                # Running Average
-                output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data)
+                output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data) # Running Average
 
         if self.pad_borders:
 

@@ -528,6 +528,6 @@ class Downsample(Augmentation):
 
             data_group.augmentation_cases[augmentation_num+1] = resampled_data           
             data_group.augmentation_strings[augmentation_num+1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(self.factor) + '_' + str(axes).strip('[]').replace(' ', '')
-
+ 
 if __name__ == '__main__':
     pass
