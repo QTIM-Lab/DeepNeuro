@@ -209,10 +209,12 @@ class DataCollection(object):
 
         return
 
-    def add_channel(self, input_data=None, data_group_labels=None, channel=-1,):
+    def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
         
+        # TODO: Add functionality for inserting channel at specific index, multiple channels
+
         if isinstance(input_data, basestring):
-            input_data = read_image_files(input_data)
+            input_data = read_image_files([input_data])
 
         if data_group_labels is None:
             data_groups = self.data_groups.values()
@@ -224,7 +226,38 @@ class DataCollection(object):
             print input_data.shape
             print data_group.get_shape()
 
+            if data_group.base_case is None:
+                self.load_case_data(case)
 
+            data_group.base_case = np.concatenate((data_group.base_case, input_data), axis=channel_dim)
+
+            # Perhaps should not use tuples for output shape.
+            output_shape = list(data_group.output_shape)
+            output_shape[channel_dim] = output_shape[channel_dim] + 1
+            data_group.output_shape = tuple(output_shape)
+
+    def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
+
+        # TODO: Add functionality for removing multiple channels
+
+        if data_group_labels is None:
+            data_groups = self.data_groups.values()
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            print input_data.shape
+            print data_group.get_shape()
+
+            data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
+
+            # Perhaps should not use tuples for output shape.
+            output_shape = list(data_group.output_shape)
+            output_shape[channel_dim] -= 1
+            data_group.output_shape = tuple(output_shape)
+
+        return
 
     def clear_augmentations(self):
 
@@ -329,12 +362,39 @@ class DataCollection(object):
 
         return
 
-    def get_data(self, case, data_group_labels=None, batch_size=None):
+    def get_data_groups(self, data_group_labels=None):
 
         if data_group_labels is None:
             data_groups = self.data_groups.values()
         else:
             data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        return data_groups
+
+    def load_case_data(self, case, casename=None):
+
+        data_groups = self.get_data_groups()
+
+        if casename is None:
+            casename = case
+
+        for data_group in data_groups:
+
+            data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+            
+            if data_group.source == 'storage':
+                data_group.base_casename = data_group.data_casenames[case_name][0]
+            else:
+                data_group.base_casename = case
+
+            if len(self.augmentations) != 0:
+                data_group.augmentation_cases[0] = data_group.base_case
+
+        self.current_case = case
+
+    def get_data(self, case, data_group_labels=None, batch_size=None):
+
+        data_groups = self.get_data_groups(data_group_labels)
 
         if len(self.augmentations) != 0:
             for data_group in data_groups:
@@ -348,15 +408,7 @@ class DataCollection(object):
             print 'Working on image.. ', case
 
         if case != self.current_case:
-            for data_group in data_groups:
-
-                print data_group
-
-                data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
-                data_group.base_casename = case
-                if len(self.augmentations) != 0:
-                    data_group.augmentation_cases[0] = data_group.base_case
-            self.current_case = case
+            self.load_case_data(case)
 
         recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
@@ -382,10 +434,7 @@ class DataCollection(object):
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
 
-        if data_group_labels is None:
-            data_groups = self.data_groups.values()
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
+        data_groups = self.get_data_groups(data_group_labels)
 
         if len(self.augmentations) != 0:
             for data_group in data_groups:
@@ -408,19 +457,7 @@ class DataCollection(object):
                     print 'Working on image.. ', case_idx, 'at', case_name
 
                 try:
-                    for data_group in data_groups:
-
-                        data_group.base_case, data_group.base_affine = data_group.get_data(index=case_name, return_affine=True)
-                        
-                        # Temporary HDF5 code. Think about how make simpler.
-                        if data_group.source == 'directory':
-                            data_group.base_casename = case_name
-                        elif data_group.source == 'storage':
-                            data_group.base_casename = data_group.data_casenames[case_name][0]
-
-                        if len(self.augmentations) != 0:
-                            data_group.augmentation_cases[0] = data_group.base_case
-                    self.current_case = case_name
+                    self.load_case_data(case)
                 except KeyboardInterrupt:
                     raise
                 except:

@@ -28,6 +28,11 @@ class ModelInference(Output):
         else:
             self.ground_truth = None
 
+        if 'save_to_file' in kwargs:
+            self.save_to_file = kwargs.get('save_to_file')
+        else:
+            self.save_to_file = True
+
         if 'output_types' in kwargs:
             self.output_types = kwargs.get('output_types')
         else:
@@ -65,6 +70,8 @@ class ModelInference(Output):
             if not os.path.exists(self.output_directory):
                 os.makedirs(self.output_directory)
 
+        print 'CURRENT CASE: ', self.case
+
         if self.case is None:
 
             # At present, this only works for one input, one output patch networks.
@@ -80,7 +87,10 @@ class ModelInference(Output):
 
                 input_data = next(data_generator)
         else:
+            print 'LOADING IT!'
             self.process_case(self.data_collection.get_data(self.case))
+
+        print self.return_objects
 
         return self.return_objects
 
@@ -127,7 +137,6 @@ class ModelInference(Output):
         else:
             self.return_objects.append(output_data)
 
-
     def predict(self, input_data, model, batch_size):
 
         # Vanilla prediction case is obivously not fleshed out.
@@ -153,12 +162,14 @@ class ModelInference(Output):
                 return_filenames += [save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))]
 
             if 'binary_label' in self.output_types:
-                binary_data = self.threshold_binarize(threshold=self.binarize_probability, input_data=input_data[0,...])
-                return_filenames += [save_numpy_2_nifti(binarized_output_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))]
+                binary_data = self.threshold_binarize(threshold=self.binarize_probability, input_data=input_data)
+                return_filenames += [save_numpy_2_nifti(binary_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))]
 
         else:
             pass
             # Return to case for multiple outputs.
+
+        return_filenames = replace_suffix(output_filepath, input_suffix='', output_suffix='-label')
 
         return return_filenames
 
@@ -253,26 +264,20 @@ class ModelPatchesInference(ModelInference):
         if self.input_channels is not None:
             self.input_shape[self.channels_dim] = len(self.input_channels)
 
-        print self.model.model.layers[-1].output_shape
         self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
-        print self.output_shape
-        print self.input_shape
         for i in xrange(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
-        print self.output_shape
 
         super(ModelPatchesInference, self).execute()
+
+        return self.return_objects
 
 
     def predict(self, input_data):
 
-        print self.output_shape
-        print input_data.shape
-
         repatched_image = np.zeros(self.output_shape)
 
         repetition_offsets = [np.linspace(0, self.input_patch_shape[axis]-1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
-        print repetition_offsets
 
         if self.pad_borders:
             # I use this three-line loop construciton a lot. Is there a more sensible way?
@@ -284,10 +289,8 @@ class ModelPatchesInference(ModelInference):
             for idx, dim in enumerate(self.output_patch_dimensions):
                 output_pad_dimensions[dim] = (int(self.input_patch_shape[dim]/2), int(self.input_patch_shape[dim]/2))
 
-            # Unnessecary doubling of data in memory here. Could be quite bad for 4D images. But has advantages over
-            # padding each patch individually, so..
-            input_data = np.pad(input_data, input_pad_dimensions, mode='constant')
-            repatched_image = np.pad(repatched_image, output_pad_dimensions, mode='constant')
+            input_data = self.pad_data(input_data, input_pad_dimensions)
+            repatched_image = self.pad_data(repatched_image, output_pad_dimensions)
 
         corner_data_dims = [input_data.shape[axis] for axis in self.patch_dimensions]
         corner_patch_dims = [self.output_patch_shape[axis] for axis in self.patch_dimensions]
@@ -342,6 +345,18 @@ class ModelPatchesInference(ModelInference):
 
         return output_data
 
+    def pad_data(self, data, pad_dimensions):
+
+        # Maybe more effecient than np.pad? Created for testing a different purpose.
+
+        for idx, width in enumerate(pad_dimensions):
+            pad_block_1, pad_block_2 = list(data.shape), list(data.shape)
+            pad_block_1[idx] = width[0]
+            pad_block_2[idx] = width[1]
+            data = np.concatenate((np.zeros(pad_block_1), data, np.zeros(pad_block_2)), axis=idx)
+
+        return data
+
     def remove_empty_patches(self, input_data, corners_list):
 
         corner_selections = []
@@ -354,7 +369,6 @@ class ModelPatchesInference(ModelInference):
             corner_selections += [np.any(input_data[output_slice])]
 
         return corners_list[corner_selections]
-
 
     def grab_patch(self, input_data, corner_list):
 

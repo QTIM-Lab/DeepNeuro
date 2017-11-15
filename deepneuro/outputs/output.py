@@ -1,6 +1,5 @@
 class Output(object):
 
-
     def __init__(self, data_collection=None, inputs=['input_modalities'], output_directory=None, output_filename='prediction.nii.gz', batch_size=32, verbose=True, replace_existing=True, case=None, save_to_file=True, **kwargs):
 
         self.data_collection = data_collection

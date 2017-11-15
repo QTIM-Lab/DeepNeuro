@@ -12,6 +12,8 @@ def read_image_files(image_files, return_affine=False):
 
     # Rename this function to something more descriptive?
 
+    print image_files
+
     image_list = []
     affine = None
     for image_file in image_files:

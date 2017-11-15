@@ -24,7 +24,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     # Step 1, Load Data
     #--------------------------------------------------------------------#
 
-    input_data = {'input_modalities': [T2, T1, T1POST, FLAIR]}
+    input_data = {'input_modalities': [FLAIR, T2, T1, T1POST]}
 
     if ground_truth is not None:
         input_data['ground_truth'] = [ground_truth]
@@ -58,36 +58,52 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
     wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, 'wholetumor_segmentation.nii.gz'),
-                        'batch_size': 200,
+                        'batch_size': 50,
                         'patch_overlaps': 1,
                         'channels_first': True,
                         'patch_dimensions': [-3,-2,-1],
-                        'input_channels': [3, 2]}
+                        'input_channels': [0, 3]}
 
-    # enhacning_prediction_parameters = {'inputs': ['input_modalities'], 
-    #                     'output_filename': os.path.join(output_folder, 'enhancing_segmentation.nii.gz'),
-                        # 'batch_size': 50,
-    #                     'patch_overlaps': 8}
+    enhancing_prediction_parameters = {'inputs': ['input_modalities'], 
+                        'output_filename': os.path.join(output_folder, 'enhancing_segmentation.nii.gz'),
+                        'batch_size': 50,
+                        'patch_overlaps': 1,
+                        'channels_first': True,
+                        'patch_dimensions': [-3,-2,-1]}
 
     wholetumor_model = load_old_model('/mnt/jk489/sharedfolder/segmentation/qtim_ChallengePipeline/model_files/wholetumor_FLAIRT1post.h5')
+    enhancing_model = load_old_model('enhancingtumor_BRATS_submission.h5')
     # wholetumor_model = load_old_model(load('Segment_GBM_wholetumor'))
     # enhancing_model = load_old_model(load('Segment_GBM_enhancing'))
+
+    wholetumor_prediction = ModelPatchesInference(data_collection, **wholetumor_prediction_parameters)
+    wholetumor_model.append_output([wholetumor_prediction])
+
+    enhancing_prediction = ModelPatchesInference(data_collection, **enhancing_prediction_parameters)
+    enhancing_model.append_output([enhancing_prediction])
 
     for case in data_collection.cases:
 
         print case
 
-        prediction = ModelPatchesInference(data_collection, case=case, **wholetumor_prediction_parameters)
-        wholetumor_model.append_output([prediction])
-        wholetumor_file = wholetumor_model.generate_outputs()[0]
+        wholetumor_prediction.case = case
+        wholetumor_file = wholetumor_model.generate_outputs()[0][0]
 
-        # data_collection.add_channel(wholetumor_file, data_group_labels=['input_modalities'])
+        print '\n'
 
+        data_collection.add_channel(case, wholetumor_file)
+
+        print '\n'
+
+        enhancing_prediction.case = case
+        enhancing_file = enhancing_model.generate_outputs()[0]
+
+        print '\nNext Case\n'
 
 if __name__ == '__main__':
 
-    input_directory = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_3'
+    input_directory = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_2'
     T2, T1, T1POST, FLAIR = '*T2_pp.*', '*T1_pp.*', '*T1post_pp.*', 'FLAIR_pp.*'
-    output_folder = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_3'
+    output_folder = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_2'
 
     predict_GBM(output_folder, T2, T1, T1POST, FLAIR, input_directory=input_directory)
