@@ -12,13 +12,14 @@ from deepneuro.models.model import load_old_model
 
 from deepneuro.load.load import load
 from deepneuro.data.data_collection import DataCollection
-# from deepneuro.preprocess.bias_correction import BiasCorrection
+from deepneuro.preprocessing.signal import N4BiasCorrection
+from deepneuro.preprocessing.transform import Resample, Coregister
 
 # Temporary
 from keras.utils import plot_model
 import glob
 
-def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, dicoms=True, bias=True, registered=False, skullstripped=False, normalized=False, save_steps=False):
+def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, dicoms=True, bias=True, resampled=False, registered=False, skullstripped=False, normalized=False, save_steps=False):
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -45,12 +46,18 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     # Step 2, Preprocess Data
     #--------------------------------------------------------------------#
 
-    # preprocessing_steps = []
+    preprocessing_steps = []
 
-    # if bias:
-    #     preprocessing_steps += [BiasCorrection(data_groups=['input_modalities'])]
+    if bias:
+        preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'])]
 
-    # data_collection.append_preprocessor(preprocessing_steps)
+    if not resampled:
+        preprocessing_steps += [Resample(data_groups=['input_modalities'])]
+
+    if not registered:
+        preprocessing_steps += [Coregister(data_groups=['input_modalities'], reference_channel = 1)]
+
+    data_collection.append_preprocessor(preprocessing_steps)
 
     #--------------------------------------------------------------------#
     # Step 3, Segmentation
@@ -103,7 +110,9 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 if __name__ == '__main__':
 
     input_directory = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_2'
-    T2, T1, T1POST, FLAIR = '*T2_pp.*', '*T1_pp.*', '*T1post_pp.*', 'FLAIR_pp.*'
-    output_folder = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_2'
+    T2, T1, T1POST, FLAIR = '*T2_raw.*', '*T1_raw.*', '*T1post_raw.*', 'FLAIR_raw.*'
 
-    predict_GBM(output_folder, T2, T1, T1POST, FLAIR, input_directory=input_directory)
+    output_folder = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_3/Brats17_CBICA_AQO_1'
+    T2, T1, T1POST, FLAIR = [os.path.join(output_folder, file) for file in ['T2_raw.nii.gz', 'T1_raw.nii.gz', 'T1post_raw.nii.gz', 'FLAIR_raw.nii.gz']]
+
+    predict_GBM(output_folder, T2, T1, T1POST, FLAIR)

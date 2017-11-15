@@ -49,11 +49,10 @@ class DataCollection(object):
                 self.data_groups[modality_group] = DataGroup(modality_group)
                 self.data_groups[modality_group].source = 'directory'
 
-
         # Search for modality files, and skip those missing with files modalities.
         for data_group, modality_group_files in case_dict.iteritems():
 
-            self.data_groups[data_group].add_case(case_name, tuple(modality_group_files))
+            self.data_groups[data_group].add_case(case_name, list(modality_group_files))
         
         self.cases.append(case_name)
         self.total_cases = len(self.cases)
@@ -114,7 +113,7 @@ class DataCollection(object):
                             break
 
                     if len(modality_group_files) == len(modality_labels):
-                        self.data_groups[data_group].add_case(os.path.abspath(subject_dir), tuple(modality_group_files))
+                        self.data_groups[data_group].add_case(os.path.abspath(subject_dir), list(modality_group_files))
 
                 self.cases.append(os.path.abspath(subject_dir))
 
@@ -179,6 +178,8 @@ class DataCollection(object):
             for data_group_label in augmentation.data_groups.keys():
                 if augmentation.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
+                    self.data_group.augmentation_cases.append([None]) 
+                    self.data_group.augmentation_strings.append([''])
 
         # The total iterations variable allows for "total" augmentations later on.
         # For example, "augment until 5000 images is reached"
@@ -189,14 +190,15 @@ class DataCollection(object):
 
         return
 
-    def append_preprocessor(self, preprocessor):
+    def append_preprocessor(self, preprocessors):
 
-        if type(augmentations) is not list:
+        if type(preprocessors) is not list:
             preprocessors = [preprocessors]
 
         for preprocessor in preprocessors:
             for data_group_label in preprocessor.data_groups:
                 preprocessor.append_data_group(self.data_groups[data_group_label])
+            self.preprocessors.append(preprocessor)
 
         # This is so bad.
         for preprocessor in preprocessors:
@@ -204,8 +206,6 @@ class DataCollection(object):
             for data_group_label in preprocessor.data_groups:
                 if preprocessor.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
-
-        self.preprocessors.append(preprocessors)
 
         return
 
@@ -258,6 +258,162 @@ class DataCollection(object):
             data_group.output_shape = tuple(output_shape)
 
         return
+
+    def load_case_data(self, case, casename=None):
+
+        data_groups = self.get_data_groups()
+
+        if casename is None:
+            casename = case
+
+        self.preprocess(case)
+
+        for data_group in data_groups:
+
+            data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+
+            if data_group.source == 'storage':
+                data_group.base_casename = data_group.data_casenames[case_name][0]
+            else:
+                data_group.base_casename = case
+
+            if len(self.augmentations) != 0:
+                data_group.augmentation_cases[0] = data_group.base_case
+
+        self.current_case = case
+
+    def preprocess(self, case):
+
+        data_groups = self.get_data_groups()
+
+        for data_group in data_groups:
+            data_group.preprocessed_case = data_group.data[case]
+
+        for preprocessor in self.preprocessors:
+            print preprocessor
+            preprocessor.execute(case)
+
+    def get_data(self, case, data_group_labels=None, batch_size=None):
+
+        data_groups = self.get_data_groups(data_group_labels)
+
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
+
+        if self.verbose:
+            print 'Working on image.. ', case
+
+        if case != self.current_case:
+            self.load_case_data(case)
+
+        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
+
+        if batch_size is None:
+            batch_size = self.multiplier
+
+        for i in xrange(batch_size):
+            generate_data = next(recursive_augmentation_generator)
+
+            # TODO: Do this without if-statement and for loop?
+            for data_idx, data_group in enumerate(data_groups):
+                if len(self.augmentations) == 0:
+                    # Return; currently broken.
+                    data_batch[data_idx].append(data_group.base_case)
+                else:
+                    data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
+                    
+        return tuple([np.stack(data_list) for data_list in data_batch])
+
+    # @profile
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
+
+        data_groups = self.get_data_groups(data_group_labels)
+
+        if case_list is None:
+            case_list = self.cases
+
+        # Kind of a funny way to do batches
+        data_batch = [[] for data_group in data_groups]
+
+        while True:
+
+            np.random.shuffle(case_list)
+
+            for case_idx, case_name in enumerate(case_list):
+
+                if self.verbose and verbose:
+                    print 'Working on image.. ', case_idx, 'at', case_name
+
+                try:
+                    self.load_case_data(case)
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    print 'Hit error on', case_name, 'skipping.'
+                    yield False
+                    continue
+
+                recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+
+                for i in xrange(self.multiplier):
+                    generate_data = next(recursive_augmentation_generator)
+
+                    if yield_data:
+                        # TODO: Do this without if-statement and for loop?
+                        for data_idx, data_group in enumerate(data_groups):
+                            if len(self.augmentations) == 0:
+                                data_batch[data_idx].append(data_group.base_case[0])
+                            else:
+                                data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
+                        if len(data_batch[0]) == batch_size:
+                            # More strange indexing behavior. Shape inconsistency to be resolved.
+                            yield tuple([np.stack(data_list) for data_list in data_batch])
+                            data_batch = [[] for data_group in data_groups]
+                    else:
+                        yield True
+
+            if not perpetual:
+                yield None
+                break
+
+    # @profile
+    def recursive_augmentation(self, data_groups, augmentation_num=0):
+
+        if augmentation_num == len(self.augmentations):
+
+            yield True
+        
+        else:
+
+            # print 'BEGIN RECURSION FOR AUGMENTATION NUM', augmentation_num
+
+            current_augmentation = self.augmentations[augmentation_num]
+
+            for subaugmentation in current_augmentation['augmentation']:
+                subaugmentation.reset(augmentation_num=augmentation_num)
+
+            for iteration in xrange(current_augmentation['iterations']):
+
+                for subaugmentation in current_augmentation['augmentation']:
+
+                    subaugmentation.augment(augmentation_num=augmentation_num)
+                    subaugmentation.iterate()
+
+                lower_recursive_generator = self.recursive_augmentation(data_groups, augmentation_num + 1)
+
+                # Why did I do this
+                sub_augmentation_iterations = self.multiplier
+                for i in xrange(augmentation_num+1):
+                    sub_augmentation_iterations /= self.augmentations[i]['iterations']
+
+                for i in xrange(int(sub_augmentation_iterations)):
+                    yield next(lower_recursive_generator)
+
+            # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
+
 
     def clear_augmentations(self):
 
@@ -371,158 +527,6 @@ class DataCollection(object):
 
         return data_groups
 
-    def load_case_data(self, case, casename=None):
-
-        data_groups = self.get_data_groups()
-
-        if casename is None:
-            casename = case
-
-        for data_group in data_groups:
-
-            data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
-            
-            if data_group.source == 'storage':
-                data_group.base_casename = data_group.data_casenames[case_name][0]
-            else:
-                data_group.base_casename = case
-
-            if len(self.augmentations) != 0:
-                data_group.augmentation_cases[0] = data_group.base_case
-
-        self.current_case = case
-
-    def get_data(self, case, data_group_labels=None, batch_size=None):
-
-        data_groups = self.get_data_groups(data_group_labels)
-
-        if len(self.augmentations) != 0:
-            for data_group in data_groups:
-                data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
-                data_group.augmentation_strings = [''] * (1 + len(self.augmentations))
-
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
-
-        if self.verbose:
-            print 'Working on image.. ', case
-
-        if case != self.current_case:
-            self.load_case_data(case)
-
-        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
-
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
-
-        if batch_size is None:
-            batch_size = self.multiplier
-
-        for i in xrange(batch_size):
-            generate_data = next(recursive_augmentation_generator)
-
-            # TODO: Do this without if-statement and for loop?
-            for data_idx, data_group in enumerate(data_groups):
-                if len(self.augmentations) == 0:
-                    # Return; currently broken.
-                    data_batch[data_idx].append(data_group.base_case)
-                else:
-                    data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-                    
-        return tuple([np.stack(data_list) for data_list in data_batch])
-
-    # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
-
-        data_groups = self.get_data_groups(data_group_labels)
-
-        if len(self.augmentations) != 0:
-            for data_group in data_groups:
-                data_group.augmentation_cases = [None] * (1 + len(self.augmentations))
-                data_group.augmentation_strings = [''] * (1 + len(self.augmentations))
-
-        if case_list is None:
-            case_list = self.cases
-
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
-
-        while True:
-
-            np.random.shuffle(case_list)
-
-            for case_idx, case_name in enumerate(case_list):
-
-                if self.verbose and verbose:
-                    print 'Working on image.. ', case_idx, 'at', case_name
-
-                try:
-                    self.load_case_data(case)
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    print 'Hit error on', case_name, 'skipping.'
-                    yield False
-                    continue
-
-                recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
-
-                for i in xrange(self.multiplier):
-                    generate_data = next(recursive_augmentation_generator)
-
-                    if yield_data:
-                        # TODO: Do this without if-statement and for loop?
-                        for data_idx, data_group in enumerate(data_groups):
-                            if len(self.augmentations) == 0:
-                                data_batch[data_idx].append(data_group.base_case[0])
-                            else:
-                                data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-                        if len(data_batch[0]) == batch_size:
-                            # More strange indexing behavior. Shape inconsistency to be resolved.
-                            yield tuple([np.stack(data_list) for data_list in data_batch])
-                            data_batch = [[] for data_group in data_groups]
-                    else:
-                        yield True
-
-            if not perpetual:
-                yield None
-                break
-
-    # @profile
-    def recursive_augmentation(self, data_groups, augmentation_num=0):
-
-        if augmentation_num == len(self.augmentations):
-
-            yield True
-        
-        else:
-
-            # print 'BEGIN RECURSION FOR AUGMENTATION NUM', augmentation_num
-
-            current_augmentation = self.augmentations[augmentation_num]
-
-            for subaugmentation in current_augmentation['augmentation']:
-                subaugmentation.reset(augmentation_num=augmentation_num)
-
-            for iteration in xrange(current_augmentation['iterations']):
-
-                for subaugmentation in current_augmentation['augmentation']:
-
-                    subaugmentation.augment(augmentation_num=augmentation_num)
-                    subaugmentation.iterate()
-
-                lower_recursive_generator = self.recursive_augmentation(data_groups, augmentation_num + 1)
-
-                # Why did I do this
-                sub_augmentation_iterations = self.multiplier
-                for i in xrange(augmentation_num+1):
-                    sub_augmentation_iterations /= self.augmentations[i]['iterations']
-
-                for i in xrange(int(sub_augmentation_iterations)):
-                    yield next(lower_recursive_generator)
-
-            # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
-
 
 class DataGroup(object):
 
@@ -541,12 +545,13 @@ class DataGroup(object):
         self.data_affines = None
 
         # TODO: More distinctive naming for "base" and "current" cases.
+        self.preprocessed_case = None
         self.base_case = None
         self.base_casename = None
         self.base_affine = None
 
-        self.augmentation_cases = []
-        self.augmentation_strings = []
+        self.augmentation_cases = [None]
+        self.augmentation_strings = ['']
         self.preprocessing_data = []
 
         self.data_storage = None
@@ -590,7 +595,7 @@ class DataGroup(object):
     def get_data(self, index, return_affine):
 
         if self.source == 'directory':
-            return read_image_files(self.data[index], return_affine)
+            return read_image_files(self.preprocessed_case, return_affine)
         elif self.source == 'storage':
             if return_affine:
                 return self.data[index][:][np.newaxis], self.data_affines[index]
