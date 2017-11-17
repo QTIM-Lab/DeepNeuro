@@ -2,9 +2,9 @@
 import os
 
 from deepneuro.outputs.output import Output
+from deepneuro.utilities.util import add_parameter, replace_suffix
 
 from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
-from qtim_tools.qtim_utilities.file_util import replace_suffix, nifti_splitext
 
 import numpy as np
 
@@ -23,25 +23,12 @@ class ModelInference(Output):
 
         """
 
-        if 'ground_truth' in kwargs:
-            self.ground_truth = kwargs.get('ground_truth')
-        else:
-            self.ground_truth = None
 
-        if 'save_to_file' in kwargs:
-            self.save_to_file = kwargs.get('save_to_file')
-        else:
-            self.save_to_file = True
+        add_parameter(self, kwargs, 'ground_truth', None)
 
-        if 'output_types' in kwargs:
-            self.output_types = kwargs.get('output_types')
-        else:
-            self.output_types = ['probability', 'binary_label']
-
-        if 'binarize_probability' in kwargs:
-            self.binarize_probability = kwargs.get('binarize_probability')
-        else:
-            self.binarize_probability = .5
+        add_parameter(self, kwargs, 'save_to_file', True)
+        add_parameter(self, kwargs, 'output_types', ['probability', 'binary_label'])
+        add_parameter(self, kwargs, 'binarize_probability', .5)
 
         if 'channels_first' in kwargs:
             self.channels_first = kwargs.get('channels_first')
@@ -87,7 +74,6 @@ class ModelInference(Output):
 
                 input_data = next(data_generator)
         else:
-            print 'LOADING IT!'
             self.process_case(self.data_collection.get_data(self.case))
 
         print self.return_objects
@@ -131,6 +117,20 @@ class ModelInference(Output):
         # Will fail for time-data.
         if self.channels_first:
             output_data = np.swapaxes(output_data, 1, -1)
+
+        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
+        # the input data. This is wonky.
+        self.input_shape = list((None,) + self.data_collection.data_groups[self.inputs[0]].get_shape())
+
+        if self.channels_first:
+            self.input_shape[self.channels_dim], self.input_shape[-1] = self.input_shape[self.channels_dim], self.input_shape[1]
+
+        if self.input_channels is not None:
+            self.input_shape[self.channels_dim] = len(self.input_channels)
+
+        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
+        for i in xrange(len(self.patch_dimensions)):
+            self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
 
         if self.save_to_file:
             self.return_objects.append(self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0]))
@@ -253,20 +253,6 @@ class ModelPatchesInference(ModelInference):
         self.input_patch_shape = self.model.model.layers[0].input_shape
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model.layers[-1].output_shape
-
-        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
-        # the input data. This is wonky.
-        self.input_shape = list((None,) + self.data_collection.data_groups[self.inputs[0]].get_shape())
-
-        if self.channels_first:
-            self.input_shape[self.channels_dim], self.input_shape[-1] = self.input_shape[self.channels_dim], self.input_shape[1]
-
-        if self.input_channels is not None:
-            self.input_shape[self.channels_dim] = len(self.input_channels)
-
-        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
-        for i in xrange(len(self.patch_dimensions)):
-            self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
 
         super(ModelPatchesInference, self).execute()
 

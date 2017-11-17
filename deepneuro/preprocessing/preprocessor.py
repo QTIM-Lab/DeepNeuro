@@ -41,7 +41,10 @@ class Preprocessor(object):
         if not self.initialization:
             self.initialization = True
 
-    def reset(self, augmentation_num):
+    def reset(self):
+
+        self.outputs = defaultdict(list)
+
         return
 
     def append_data_group(self, data_group):

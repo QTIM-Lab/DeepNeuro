@@ -4,9 +4,9 @@ import os
 import glob
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
+from deepneuro.utilities.util import add_parameter, replace_suffix
 
 from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
-from qtim_tools.qtim_utilities.file_util import replace_suffix, nifti_splitext
 
 class Resample(Preprocessor):
 
@@ -23,25 +23,11 @@ class Resample(Preprocessor):
 
         """
 
-        if 'command' in kwargs:
-            self.command = kwargs.get('command')
-        else:
-            self.command = ['Slicer', '--launch']
+        add_parameter(self, kwargs, 'command', ['Slicer', '--launch'])
 
-        if 'dimensions' in kwargs:
-            self.dimensions = kwargs.get('dimensions')
-        else:
-            self.dimensions = [1,1,1]
-
-        if 'interpolation' in kwargs:
-            self.interpolation = kwargs.get('interpolation')
-        else:
-            self.interpolation = 'linear'
-
-        if 'reference_file' in kwargs:
-            self.reference_file = kwargs.get('reference_file')
-        else:
-            self.reference_file = None
+        add_parameter(self, kwargs, 'dimensions', [1,1,1])
+        add_parameter(self, kwargs, 'interpolation', 'linear')
+        add_parameter(self, kwargs, 'reference_file', None)
 
         self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
 
@@ -49,8 +35,6 @@ class Resample(Preprocessor):
 
 
     def execute(self, case):
-
-        print 'ABOUT TO RESAMPLE'
 
         for label, data_group in self.data_groups.iteritems():
 
@@ -63,8 +47,12 @@ class Resample(Preprocessor):
                 else:
                     specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], file, output_filename]
                 
-                # subprocess.call(' '.join(specific_command), shell=True)
+                subprocess.call(' '.join(specific_command), shell=True)
 
+                print 'save_output', self.save_output
+                print data_group.preprocessed_case[index]
+                print data_group.data[case][index]
+                print data_group.preprocessed_case[index] != data_group.data[case][index]
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
 
@@ -87,25 +75,12 @@ class Coregister(Preprocessor):
 
         """
 
-        if 'command' in kwargs:
-            self.command = kwargs.get('command')
-        else:
-            self.command = ['Slicer', '--launch', 'BRAINSFit']
 
-        if 'transform_type' in kwargs:
-            self.transform_type = kwargs.get('transform_type')
-        else:
-            self.transform_type = 'Rigid,ScaleVersor3D,ScaleSkewVersor3D,Affine'
+        add_parameter(self, kwargs, 'command', ['Slicer', '--launch', 'BRAINSFit'])
 
-        if 'transform_initialization' in kwargs:
-            self.transform_initialization = kwargs.get('transform_initialization')
-        else:
-            self.transform_initialization = 'useMomentsAlign'
-
-        if 'interpolation' in kwargs:
-            self.interpolation = kwargs.get('interpolation')
-        else:
-            self.interpolation = 'Linear'
+        add_parameter(self, kwargs, 'transform_type', 'Rigid,ScaleVersor3D,ScaleSkewVersor3D,Affine')
+        add_parameter(self, kwargs, 'transform_initialization', 'useMomentsAlign')
+        add_parameter(self, kwargs, 'interpolation', 'Linear')
 
         if 'reference_channel' in kwargs:
             self.reference_channel = kwargs.get('reference_channel')

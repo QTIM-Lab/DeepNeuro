@@ -12,8 +12,10 @@ from deepneuro.models.model import load_old_model
 
 from deepneuro.load.load import load
 from deepneuro.data.data_collection import DataCollection
-from deepneuro.preprocessing.signal import N4BiasCorrection
+
+from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
+from deepneuro.preprocessing.skullstrip import SkullStrip
 
 # Temporary
 from keras.utils import plot_model
@@ -46,16 +48,24 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     # Step 2, Preprocess Data
     #--------------------------------------------------------------------#
 
+    print 'ABOUT TO PREPROCESS....'
+
     preprocessing_steps = []
 
     if bias:
-        preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'])]
+        preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=True)]
 
     if not resampled:
-        preprocessing_steps += [Resample(data_groups=['input_modalities'])]
+        preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=True)]
 
     if not registered:
-        preprocessing_steps += [Coregister(data_groups=['input_modalities'], reference_channel = 1)]
+        preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=True, reference_channel = 1)]
+
+    if not skullstripped:
+        preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_steps, reference_channel = 1)]
+
+    if not normalized:
+        preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_steps, mask=preprocessing_steps[-1].outputs['masks'])]
 
     data_collection.append_preprocessor(preprocessing_steps)
 
@@ -113,6 +123,9 @@ if __name__ == '__main__':
     T2, T1, T1POST, FLAIR = '*T2_raw.*', '*T1_raw.*', '*T1post_raw.*', 'FLAIR_raw.*'
 
     output_folder = '/mnt/jk489/sharedfolder/BRATS2017/Test_Case_3/Brats17_CBICA_AQO_1'
-    T2, T1, T1POST, FLAIR = [os.path.join(output_folder, file) for file in ['T2_raw.nii.gz', 'T1_raw.nii.gz', 'T1post_raw.nii.gz', 'FLAIR_raw.nii.gz']]
+    output_folder = '/mnt/jk489/sharedfolder/Duke/Patients/20090501'
+    # T2, T1, T1POST, FLAIR = [os.path.join(output_folder, file) for file in ['T2_raw.nii.gz', 'T1_raw.nii.gz', 'T1post_raw.nii.gz', 'FLAIR_raw.nii.gz']]
+    # T2, T1, T1POST, FLAIR = [os.path.join(output_folder, file) for file in ['T2_pp.nii.gz', 'T1_pp.nii.gz', 'T1post_pp.nii.gz', 'FLAIR_pp.nii.gz']]
+    T2, T1, T1POST, FLAIR = [os.path.join(output_folder, file) for file in ['T2', 'T1', 'T1post', 'FLAIR']]
 
-    predict_GBM(output_folder, T2, T1, T1POST, FLAIR)
+    predict_GBM(output_folder, T2, T1, T1POST, FLAIR, input_directory=None)

@@ -5,6 +5,7 @@ import glob
 import numpy as np
 import tables
 import nibabel as nib
+import copy
 
 from qtim_tools.qtim_utilities.format_util import convert_input_2_numpy
 from qtim_tools.qtim_utilities.nifti_util import check_image_2d
@@ -287,10 +288,11 @@ class DataCollection(object):
         data_groups = self.get_data_groups()
 
         for data_group in data_groups:
-            data_group.preprocessed_case = data_group.data[case]
+            data_group.preprocessed_case = copy.copy(data_group.data[case])
 
         for preprocessor in self.preprocessors:
             print preprocessor
+            preprocessor.reset()
             preprocessor.execute(case)
 
     def get_data(self, case, data_group_labels=None, batch_size=None):
