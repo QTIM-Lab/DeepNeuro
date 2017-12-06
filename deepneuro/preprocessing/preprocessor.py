@@ -1,4 +1,12 @@
+import os
+import numpy as np
+
 from collections import defaultdict
+
+from deepneuro.utilities.util import add_parameter, replace_suffix
+from deepneuro.utilities.conversion import read_image_files
+
+from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
 
 class Preprocessor(object):
 
@@ -10,7 +18,7 @@ class Preprocessor(object):
 
         self.data_groups = {data_group: None for data_group in data_groups}
 
-        self.preproccesor_string = ''
+        self.preprocessor_string = '_convert'
 
         self.save_output = save_output
         self.channel_dim = channel_dim
@@ -33,8 +41,17 @@ class Preprocessor(object):
 
         for label, data_group in self.data_groups.iteritems():
 
-            data_group.augmentation_cases[augmentation_num+1] = data_group.augmentation_cases[augmentation_num]
+            for index, file in enumerate(data_group.preprocessed_case):
 
+                output_filename = replace_suffix(file, '', self.preprocessor_string)
+
+                array, affine = read_image_files([file], return_affine=True)
+                save_numpy_2_nifti(np.squeeze(array), affine, output_filename)
+
+                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
+                    os.remove(data_group.preprocessed_case[index])
+
+                data_group.preprocessed_case[index] = output_filename
 
     def initialize(self):
 

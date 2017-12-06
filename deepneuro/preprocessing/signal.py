@@ -37,9 +37,8 @@ class N4BiasCorrection(Preprocessor):
 
                 output_filename = replace_suffix(file, '', self.preprocessor_string)
                 specific_command = self.command + ['-i', file, '-o', output_filename]
-                subprocess.call(' '.join(specific_command), shell=True)
-
-                print data_group.preprocessed_case[index] != data_group.data[case][index]
+                # subprocess.call(' '.join(specific_command), shell=True)
+                
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
 
@@ -77,10 +76,8 @@ class ZeroMeanNormalization(Preprocessor):
 
                 normalize_numpy = read_image_files([file])
 
-                print self.mask
-
                 if self.mask is not None:
-                    mask_numpy = read_image_files(self.mask)
+                    mask_numpy = read_image_files(self.mask.outputs['masks'])
                     vol_mean = np.mean(normalize_numpy[mask_numpy > 0])
                     vol_std = np.std(normalize_numpy[mask_numpy > 0])
                     normalize_numpy = (normalize_numpy - vol_mean) / vol_std

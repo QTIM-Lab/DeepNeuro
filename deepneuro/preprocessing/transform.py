@@ -8,6 +8,8 @@ from deepneuro.utilities.util import add_parameter, replace_suffix
 
 from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
 
+FNULL = open(os.devnull, 'w')
+
 class Resample(Preprocessor):
 
     def load(self, kwargs):
@@ -33,6 +35,8 @@ class Resample(Preprocessor):
 
         self.preprocessor_string = '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', '')
 
+        self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
+
 
     def execute(self, case):
 
@@ -43,16 +47,14 @@ class Resample(Preprocessor):
                 output_filename = replace_suffix(file, '', self.preprocessor_string)
 
                 if self.reference_file is None:
-                    specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, file, output_filename]
+                    specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, file, output_filename]
                 else:
                     specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], file, output_filename]
                 
-                subprocess.call(' '.join(specific_command), shell=True)
+                # subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
-                print 'save_output', self.save_output
-                print data_group.preprocessed_case[index]
-                print data_group.data[case][index]
-                print data_group.preprocessed_case[index] != data_group.data[case][index]
+                print specific_command
+
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
 
@@ -81,24 +83,12 @@ class Coregister(Preprocessor):
         add_parameter(self, kwargs, 'transform_type', 'Rigid,ScaleVersor3D,ScaleSkewVersor3D,Affine')
         add_parameter(self, kwargs, 'transform_initialization', 'useMomentsAlign')
         add_parameter(self, kwargs, 'interpolation', 'Linear')
+        add_parameter(self, kwargs, 'sampling_percentage', .06)
 
-        if 'reference_channel' in kwargs:
-            self.reference_channel = kwargs.get('reference_channel')
-        else:
-            self.reference_channel = None
-
-        if 'reference_file' in kwargs:
-            self.reference_file = kwargs.get('reference_file')
-        else:
-            self.reference_file = None
-
-        if 'sampling_percentage' in kwargs:
-            self.sampling_percentage = kwargs.get('sampling_percentage')
-        else:
-            self.sampling_percentage = .06
+        add_parameter(self, kwargs, 'reference_channel', None)
+        add_parameter(self, kwargs, 'reference_file', None)
 
         self.interpolation_dict = {'nearestNeighbor': 'nn'}
-
         self.preprocessor_string = '_Registered'
 
 
@@ -121,7 +111,7 @@ class Coregister(Preprocessor):
                 else:
                     specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
 
-                subprocess.call(' '.join(specific_command), shell=True)
+                # subprocess.call(' '.join(specific_command), shell=True)
 
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])

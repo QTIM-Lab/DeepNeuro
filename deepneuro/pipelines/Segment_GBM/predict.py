@@ -1,8 +1,5 @@
 import os
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
-
 from deepneuro.data.data_collection import DataCollection
 from deepneuro.augmentation.augment import Flip_Rotate_2D, ExtractPatches
 from deepneuro.models.unet import UNet
@@ -13,15 +10,12 @@ from deepneuro.models.model import load_old_model
 from deepneuro.load.load import load
 from deepneuro.data.data_collection import DataCollection
 
+from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
 from deepneuro.preprocessing.skullstrip import SkullStrip
 
-# Temporary
-from keras.utils import plot_model
-import glob
-
-def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, dicoms=True, bias=True, resampled=False, registered=False, skullstripped=False, normalized=False, save_steps=False):
+def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=False, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=True, save_all_steps=True):
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -48,26 +42,31 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     # Step 2, Preprocess Data
     #--------------------------------------------------------------------#
 
-    print 'ABOUT TO PREPROCESS....'
+    save_all_steps = True
+    save_preprocess = True
 
-    preprocessing_steps = []
+    if not preprocessed:
+        print 'ABOUT TO PREPROCESS....'
 
-    if bias:
-        preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=True)]
+        # Random hack to save DICOMs to niftis for further processing.
+        preprocessing_steps = [Preprocessor(data_groups=['input_modalities'], save_output=save_all_steps)]
 
-    if not resampled:
-        preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=True)]
+        if not bias_corrected:
+            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps)]
 
-    if not registered:
-        preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=True, reference_channel = 1)]
+        if not resampled:
+            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps)]
 
-    if not skullstripped:
-        preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_steps, reference_channel = 1)]
+        if not registered:
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, reference_channel = 1)]
 
-    if not normalized:
-        preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_steps, mask=preprocessing_steps[-1].outputs['masks'])]
+        if not skullstripped:
+            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, reference_channel = 1)]
 
-    data_collection.append_preprocessor(preprocessing_steps)
+        if not normalized:
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_preprocess, mask=preprocessing_steps[-1])]
+
+        data_collection.append_preprocessor(preprocessing_steps)
 
     #--------------------------------------------------------------------#
     # Step 3, Segmentation
@@ -75,21 +74,21 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
     wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, 'wholetumor_segmentation.nii.gz'),
-                        'batch_size': 50,
-                        'patch_overlaps': 1,
+                        'batch_size': 75,
+                        'patch_overlaps': 8,
                         'channels_first': True,
                         'patch_dimensions': [-3,-2,-1],
                         'input_channels': [0, 3]}
 
     enhancing_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, 'enhancing_segmentation.nii.gz'),
-                        'batch_size': 50,
-                        'patch_overlaps': 1,
+                        'batch_size': 75,
+                        'patch_overlaps': 8,
                         'channels_first': True,
                         'patch_dimensions': [-3,-2,-1]}
 
     wholetumor_model = load_old_model('/mnt/jk489/sharedfolder/segmentation/qtim_ChallengePipeline/model_files/wholetumor_FLAIRT1post.h5')
-    enhancing_model = load_old_model('enhancingtumor_BRATS_submission.h5')
+    enhancing_model = load_old_model('/home/abeers/Github/DeepNeuro/deepneuro/pipelines/Segment_GBM/enhancingtumor_BRATS_submission.h5')
     # wholetumor_model = load_old_model(load('Segment_GBM_wholetumor'))
     # enhancing_model = load_old_model(load('Segment_GBM_enhancing'))
 

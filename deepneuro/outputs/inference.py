@@ -30,10 +30,8 @@ class ModelInference(Output):
         add_parameter(self, kwargs, 'output_types', ['probability', 'binary_label'])
         add_parameter(self, kwargs, 'binarize_probability', .5)
 
-        if 'channels_first' in kwargs:
-            self.channels_first = kwargs.get('channels_first')
-        else:
-            self.channels_first = False
+        add_parameter(self, kwargs, 'channels_first', False)
+        add_parameter(self, kwargs, 'input_channels', None)
 
         if 'channels_dim' in kwargs:
             self.channels_dim = kwargs.get('channels_dim')
@@ -41,12 +39,6 @@ class ModelInference(Output):
             self.channels_dim = 1
         else:
             self.channels_dim = -1
-
-        # Replace this with a method for slicing all dimensions.
-        if 'input_channels' in kwargs:
-            self.input_channels = kwargs.get('input_channels')
-        else:
-            self.input_channels = None
 
         self.return_objects = []
 
@@ -67,16 +59,11 @@ class ModelInference(Output):
             input_data = next(data_generator)
             while input_data is not None:
 
-                if input_data is None:
-                    continue
-
                 self.process_case(input_data)
 
                 input_data = next(data_generator)
         else:
             self.process_case(self.data_collection.get_data(self.case))
-
-        print self.return_objects
 
         return self.return_objects
 
@@ -103,6 +90,9 @@ class ModelInference(Output):
         if os.path.exists(output_filepath) and not self.replace_existing:
             return
 
+        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
+        # the input data. This is wonky. Move this to PatchInference, maybe.
+
         if self.channels_first:
             input_data = np.swapaxes(input_data[0], 1, -1)
         else:
@@ -112,25 +102,15 @@ class ModelInference(Output):
         if self.input_channels is not None:
             input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
+        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
+        for i in xrange(len(self.patch_dimensions)):
+            self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
+
         output_data = self.predict(input_data)
 
         # Will fail for time-data.
         if self.channels_first:
             output_data = np.swapaxes(output_data, 1, -1)
-
-        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
-        # the input data. This is wonky.
-        self.input_shape = list((None,) + self.data_collection.data_groups[self.inputs[0]].get_shape())
-
-        if self.channels_first:
-            self.input_shape[self.channels_dim], self.input_shape[-1] = self.input_shape[self.channels_dim], self.input_shape[1]
-
-        if self.input_channels is not None:
-            self.input_shape[self.channels_dim] = len(self.input_channels)
-
-        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:] # Weird
-        for i in xrange(len(self.patch_dimensions)):
-            self.output_shape[self.output_patch_dimensions[i]] = self.input_shape[self.patch_dimensions[i]]
 
         if self.save_to_file:
             self.return_objects.append(self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0]))

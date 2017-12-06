@@ -18,8 +18,10 @@ def read_image_files(image_files, return_affine=False):
     image_list = []
     affine = None
     for image_file in image_files:
-        image_list.append(convert_input_2_numpy(image_file))
-        # if affine
+        data, _, affine, _ = convert_input_2_numpy(image_file, return_all=True)
+        image_list.append(data)
+        
+        # Badly presumes only one affine.
 
     if image_list[0].ndim == 4:
         array = np.rollaxis(np.stack([image for image in image_list], axis=-1), 3, 0)
@@ -28,7 +30,6 @@ def read_image_files(image_files, return_affine=False):
 
     # This is a little clunky.
     if return_affine:
-        affine = nib.load(image_files[0]).affine
         # This assumes all images share an affine matrix.
         # Replace with a better convert function, at some point.
         return array, affine
@@ -38,7 +39,7 @@ def read_image_files(image_files, return_affine=False):
 def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
 
-def dcm_2_numpy(input_folder, verbose=False, harden_orientation=None):
+def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all=False):
 
     """ Uses pydicom to stack an alphabetical list of DICOM files. TODO: Make it
         take slice_order into account.
@@ -79,6 +80,9 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=None):
     output_filenames = []
     for UID in unique_dicoms.keys():
     
+        # Bad behavior: Currently outputs first DICOM found.
+        # Unsure about error-checking with DICOM.
+
         if True:
         # try:
             # Grab DICOMs for a certain Instance
@@ -133,7 +137,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=None):
 
             # If preferred, harden to identity matrix space (LPS, maybe?)
             # Also unsure of the dynamic here, but they work.
-            if harden_orientation is not None:
+            if harden_orientation:
 
                 cx, cy, cz = np.argmax(np.abs(output_affine[0:3,0:3]), axis=0)
 
@@ -153,12 +157,16 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=None):
 
                 output_affine = np.matmul(output_affine, flip_matrix)
 
-            return output_numpy
+
+            if return_all:
+                return output_numpy, None, output_affine # TODO provide DICOM tags without doubling memory
+            else:
+                return output_numpy
 
         # except:
             # print 'Could not read DICOM at folder...', input_folder
 
-def itk_transform_2_numpy(input_filepath):
+def itk_transform_2_numpy(input_filepath, return_all=False):
 
     """ This function takes in an itk transform text file and converts into a 4x4
         array.
@@ -195,10 +203,13 @@ def itk_transform_2_numpy(input_filepath):
         output_array[i,0:3] = rotations[i*3:(i+1)*3]
         output_array[i, 3] = translations[i]
 
-    return output_array
+    if return_all:
+        return output_array, None, None
+    else:
+        return output_array
 
 
-def img_2_numpy(input_image):
+def img_2_numpy(input_image, return_all=False):
     
     """ Loads image data and returns a numpy array. There
         will likely be many parameters to specify because
@@ -208,9 +219,12 @@ def img_2_numpy(input_image):
 
     image_nifti = misc.imread(filepath)
 
-    return image_nifti
+    if return_all:
+        return image_nifti, None, None
+    else:
+        return image_nifti
 
-def nrrd_2_numpy(input_nrrd, return_header=False):
+def nrrd_2_numpy(input_nrrd, return_all=False):
     
     """ Loads nrrd data and optionally return a nrrd header
         in pynrrd's format. If array is 4D, swaps axes so
@@ -222,12 +236,12 @@ def nrrd_2_numpy(input_nrrd, return_header=False):
     if nrrd_data.ndim == 4:
         nrrd_data = np.rollaxis(nrrd_data, 0, 4)
 
-    if return_header:
-        return nrrd_data, nrrd_options
+    if return_all:
+        return nrrd_data, nrrd_options, None # Affine not implemented yet whoops..
     else:
         return nrrd_data
 
-def nifti_2_numpy(input_filepath, return_header=False):
+def nifti_2_numpy(input_filepath, return_all=False):
 
     """ Copies a file somewhere else. Effectively only used for compressing nifti files.
 
@@ -248,11 +262,10 @@ def nifti_2_numpy(input_filepath, return_header=False):
 
     """
 
-
     nifti = nib.load(input_filepath)
 
-    if return_header:
-        return nifti.get_data(), [nifti.affine, nifti.header]
+    if return_all:
+        return nifti.get_data(), nifti.header, nifti.affine
     else:
         return nifti.get_data()
 
@@ -289,7 +302,7 @@ def check_format(filepath):
     else:
         return format_type
 
-def convert_input_2_numpy(input_data, input_format=None, return_header=False, return_type=False):
+def convert_input_2_numpy(input_data, input_format=None, return_all=False):
     
     """ Copies a file somewhere else. Effectively only used for compressing nifti files.
 
@@ -318,27 +331,18 @@ def convert_input_2_numpy(input_data, input_format=None, return_header=False, re
 
         if input_format is None:
             raise ValueError
-            # print 'Cannot understand input format for numpy conversion, returning None.'
-            if return_header:
-                return None, None
+            if return_all:
+                return None, None, None, None
             else:
                 return None
 
-        if return_header:
-            return_items += NUMPY_CONVERTER_LIST[input_format](input_data, return_header=True)
+        if return_all:
+            return NUMPY_CONVERTER_LIST[input_format](input_data, return_all=True) + (input_format,)
         else:
-            return_items = [NUMPY_CONVERTER_LIST[input_format](input_data)]
-        if return_type:
-            return_items += [input_format]
+            return NUMPY_CONVERTER_LIST[input_format](input_data)
 
     else:
-        return_items += [input_data]
-        if return_header:
-            return_items += [None]
-        if return_type:
-            return_items += ['numpy']
-
-    if len(return_items) > 1:
-        return return_items
-    else:
-        return return_items[0]
+        if return_all:
+            return input_data, None, None, 'numpy'
+        else:
+            return input_data

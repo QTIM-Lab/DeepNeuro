@@ -224,18 +224,15 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
-            print input_data.shape
-            print data_group.get_shape()
-
             if data_group.base_case is None:
                 self.load_case_data(case)
 
             data_group.base_case = np.concatenate((data_group.base_case, input_data), axis=channel_dim)
 
-            # Perhaps should not use tuples for output shape.
-            output_shape = list(data_group.output_shape)
-            output_shape[channel_dim] = output_shape[channel_dim] + 1
-            data_group.output_shape = tuple(output_shape)
+            # # Perhaps should not use tuples for output shape.
+            # output_shape = list(data_group.output_shape)
+            # output_shape[channel_dim] = output_shape[channel_dim] + 1
+            # data_group.output_shape = tuple(output_shape)
 
     def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
 

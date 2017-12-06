@@ -33,14 +33,16 @@ def nifti_splitext(input_filepath):
 
     """
 
-    split_filepath = str.split(input_filepath, '.')
+    path_split = str.split(input_filepath, os.sep)
+    basename = path_split[-1]
+    split_filepath = str.split(basename, '.')
 
     if len(split_filepath) <= 1:
         return split_filepath
     else:
-        return [split_filepath[0], '.' + '.'.join(split_filepath[1:])]
+        return [os.path.join(os.sep.join(path_split[0:-1]), split_filepath[0]), '.' + '.'.join(split_filepath[1:])]
 
-def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter=None):
+def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter=None, file_extension='.nii.gz'):
 
     """ Replaces an input_suffix in a filename with an output_suffix. Can be used
         to generate or remove suffixes by leaving one or the other option blank.
@@ -66,23 +68,31 @@ def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter
             The transformed filename
     """
 
+    # Temp code to deal with directories, TODO
     if os.path.isdir(input_filepath):
-        split_filename = [input_filepath, '']
+        output_filepath = input_filepath + output_suffix + file_extension
+        return output_filepath
+
     else:
         split_filename = nifti_splitext(input_filepath)
 
-    if suffix_delimiter is not None:
-        input_suffix = str.split(split_filename[0], suffix_delimiter)[-1]
+        if suffix_delimiter is not None:
+            input_suffix = str.split(split_filename[0], suffix_delimiter)[-1]
 
-    if input_suffix not in os.path.basename(input_filepath):
-        print 'ERROR!', input_suffix, 'not in input_filepath.'
-        return []
+        if input_suffix not in os.path.basename(input_filepath):
+            print 'ERROR!', input_suffix, 'not in input_filepath.'
+            return []
 
-    else:
-        if input_suffix == '':
-            prefix = split_filename[0]
         else:
-            prefix = input_suffix.join(str.split(split_filename[0], input_suffix)[0:-1])
-        prefix = prefix + output_suffix
-        output_filepath = prefix + split_filename[1]
-        return output_filepath
+            if input_suffix == '':
+                prefix = split_filename[0]
+            else:
+                prefix = input_suffix.join(str.split(split_filename[0], input_suffix)[0:-1])
+            prefix = prefix + output_suffix
+            output_filepath = prefix + split_filename[1]
+
+            if file_extension is not None:
+                if not output_filepath.endswith(file_extension):
+                    output_filepath = output_filepath + file_extension
+
+            return output_filepath
