@@ -78,6 +78,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
                         'patch_overlaps': 8,
                         'channels_first': True,
                         'patch_dimensions': [-3,-2,-1],
+                        'output_patch_shape': (1,26,26,26),
                         'input_channels': [0, 3]}
 
     enhancing_prediction_parameters = {'inputs': ['input_modalities'], 
@@ -85,6 +86,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
                         'batch_size': 75,
                         'patch_overlaps': 8,
                         'channels_first': True,
+                        'output_patch_shape': (1,26,26,26),
                         'patch_dimensions': [-3,-2,-1]}
 
     wholetumor_model = load_old_model('/mnt/jk489/sharedfolder/segmentation/qtim_ChallengePipeline/model_files/wholetumor_FLAIRT1post.h5')

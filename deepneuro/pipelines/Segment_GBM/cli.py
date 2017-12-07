@@ -28,9 +28,7 @@ The following commands are available:
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
 
-    def pipeline(self):
-
-        # segment_gbm pipeline /mnt/jk489/sharedfolder/Duke/Patients/20090501 -T2 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T2 -T1 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1 -T1POST /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1post -FLAIR /mnt/jk489/sharedfolder/Duke/Patients/20090501/FLAIR -gpu_num 0
+    def parse_args(self):
 
         parser = argparse.ArgumentParser(
             description='''segment pipeline <T2> <T1pre> <T1post> <FLAIR> <output_folder> [-gpu_num <int> -niftis -nobias -preprocessed -keep_outputs]
@@ -59,6 +57,15 @@ The following commands are available:
         parser.add_argument('-save_preprocess', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
         args = parser.parse_args(sys.argv[2:])
+
+        return args
+       
+
+    def pipeline(self):
+
+        # segment_gbm pipeline /mnt/jk489/sharedfolder/Duke/Patients/20090501 -T2 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T2 -T1 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1 -T1POST /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1post -FLAIR /mnt/jk489/sharedfolder/Duke/Patients/20090501/FLAIR -gpu_num 0
+
+        args = self.parse_args()
 
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_num)
@@ -67,35 +74,9 @@ The following commands are available:
 
         predict_GBM(args.output_folder, args.T2, args.T1, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.bias, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps)
 
-
     def docker_pipeline(self):
-        parser = argparse.ArgumentParser(
-            description='''segment pipeline <T2> <T1pre> <T1post> <FLAIR> <output_folder> [-gpu_num <int> -niftis -nobias -preprocessed -keep_outputs]
 
-            Segment an image from DICOMs with all preprocessing steps included.
-            -gpu_num <int>      Which CUDA GPU ID # to use.
-            -niftis             Input nifti files instead of DIOCM folders.
-            -nobias             Skip the bias correction step.
-            -preprocessed       Skip bias correction, resampling, and registration.
-            -no_ss              [not yet implemented]
-            -keep_outputs       Do not delete files generated from intermediary steps.
-                ''')
-
-        parser.add_argument('output_folder', type=str)
-        parser.add_argument('-T2', type=str)
-        parser.add_argument('-T1', type=str)
-        parser.add_argument('-T1POST', type=str)
-        parser.add_argument('-FLAIR', type=str)
-        parser.add_argument('-input_directory', type=str)
-        parser.add_argument('-gpu_num', nargs='?', const='0', type=str)
-        parser.add_argument('-bias', action='store_true')  
-        parser.add_argument('-resampled', action='store_true')
-        parser.add_argument('-registered', action='store_true')
-        parser.add_argument('-skullstripped', action='store_true') # Currently non-functional
-        parser.add_argument('-normalized', action='store_true') 
-        parser.add_argument('-save_preprocess', action='store_true')
-        parser.add_argument('-save_all_steps', action='store_true')
-        args = parser.parse_args(sys.argv[2:])
+        args = self.parse_args()
 
         nvidia_docker_wrapper(['segment_gbm', 'pipeline'], args, ['output_folder', 'T2', 'T1', 'T1POST', 'FLAIR', 'input_directory'])
 

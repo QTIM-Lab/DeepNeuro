@@ -5,10 +5,8 @@ import glob
 import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.conversion import read_image_files
+from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, replace_suffix
-
-from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
 
 class SkullStrip(Preprocessor):
 

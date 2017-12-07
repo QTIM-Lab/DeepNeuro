@@ -4,9 +4,7 @@ import numpy as np
 from collections import defaultdict
 
 from deepneuro.utilities.util import add_parameter, replace_suffix
-from deepneuro.utilities.conversion import read_image_files
-
-from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
+from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 
 class Preprocessor(object):
 

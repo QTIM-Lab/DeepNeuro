@@ -7,9 +7,6 @@ import tables
 import nibabel as nib
 import copy
 
-from qtim_tools.qtim_utilities.format_util import convert_input_2_numpy
-from qtim_tools.qtim_utilities.nifti_util import check_image_2d
-
 from deepneuro.augmentation.augment import Augmentation, Copy
 from deepneuro.utilities.conversion import read_image_files
 

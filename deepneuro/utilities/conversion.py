@@ -306,6 +306,9 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
     
     """ Copies a file somewhere else. Effectively only used for compressing nifti files.
 
+        Note: Some say it is bad practice to have varying amounts of objects returned. On
+        the other hand, I find it easier to use this way.
+
         Parameters
         ----------
         input_filepath: str
@@ -346,3 +349,27 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
             return input_data, None, None, 'numpy'
         else:
             return input_data
+
+def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None):
+
+    """ This is a bit convoluted.
+
+        TODO: Documentation, rearrange reference_nifti and output_filepath, and
+        propagate changes to the rest of qtim_tools.
+    """
+
+    if reference_nifti_filepath is not None:
+        if isinstance(reference_nifti_filepath, basestring):
+            nifti_image = nib.load(reference_nifti_filepath)
+            image_affine = nifti_image.affine
+        else:
+            image_affine = reference_nifti_filepath
+    else:
+        image_affine = np.eye(4)
+
+    output_nifti = nib.Nifti1Image(image_numpy, image_affine)
+
+    if output_filepath is None:
+        return output_nifti
+    else:
+        nib.save(output_nifti, output_filepath)

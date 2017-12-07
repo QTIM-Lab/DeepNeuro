@@ -5,8 +5,7 @@ import glob
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, replace_suffix
-
-from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
+from deepneuro.utilities.conversion import save_numpy_2_nifti
 
 FNULL = open(os.devnull, 'w')
 
