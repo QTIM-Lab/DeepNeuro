@@ -1,19 +1,14 @@
 import os
 
-def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=True, docker_container='deepneuro'):
+def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
 
-    print args
-
-    filename_args = [arg for arg in filename_args if arg is not None]
-    mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([getattr(cli_args, arg) for arg in filename_args])))
-    for arg in filename_args:
-        setattr(cli_args, arg, os.path.abspath(cli_args.arg).split(mounted_dir,1)[1][1:])
-
-    if hasattr(cli_args, 'gpu_num'):
-        if getattr(cli_args, 'gpu_num') is None:
-            setattr(cli_args, 'gpu_num', 0)
-        else:
-            setattr(cli_args, 'gpu_num', str(cli_args.gpu_num))
+    if filename_args is not None:
+        filename_args = [arg for arg in filename_args if cli_args[arg] is not None]
+        mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([cli_args[arg] for arg in filename_args])))
+        for arg in filename_args:
+            cli_args[arg] = os.path.abspath(cli_args[arg]).split(mounted_dir,1)[1][1:]
+    else:
+        pass # TODO: Default behavior when mounted directory not needed.
 
     if interactive:
         docker_command = ['nvidia-docker', 'run', '-it', '-v', mounted_dir + ':/INPUT_DATA', docker_container, 'bash']
@@ -21,15 +16,12 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
     else:
         docker_command = ['nvidia-docker', 'run', '--rm', '-v', mounted_dir + ':/INPUT_DATA', docker_container] + command
 
-        if kwargs is not None:
-            for key, value in kwargs.iteritems():
-                print key, value
-                if value == True:
-                    docker_command += ['-' + str(key)]
-                elif value == False:
-                    continue
-                else:
-                    docker_command += ['-' + str(key) + ' ' + value]
+        for arg in cli_args:
+            if cli_args[arg] == True:
+                docker_command += ['-' + str(arg)]
+            elif cli_args[arg] == False or cli_args[arg] is None:
+                continue
+            else:
+                docker_command += ['-' + str(arg) + ' ' + cli_args[arg]]
 
-    print ' '.join(docker_command)
     call(' '.join(docker_command), shell=True)

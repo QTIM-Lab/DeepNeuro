@@ -14,7 +14,7 @@ class Segment_GBM_cli(object):
 
 The following commands are available:
    pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
-   docker-pipeline        Run the previous command via a Docker container via nvidia-docker.
+   docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
                 ''')
 
         parser.add_argument('command', help='Subcommand to run')
@@ -58,6 +58,12 @@ The following commands are available:
         parser.add_argument('-save_all_steps', action='store_true')
         args = parser.parse_args(sys.argv[2:])
 
+        # Very lazy, come back to this.
+        try:
+            args.gpu_num = str(args.gpu_num)
+        except:
+            pass
+
         return args
        
 
@@ -78,7 +84,7 @@ The following commands are available:
 
         args = self.parse_args()
 
-        nvidia_docker_wrapper(['segment_gbm', 'pipeline'], args, ['output_folder', 'T2', 'T1', 'T1POST', 'FLAIR', 'input_directory'])
+        nvidia_docker_wrapper(['segment_gbm', 'pipeline'], vars(args), ['output_folder', 'T2', 'T1', 'T1POST', 'FLAIR', 'input_directory'])
 
 def main():
     Segment_GBM_cli()
