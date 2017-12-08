@@ -42,7 +42,7 @@ The following commands are available:
             -keep_outputs       Do not delete files generated from intermediary steps.
                 ''')
 
-        parser.add_argument('output_folder', type=str)
+        parser.add_argument('-output_folder', type=str)
         parser.add_argument('-T2', type=str)
         parser.add_argument('-T1', type=str)
         parser.add_argument('-T1POST', type=str)
@@ -57,12 +57,6 @@ The following commands are available:
         parser.add_argument('-save_preprocess', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
         args = parser.parse_args(sys.argv[2:])
-
-        # Very lazy, come back to this.
-        try:
-            args.gpu_num = str(args.gpu_num)
-        except:
-            pass
 
         return args
        

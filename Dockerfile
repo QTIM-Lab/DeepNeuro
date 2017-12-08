@@ -168,9 +168,9 @@ ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 # Setup Scripts
 RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
 
-RUN git clone https://github.com/QTIM-Lab/qtim_gbmSegmenter /home/qtim_gbmSegmenter
-WORKDIR /home/qtim_gbmSegmenter
-RUN python /home/qtim_gbmSegmenter/setup.py develop
+RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
+WORKDIR /home/DeepNeuro
+RUN python /home/DeepNeuro/setup.py develop
 
 # Copy in models
 # RUN mkdir -p /home/DeepNeuro/deepneuro/

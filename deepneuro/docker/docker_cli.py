@@ -1,4 +1,5 @@
 import os
+from subprocess import call
 
 def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
 
@@ -16,6 +17,7 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
     else:
         docker_command = ['nvidia-docker', 'run', '--rm', '-v', mounted_dir + ':/INPUT_DATA', docker_container] + command
 
+        # This presumes everything is an optional arg, which is wrong.
         for arg in cli_args:
             if cli_args[arg] == True:
                 docker_command += ['-' + str(arg)]
@@ -24,4 +26,5 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
             else:
                 docker_command += ['-' + str(arg) + ' ' + cli_args[arg]]
 
+    print ' '.join(docker_command)
     call(' '.join(docker_command), shell=True)
