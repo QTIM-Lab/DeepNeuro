@@ -176,11 +176,10 @@ RUN python /home/DeepNeuro/setup.py develop
 # RUN mkdir -p /home/DeepNeuro/deepneuro/
 # RUN mv -v /home/models /home/qtim_gbmSegmenter/qtim_gbmSegmenter/DeepLearningLibrary/model_data/
 
-# RUN echo 7
-# RUN git pull
+RUN echo 4
+RUN git pull
 
 # Commands at startup.
-# WORKDIR "/"
-# RUN chmod 777 /home/qtim_gbmSegmenter/entrypoint.sh
-# ENTRYPOINT ["/home/qtim_gbmSegmenter/entrypoint.sh"]
-# CMD /bin/bash -c "source /root/.bashrc"
+WORKDIR "/"
+# RUN chmod 777 /home/DeepNeuro/entrypoint.sh
+# ENTRYPOINT ["/home/DeepNeuro/entrypoint.sh"]

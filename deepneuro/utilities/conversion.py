@@ -8,8 +8,7 @@ import dicom
 
 from collections import defaultdict
 
-from qtim_tools.qtim_utilities.file_util import human_sort, grab_files_recursive, sanitize_filename, replace_suffix
-from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti, check_image_2d
+from deepneuro.utilities.util import grab_files_recursive
 
 def read_image_files(image_files, return_affine=False):
 

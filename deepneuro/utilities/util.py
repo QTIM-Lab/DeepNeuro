@@ -1,5 +1,6 @@
 import math
 import os
+import fnmatch
 
 def round_up(x, y):
     return int(math.ceil(float(x) / float(y)))
@@ -10,6 +11,36 @@ def add_parameter(class_object, kwargs, parameter, default=None):
         setattr(class_object, parameter, kwargs.get(parameter))
     else:
         setattr(class_object, parameter, default)
+
+
+def grab_files_recursive(input_directory, regex='*'):
+
+    """ Returns all files recursively in a directory. Essentially a convenience wrapper 
+        around os.walk.
+
+        Parameters
+        ----------
+
+        input_directory: str
+            The folder to search.
+        regex: str
+            A linux-style pattern to match.
+
+        Returns
+        -------
+        output_list: list
+            A list of found files.
+    """
+
+    output_list = []
+
+    for root, subFolders, files in os.walk(input_directory):
+        for file in files:
+            if fnmatch.fnmatch(file, regex):
+                output_list += [os.path.join(root, file)]
+
+    return output_list
+
 
 def nifti_splitext(input_filepath):
 
