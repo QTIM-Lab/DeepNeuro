@@ -30,10 +30,11 @@ class SkullStrip(Preprocessor):
         add_parameter(self, kwargs, 'bet2_f', .5)
         add_parameter(self, kwargs, 'bet2_g', 0)
 
-        self.preprocessor_string = '_SkullStripped'
+        add_parameter(self, kwargs, 'preprocessor_string', '_SkullStripped')
+
         self.mask_string = '_Skullstrip_Mask'
 
-    def execute(self, case):
+    def initialize(self):
 
         for label, data_group in self.data_groups.iteritems():
 
@@ -48,21 +49,11 @@ class SkullStrip(Preprocessor):
 
             self.outputs['masks'] += [output_mask_filename]
 
-        mask_numpy = read_image_files(self.outputs['masks'])
+        self.mask_numpy = read_image_files(self.outputs['masks'])
 
-        for label, data_group in self.data_groups.iteritems():
+    def preprocess(self):
 
-            for index, file in enumerate(data_group.preprocessed_case):
+        input_numpy = read_image_files([self.base_file])
+        input_numpy[self.mask_numpy == 0] = 0
 
-                output_filename = replace_suffix(file, '', self.preprocessor_string)
-
-                input_numpy = read_image_files([file])
-                input_numpy[mask_numpy == 0] = 0
-
-                save_numpy_2_nifti(np.squeeze(input_numpy), file, output_filename)
-
-                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
-                    os.remove(data_group.preprocessed_case[index])
-
-                data_group.preprocessed_case[index] = output_filename
-                self.outputs['outputs'] += [output_filename]
+        save_numpy_2_nifti(np.squeeze(input_numpy), self.base_file, self.output_filename)      

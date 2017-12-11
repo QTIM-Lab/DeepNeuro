@@ -176,7 +176,7 @@ RUN python /home/DeepNeuro/setup.py develop
 # RUN mkdir -p /home/DeepNeuro/deepneuro/
 # RUN mv -v /home/models /home/qtim_gbmSegmenter/qtim_gbmSegmenter/DeepLearningLibrary/model_data/
 
-RUN echo 4
+RUN echo 5
 RUN git pull
 
 # Commands at startup.

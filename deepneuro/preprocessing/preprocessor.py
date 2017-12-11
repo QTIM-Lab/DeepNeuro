@@ -16,10 +16,10 @@ class Preprocessor(object):
 
         self.data_groups = {data_group: None for data_group in data_groups}
 
-        self.preprocessor_string = '_convert'
-
         self.save_output = save_output
         self.channel_dim = channel_dim
+
+        add_parameter(self, kwargs, 'preprocessor_string', '_convert')
 
         self.outputs = defaultdict(list)
 
@@ -37,24 +37,37 @@ class Preprocessor(object):
 
     def execute(self, case):
 
+        """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
+        """
+
+        self.initialize()
+
         for label, data_group in self.data_groups.iteritems():
 
             for index, file in enumerate(data_group.preprocessed_case):
 
-                output_filename = replace_suffix(file, '', self.preprocessor_string)
+                self.base_file = file # Weird name for this, make more descriptive
+                self.output_filename = replace_suffix(file, '', self.preprocessor_string)
 
-                array, affine = read_image_files([file], return_affine=True)
-                save_numpy_2_nifti(np.squeeze(array), affine, output_filename)
+                continue_status = self.preprocess() # Really weird
 
-                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
-                    os.remove(data_group.preprocessed_case[index])
+                if not continue_status:
 
-                data_group.preprocessed_case[index] = output_filename
+                    if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
+                        os.remove(data_group.preprocessed_case[index])
+
+                    data_group.preprocessed_case[index] = self.output_filename
+
+                    self.outputs['outputs'] += [self.output_filename]
+
+    def preprocess(self):
+
+        array, affine = read_image_files([self.base_file], return_affine=True)
+        save_numpy_2_nifti(np.squeeze(array), affine, self.output_filename)
 
     def initialize(self):
 
-        if not self.initialization:
-            self.initialization = True
+        return
 
     def reset(self):
 

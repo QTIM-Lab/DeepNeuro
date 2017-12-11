@@ -13,69 +13,29 @@ class Resample(Preprocessor):
 
     def load(self, kwargs):
 
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
-
         add_parameter(self, kwargs, 'command', ['Slicer', '--launch'])
 
         add_parameter(self, kwargs, 'dimensions', [1,1,1])
         add_parameter(self, kwargs, 'interpolation', 'linear')
         add_parameter(self, kwargs, 'reference_file', None)
 
+        add_parameter(self, kwargs, 'preprocessor_string', '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', ''))
+
         self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
-
-        self.preprocessor_string = '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', '')
-
         self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
 
+    def preprocess():
 
-    def execute(self, case):
-
-        for label, data_group in self.data_groups.iteritems():
-
-            for index, file in enumerate(data_group.preprocessed_case):
-
-                output_filename = replace_suffix(file, '', self.preprocessor_string)
-
-                if self.reference_file is None:
-                    specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, file, output_filename]
-                else:
-                    specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], file, output_filename]
-                
-                # subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-
-                print specific_command
-
-                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
-                    os.remove(data_group.preprocessed_case[index])
-
-                data_group.preprocessed_case[index] = output_filename
-
-                self.outputs['outputs'] += [output_filename]
+        if self.reference_file is None:
+            specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, file, output_filename]
+        else:
+            specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], file, output_filename]
+        
+        subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
 class Coregister(Preprocessor):
 
     def load(self, kwargs):
-
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
-
 
         add_parameter(self, kwargs, 'command', ['Slicer', '--launch', 'BRAINSFit'])
 
@@ -87,34 +47,19 @@ class Coregister(Preprocessor):
         add_parameter(self, kwargs, 'reference_channel', None)
         add_parameter(self, kwargs, 'reference_file', None)
 
+        add_parameter(self, kwargs, 'preprocessor_string', '_Registered')
+
         self.interpolation_dict = {'nearestNeighbor': 'nn'}
-        self.preprocessor_string = '_Registered'
 
+    def preprocess():
 
-    def execute(self, case):
+        if self.reference_channel is not None:
+            if self.reference_channel == index:
+                data_group.preprocessed_case[index] = file
+                return True
+            else:
+                specific_command = self.command + ['--fixedVolume', data_group.preprocessed_case[self.reference_channel], '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
+        else:
+            specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
 
-        for label, data_group in self.data_groups.iteritems():
-
-            for index, file in enumerate(data_group.preprocessed_case):
-
-                output_filename = replace_suffix(file, '', self.preprocessor_string)
-
-                self.outputs['outputs'] += [output_filename]
-
-                if self.reference_channel is not None:
-                    if self.reference_channel == index:
-                        data_group.preprocessed_case[index] = file
-                        continue
-                    else:
-                        specific_command = self.command + ['--fixedVolume', data_group.preprocessed_case[self.reference_channel], '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
-                else:
-                    specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
-
-                # subprocess.call(' '.join(specific_command), shell=True)
-
-                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
-                    os.remove(data_group.preprocessed_case[index])
-
-                data_group.preprocessed_case[index] = output_filename
-
-                self.outputs['outputs'] += [output_filename]
+        subprocess.call(' '.join(specific_command), shell=True)
