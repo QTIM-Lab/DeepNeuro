@@ -12,12 +12,13 @@ class N4BiasCorrection(Preprocessor):
 
     def load(self, kwargs):
 
-        add_parameter(self, kwargs, 'command', ['N4BiasFieldCorrection'])
+        add_parameter(self, kwargs, 'command', ['Slicer', '--launch'])
         add_parameter(self, kwargs, 'preprocessor_string', '_N4Bias')
 
     def preprocess(self):
 
-        specific_command = self.command + ['-i', self.base_file, '-o', self.output_filename]
+        specific_command = self.command + ['N4ITKBiasFieldCorrection', self.base_file, self.output_filename]
+        # specific_command = self.command + ['-i', self.base_file, '-o', self.output_filename]
         subprocess.call(' '.join(specific_command), shell=True)
 
 class ZeroMeanNormalization(Preprocessor):

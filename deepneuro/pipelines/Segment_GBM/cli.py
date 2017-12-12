@@ -49,7 +49,7 @@ The following commands are available:
         parser.add_argument('-FLAIR', type=str)
         parser.add_argument('-input_directory', type=str)
         parser.add_argument('-gpu_num', nargs='?', const='0', type=str)
-        parser.add_argument('-bias', action='store_true')  
+        parser.add_argument('-bias', action='store_false')  
         parser.add_argument('-resampled', action='store_true')
         parser.add_argument('-registered', action='store_true')
         parser.add_argument('-skullstripped', action='store_true') # Currently non-functional
