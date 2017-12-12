@@ -7,7 +7,7 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
         filename_args = [arg for arg in filename_args if cli_args[arg] is not None]
         mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([cli_args[arg] for arg in filename_args])))
         for arg in filename_args:
-            cli_args[arg] = os.path.abspath(cli_args[arg]).split(mounted_dir,1)[1][1:]
+            cli_args[arg] = os.path.join('/INPUT_DATA', os.path.abspath(cli_args[arg]).split(mounted_dir,1)[1][1:])
     else:
         pass # TODO: Default behavior when mounted directory not needed.
 
