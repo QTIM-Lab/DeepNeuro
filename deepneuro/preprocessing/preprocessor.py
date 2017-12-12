@@ -9,13 +9,14 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 class Preprocessor(object):
 
 
-    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, **kwargs):
+    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, **kwargs):
 
         self.output_shape = None
         self.initialization = False
 
         self.data_groups = {data_group: None for data_group in data_groups}
 
+        self.overwrite = overwrite
         self.save_output = save_output
         self.channel_dim = channel_dim
 
@@ -40,7 +41,7 @@ class Preprocessor(object):
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
 
-        self.initialize()
+        self.initialize() # TODO: make overwrite work with initializations
 
         for label, data_group in self.data_groups.iteritems():
 
@@ -49,6 +50,7 @@ class Preprocessor(object):
                 self.base_file = file # Weird name for this, make more descriptive
                 self.output_filename = replace_suffix(file, '', self.preprocessor_string)
 
+                # if not os.path.exists(self.output_filename) or overwrite:
                 continue_status = self.preprocess() # Really weird
 
                 if not continue_status:

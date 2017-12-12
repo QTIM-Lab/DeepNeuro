@@ -1,4 +1,10 @@
+""" TODO: Break out these augmentations into submodules for easier reference.
+"""
+
+
 import numpy as np
+
+from deepneuro.utilities.util import rot90
 
 class Augmentation(object):
 
@@ -70,6 +76,9 @@ class Copy(Augmentation):
 
 class Flip_Rotate_2D(Augmentation):
 
+    """ To do: extend to be more flexible and useful.
+    """
+
     def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
 
         # Get rid of these with super??
@@ -132,6 +141,80 @@ class Flip_Rotate_2D(Augmentation):
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
                 data_group.augmentation_cases[augmentation_num+1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis])
+
+# class Flip_Rotate_3D(Augmentation):
+
+#     def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
+
+#         """
+#         """
+
+#         # Get rid of these with super??
+#         self.multiplier = multiplier
+#         self.total = total
+#         self.flip_axis = 1
+
+#         self.output_shape = None
+#         self.initialization = False
+#         self.iteration = 0
+
+#         self.total_iterations = multiplier
+
+#         self.data_groups = {data_group: None for data_group in data_groups}
+
+#         self.available_transforms = []
+
+
+#     def rotations24(array):
+
+#         while True:
+#             # imagine shape is pointing in axis 0 (up)
+
+#             # 4 rotations about axis 0
+#             yield rotations4(array, 0)
+
+#             # rotate 180 about axis 1, now shape is pointing down in axis 0
+#             # 4 rotations about axis 0
+#             yield rotations4(rot90(array, 2, axis=1), 0)
+
+#             # rotate 90 or 270 about axis 1, now shape is pointing in axis 2
+#             # 8 rotations about axis 2
+#             yield rotations4(rot90(array, axis=1), 2)
+#             yield rotations4(rot90(array, -1, axis=1), 2)
+
+#             # rotate about axis 2, now shape is pointing in axis 1
+#             # 8 rotations about axis 1
+#             yield rotations4(rot90(array, axis=2), 1)
+#             yield rotations4(rot90(array, -1, axis=2), 1)
+
+
+#     def rotations4(array, axis):
+#         """List the four rotations of the given cube about the given axis."""
+
+#         while True:
+#             for i in range(4):
+#                 yield rot90(array, i, axis)
+
+
+#     def initialize_augmentation(self):
+
+#         if not self.initialization:
+
+#             self.initialization = True
+
+
+#     def iterate(self):
+
+#         super(Flip_Rotate_3D, self).iterate()
+
+
+#     def augment(self, augmentation_num=0):
+
+#         for label, data_group in self.data_groups.iteritems():
+
+#             if self.available_transforms[self.iteration % self.total_transforms, 0]:
+#                 data_group.augmentation_cases[augmentation_num+1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
+
 
 class ExtractPatches(Augmentation):
 

@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import os
 import fnmatch
 
@@ -11,6 +12,18 @@ def add_parameter(class_object, kwargs, parameter, default=None):
         setattr(class_object, parameter, kwargs.get(parameter))
     else:
         setattr(class_object, parameter, default)
+
+
+def rot90(array, n=1, axis=2):
+
+    """Rotate an array by 90 degrees in the counter-clockwise direction around the given axis
+        Nabbed from https://stackoverflow.com/questions/33190042/how-to-calculate-all-24-rotations-of-3d-array
+    """
+    
+    array = np.swapaxes(array, 2, axis)
+    array = np.rot90(array, n)
+    array = np.swapaxes(array, 2, axis)
+    return array
 
 
 def grab_files_recursive(input_directory, regex='*'):

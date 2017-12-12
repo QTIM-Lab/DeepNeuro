@@ -200,7 +200,6 @@ class DataCollection(object):
 
         # This is so bad.
         for preprocessor in preprocessors:
-            preprocessor.initialize()
             for data_group_label in preprocessor.data_groups:
                 if preprocessor.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]

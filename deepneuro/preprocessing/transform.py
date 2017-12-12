@@ -24,12 +24,12 @@ class Resample(Preprocessor):
         self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
         self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
 
-    def preprocess():
+    def preprocess(self):
 
         if self.reference_file is None:
-            specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, file, output_filename]
+            specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, self.base_file, self.output_filename]
         else:
-            specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], file, output_filename]
+            specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], self.base_file, self.output_filename]
         
         subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
@@ -51,15 +51,34 @@ class Coregister(Preprocessor):
 
         self.interpolation_dict = {'nearestNeighbor': 'nn'}
 
-    def preprocess():
+    def execute(self, case):
 
-        if self.reference_channel is not None:
-            if self.reference_channel == index:
-                data_group.preprocessed_case[index] = file
-                return True
-            else:
-                specific_command = self.command + ['--fixedVolume', data_group.preprocessed_case[self.reference_channel], '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
-        else:
-            specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', file, '--outputVolume', output_filename]
+        """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
+        """
 
-        subprocess.call(' '.join(specific_command), shell=True)
+        self.initialize() # TODO: make overwrite work with initializations
+
+        for label, data_group in self.data_groups.iteritems():
+
+            for index, file in enumerate(data_group.preprocessed_case):
+
+                self.base_file = file # Weird name for this, make more descriptive
+                self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+
+                if self.reference_channel is not None:
+                    if self.reference_channel == index:
+                        data_group.preprocessed_case[index] = self.base_file
+                        continue
+                    else:
+                        specific_command = self.command + ['--fixedVolume', data_group.preprocessed_case[self.reference_channel], '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', self.base_file, '--outputVolume', self.output_filename]
+                else:
+                    specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', self.base_file, '--outputVolume', self.output_filename]
+
+                subprocess.call(' '.join(specific_command), shell=True)
+
+                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
+                    os.remove(data_group.preprocessed_case[index])
+
+                data_group.preprocessed_case[index] = self.output_filename
+
+                self.outputs['outputs'] += [self.output_filename]

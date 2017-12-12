@@ -18,12 +18,17 @@ import glob
 def train_Segment_GBM(data_directory, val_data_directory):
 
     # Define input modalities to load.
-    training_modality_dict = {'input_modalities': 
+    if True:
+        training_modality_dict = {'input_modalities': 
     ['*FLAIR_pp.*', '*T2_pp.*', '*T1_pp.*', '*T1post_pp.*'],
     'ground_truth': ['*full_edemamask_pp.*']}
+    else:
+        training_modality_dict = {'input_modalities': 
+        [['*FLAIR_pp.*', 'FLAIR_norm2*'], ['*T1post_pp.*', 'T1post_norm2*']],
+        'ground_truth': ['*full_edemamask_pp.*', 'FLAIRmask-label.nii.gz']}
 
     load_data = True
-    train_model = False
+    train_model = True
     load_test_data = True
     predict = True
 
@@ -45,7 +50,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return data['ground_truth'] == 1
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(72,72,72), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'])
+        patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'])
         training_data_collection.append_augmentation(patch_augmentation, multiplier=200)
 
         # Add left-right flips
@@ -114,7 +119,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = '/mnt/jk489/sharedfolder/BRATS2017/Train'
+    data_directory = ['/mnt/jk489/sharedfolder/BRATS2017/Train', '/mnt/jk489/sharedfolder/BRATS2017/Train']
     val_data_directory = ''
 
     train_Segment_GBM(data_directory, val_data_directory)
