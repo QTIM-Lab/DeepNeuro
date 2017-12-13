@@ -101,16 +101,10 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
     for case in data_collection.cases:
 
-        print case
-
         wholetumor_prediction.case = case
         wholetumor_file = wholetumor_model.generate_outputs()[0][0]
 
-        print '\n'
-
         data_collection.add_channel(case, wholetumor_file)
-
-        print '\n'
 
         enhancing_prediction.case = case
         enhancing_file = enhancing_model.generate_outputs()[0]

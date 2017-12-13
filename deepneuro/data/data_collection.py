@@ -241,9 +241,6 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
-            print input_data.shape
-            print data_group.get_shape()
-
             data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
 
             # Perhaps should not use tuples for output shape.
@@ -284,7 +281,6 @@ class DataCollection(object):
             data_group.preprocessed_case = copy.copy(data_group.data[case])
 
         for preprocessor in self.preprocessors:
-            print preprocessor
             preprocessor.reset()
             preprocessor.execute(case)
 
@@ -323,7 +319,7 @@ class DataCollection(object):
         return tuple([np.stack(data_list) for data_list in data_batch])
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=True, batch_size=1):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):
 
         data_groups = self.get_data_groups(data_group_labels)
 
@@ -457,7 +453,6 @@ class DataCollection(object):
             output_shape = data_group.get_shape()
 
             # Add batch dimension
-            print output_shape, data_label
             data_shape = (0,) + output_shape
 
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)

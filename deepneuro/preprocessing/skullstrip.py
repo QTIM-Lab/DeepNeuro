@@ -8,6 +8,8 @@ from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, replace_suffix
 
+FNULL = open(os.devnull, 'w')
+
 class SkullStrip(Preprocessor):
 
     def load(self, kwargs):
@@ -44,7 +46,7 @@ class SkullStrip(Preprocessor):
             output_filename = replace_suffix(file, '', self.mask_string)
             specific_command = self.command + [file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
 
-            subprocess.call(' '.join(specific_command), shell=True)
+            subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
             output_mask_filename = replace_suffix(file, '', self.mask_string)
             os.rename(output_filename + '_mask.nii.gz', output_mask_filename)

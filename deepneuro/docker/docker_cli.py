@@ -19,15 +19,11 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
 
         # This presumes everything is an optional arg, which is wrong.
         for arg in cli_args:
-            print arg, cli_args[arg]
             if cli_args[arg] == True:
-                print 'yay'
                 docker_command += ['-' + str(arg)]
             elif cli_args[arg] == False or cli_args[arg] is None:
                 continue
             else:
                 docker_command += ['-' + str(arg) + ' ' + cli_args[arg]]
-
-    print ' '.join(docker_command)
 
     call(' '.join(docker_command), shell=True)

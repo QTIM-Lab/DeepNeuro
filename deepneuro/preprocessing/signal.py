@@ -8,6 +8,8 @@ from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, replace_suffix
 
+FNULL = open(os.devnull, 'w')
+
 class N4BiasCorrection(Preprocessor):
 
     def load(self, kwargs):
@@ -19,7 +21,8 @@ class N4BiasCorrection(Preprocessor):
 
         specific_command = self.command + ['N4ITKBiasFieldCorrection', self.base_file, self.output_filename]
         # specific_command = self.command + ['-i', self.base_file, '-o', self.output_filename]
-        subprocess.call(' '.join(specific_command), shell=True)
+
+        subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
 class ZeroMeanNormalization(Preprocessor):
 

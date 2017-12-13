@@ -281,18 +281,13 @@ class ModelPatchesInference(ModelInference):
             if self.check_empty_patch:
                 corners_list = self.remove_empty_patches(input_data, corners_list)
 
-            print corners_list.shape
-
             for corner_list_idx in xrange(0, corners_list.shape[0], self.batch_size):
 
                 corner_batch = corners_list[corner_list_idx:corner_list_idx+self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
 
-                print input_patches.shape
-                print 'about to predict'
                 prediction = self.model.model.predict(input_patches)
-                print prediction.shape, 'prediction'
-
+                
                 self.insert_patch(repatched_image, prediction, corner_batch)
 
             if rep_idx == 0:

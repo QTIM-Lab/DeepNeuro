@@ -74,7 +74,7 @@ class Coregister(Preprocessor):
                 else:
                     specific_command = self.command + ['--fixedVolume', '"' + self.reference_file + '"', '--transformType', self.transform_type, '--initializeTransformMode', self.transform_initialization, '--interpolationMode', self.interpolation, '--samplingPercentage', str(self.sampling_percentage), '--movingVolume', self.base_file, '--outputVolume', self.output_filename]
 
-                subprocess.call(' '.join(specific_command), shell=True)
+                subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
