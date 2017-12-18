@@ -19,6 +19,7 @@ class Resample(Preprocessor):
         add_parameter(self, kwargs, 'interpolation', 'linear')
         add_parameter(self, kwargs, 'reference_file', None)
 
+        add_parameter(self, kwargs, 'name', 'Resample')
         add_parameter(self, kwargs, 'preprocessor_string', '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', ''))
 
         self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
@@ -47,6 +48,7 @@ class Coregister(Preprocessor):
         add_parameter(self, kwargs, 'reference_channel', None)
         add_parameter(self, kwargs, 'reference_file', None)
 
+        add_parameter(self, kwargs, 'name', 'Registration')
         add_parameter(self, kwargs, 'preprocessor_string', '_Registered')
 
         self.interpolation_dict = {'nearestNeighbor': 'nn'}
@@ -61,6 +63,9 @@ class Coregister(Preprocessor):
         for label, data_group in self.data_groups.iteritems():
 
             for index, file in enumerate(data_group.preprocessed_case):
+
+                if self.verbose:
+                    print 'Preprocessor: ', self.name, 'Case: ', file
 
                 self.base_file = file # Weird name for this, make more descriptive
                 self.output_filename = replace_suffix(file, '', self.preprocessor_string)

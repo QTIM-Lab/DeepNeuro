@@ -49,22 +49,22 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         print 'ABOUT TO PREPROCESS....'
 
         # Random hack to save DICOMs to niftis for further processing.
-        preprocessing_steps = [Preprocessor(data_groups=['input_modalities'], save_output=save_all_steps)]
+        preprocessing_steps = [Preprocessor(data_groups=['input_modalities'], save_output=save_all_steps, verbose=True)]
 
         if not bias_corrected:
-            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps)]
+            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=True)]
 
         if not resampled:
-            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps)]
+            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=True)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, reference_channel = 1)]
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=True, reference_channel = 1)]
 
         if not skullstripped:
-            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, reference_channel = 1)]
+            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=True, reference_channel = 1)]
 
         if not normalized:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_preprocess, mask=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_preprocess, verbose=True, mask=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -100,7 +100,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     enhancing_model.append_output([enhancing_prediction])
 
     for case in data_collection.cases:
-
+        
         wholetumor_prediction.case = case
         wholetumor_file = wholetumor_model.generate_outputs()[0][0]
 

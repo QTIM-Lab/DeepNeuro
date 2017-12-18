@@ -9,7 +9,7 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 class Preprocessor(object):
 
 
-    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, **kwargs):
+    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, verbose=False, **kwargs):
 
         self.output_shape = None
         self.initialization = False
@@ -20,10 +20,12 @@ class Preprocessor(object):
         self.save_output = save_output
         self.channel_dim = channel_dim
 
+        add_parameter(self, kwargs, 'name', 'Conversion')
+        self.verbose = verbose
+
         add_parameter(self, kwargs, 'preprocessor_string', '_convert')
 
         self.outputs = defaultdict(list)
-
         self.load(kwargs)
 
         return
@@ -46,6 +48,9 @@ class Preprocessor(object):
         for label, data_group in self.data_groups.iteritems():
 
             for index, file in enumerate(data_group.preprocessed_case):
+
+                if self.verbose:
+                    print 'Preprocessor: ', self.name, 'Case: ', file
 
                 self.base_file = file # Weird name for this, make more descriptive
                 self.output_filename = replace_suffix(file, '', self.preprocessor_string)

@@ -177,7 +177,8 @@ RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_GBM
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/wholetumor.h5 "https://www.dropbox.com/s/74tjx14ue11rc0q/wholetumor.h5?dl=1"
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"
 
-RUN echo 12
+# TODO: Check if Docker has solved this checkpointing problem.
+RUN echo 13
 RUN git pull
 
 # Commands at startup.

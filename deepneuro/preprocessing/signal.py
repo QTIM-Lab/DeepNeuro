@@ -14,6 +14,7 @@ class N4BiasCorrection(Preprocessor):
 
     def load(self, kwargs):
 
+        add_parameter(self, kwargs, 'name', 'N4BiasCorrection')
         add_parameter(self, kwargs, 'command', ['Slicer', '--launch'])
         add_parameter(self, kwargs, 'preprocessor_string', '_N4Bias')
 
@@ -28,6 +29,7 @@ class ZeroMeanNormalization(Preprocessor):
 
     def load(self, kwargs):
 
+        add_parameter(self, kwargs, 'name', 'ZeroMeanNormalization')
         add_parameter(self, kwargs, 'mask', None)
         add_parameter(self, kwargs, 'preprocessor_string', '_ZeroNorm')
 

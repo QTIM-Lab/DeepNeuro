@@ -269,7 +269,7 @@ class ModelPatchesInference(ModelInference):
         for rep_idx in xrange(self.patch_overlaps):
 
             if self.verbose:
-                print 'Patch prediction repetition level ..', rep_idx
+                print 'Patch prediction repetition', rep_idx
 
             corners_grid_shape = [slice(None)]
             for dim in xrange(all_corners.ndim - 1):

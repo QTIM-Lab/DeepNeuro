@@ -25,8 +25,8 @@ class SkullStrip(Preprocessor):
 
         """
 
-        # add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
-        add_parameter(self, kwargs, 'command', ['bet2'])
+        add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
+        # add_parameter(self, kwargs, 'command', ['bet2'])
 
         add_parameter(self, kwargs, 'same_mask', True)
         add_parameter(self, kwargs, 'reference_channel', None)
@@ -34,6 +34,7 @@ class SkullStrip(Preprocessor):
         add_parameter(self, kwargs, 'bet2_f', .5)
         add_parameter(self, kwargs, 'bet2_g', 0)
 
+        add_parameter(self, kwargs, 'name', 'SkullStrip')
         add_parameter(self, kwargs, 'preprocessor_string', '_SkullStripped')
 
         self.mask_string = '_Skullstrip_Mask'
