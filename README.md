@@ -25,16 +25,16 @@ This package is in an initial testing phase, and will be released soon. Currentl
 
 ## Installation
 
-1. Pull the qtim_gbmSegmenter Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro-segment_gbm"
+1. Install the Docker Engine Utility for NVIDIA GPUs, AKA nvidia-docker. You can find installation instructions at their Github page, here: https://github.com/NVIDIA/nvidia-docker
 
-2. Install the Docker Engine Utility for NVIDIA GPUs, AKA nvidia-docker. You can find installation instructions at their Github page, here: https://github.com/NVIDIA/nvidia-docker
+2. Pull the DeepNeuro Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro-segment_gbm"
 
 3. If you want to inspect the code, or run your Docker container with an DeepNeuro's python wrappers and command line tools, clone this repository ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install with the command "python setup.py install" in the directory you just cloned in to.
 
 ## Modules
 
-- Glioblastoma Segmentation (Edema and Enhancing Tumor) -- https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_GBM
+- Glioblastoma Segmentation (Edema and Enhancing Tumor) -- [Documentation](https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_GBM)
 
 ## Contact
 
-DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github "issue" if you run into a bug. Otherwise, happy segmenting!
+DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
