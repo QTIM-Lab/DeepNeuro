@@ -4,8 +4,8 @@ This module creates segmentations of "whole tumor" (edema + contrast-enhancing +
 
 ## Table of Contents
 - [Docker Usage](#docker-usage)
-- [Python Docker Wrapper Usage](#python-wrapper-usage)
-- [Contact](#contact)
+- [Python Docker Wrapper Usage](#python-docker-wrapper-usage)
+- [Docker Example](#docker-example)
 
 ## Docker Usage
 
@@ -39,7 +39,7 @@ To avoid adjusting your  you may want to avoid using nvidia-docker directly. I'v
 Once you have installed the repository, you can use the following command on the command-line:
 
 ```
-segment docker-pipeline <T2> <T1pre> <T1post> <FLAIR> <output_folder> [-gpu_num <int> -bias -resampled -registered -save_all_steps -save_preprocessed
+segment docker-pipeline -T2 <file> -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -bias -resampled -registered -save_all_steps -save_preprocessed
 ```
 
 Parameters should be exactly the same as in the Docker use-case, except now you will not have to modify filepaths to be relative to the mounted folder.
