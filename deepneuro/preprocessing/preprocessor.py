@@ -51,6 +51,7 @@ class Preprocessor(object):
 
                 if self.verbose:
                     print 'Preprocessor: ', self.name, 'Case: ', file
+                    sys.stdout.flush()
 
                 self.base_file = file # Weird name for this, make more descriptive
                 self.output_filename = replace_suffix(file, '', self.preprocessor_string)

@@ -16,7 +16,7 @@ Pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deep
 You can then create a command using the following template to create a glioblastoma segmentation:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment pipeline -T2 <file> -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -bias -resampled -registered -save_all_steps -save_preprocessed]
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment pipeline -T2 <file> -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
 ```
 
 In order to use Docker, you must mount the directory containing all of your data and your output. All inputted filepaths must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/T2.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/T2.nii.gz. Note that the Python wrapper for Docker in this module will adjust paths for you.

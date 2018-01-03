@@ -12,9 +12,9 @@ class Segment_GBM_cli(object):
             description='A number of pre-packaged command used by the Quantiative Tumor Imaging Lab at the Martinos Center',
             usage='''segment <command> [<args>]
 
-The following commands are available:
-   pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
-   docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
+                    The following commands are available:
+                       pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
+                       docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
                 ''')
 
         parser.add_argument('command', help='Subcommand to run')
@@ -34,12 +34,15 @@ The following commands are available:
             description='''segment pipeline <T2> <T1pre> <T1post> <FLAIR> <output_folder> [-gpu_num <int> -niftis -nobias -preprocessed -keep_outputs]
 
             Segment an image from DICOMs with all preprocessing steps included.
-            -gpu_num <int>      Which CUDA GPU ID # to use.
-            -niftis             Input nifti files instead of DIOCM folders.
-            -nobias             Skip the bias correction step.
-            -preprocessed       Skip bias correction, resampling, and registration.
-            -no_ss              [not yet implemented]
-            -keep_outputs       Do not delete files generated from intermediary steps.
+
+            -output_folder: A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz"
+            -T2, -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
+            -gpu_num: Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.
+            -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.
+            -resampled: If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step.
+            -registered: If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step.
+            -save_all_steps: If flagged, intermediate volumes in between preprocessing steps will be saved in output_folder.
+            -save_preprocessed: If flagged, the final volume after all preprocessing steps will be saved in output_folder
                 ''')
 
         parser.add_argument('-output_folder', type=str)
