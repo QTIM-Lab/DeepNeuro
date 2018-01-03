@@ -51,7 +51,7 @@ class Preprocessor(object):
             for index, file in enumerate(data_group.preprocessed_case):
 
                 if self.verbose:
-                    print 'Preprocessor: ', self.name, 'Case: ', file
+                    print 'Preprocessor: ', self.name, '. Case: ', file
                     sys.stdout.flush()
 
                 self.base_file = file # Weird name for this, make more descriptive

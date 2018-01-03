@@ -1,6 +1,7 @@
 
 import subprocess
 import os
+import sys
 import glob
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
@@ -65,7 +66,8 @@ class Coregister(Preprocessor):
             for index, file in enumerate(data_group.preprocessed_case):
 
                 if self.verbose:
-                    print 'Preprocessor: ', self.name, 'Case: ', file
+                    print 'Preprocessor: ', self.name, '. Case: ', file
+                    sys.stdout.flush()
 
                 self.base_file = file # Weird name for this, make more descriptive
                 self.output_filename = replace_suffix(file, '', self.preprocessor_string)

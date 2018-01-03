@@ -1,5 +1,6 @@
 
 import os
+import sys
 
 from deepneuro.outputs.output import Output
 from deepneuro.utilities.util import add_parameter, replace_suffix
@@ -270,6 +271,7 @@ class ModelPatchesInference(ModelInference):
 
             if self.verbose:
                 print 'Patch prediction repetition', rep_idx
+                sys.stdout.flush()
 
             corners_grid_shape = [slice(None)]
             for dim in xrange(all_corners.ndim - 1):

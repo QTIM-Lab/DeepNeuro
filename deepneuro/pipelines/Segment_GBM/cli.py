@@ -52,7 +52,7 @@ class Segment_GBM_cli(object):
         parser.add_argument('-FLAIR', type=str)
         parser.add_argument('-input_directory', type=str)
         parser.add_argument('-gpu_num', nargs='?', const='0', type=str)
-        parser.add_argument('-bias', action='store_true')  
+        parser.add_argument('-debiased', action='store_true')  
         parser.add_argument('-resampled', action='store_true')
         parser.add_argument('-registered', action='store_true')
         parser.add_argument('-skullstripped', action='store_true') # Currently non-functional
@@ -65,8 +65,6 @@ class Segment_GBM_cli(object):
        
 
     def pipeline(self):
-
-        # segment_gbm pipeline /mnt/jk489/sharedfolder/Duke/Patients/20090501 -T2 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T2 -T1 /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1 -T1POST /mnt/jk489/sharedfolder/Duke/Patients/20090501/T1post -FLAIR /mnt/jk489/sharedfolder/Duke/Patients/20090501/FLAIR -gpu_num 0
 
         args = self.parse_args()
 

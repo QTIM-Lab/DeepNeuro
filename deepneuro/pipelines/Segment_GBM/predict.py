@@ -100,6 +100,8 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     enhancing_model.append_output([enhancing_prediction])
 
     for case in data_collection.cases:
+
+        print '\nStarting New Case...\n'
         
         wholetumor_prediction.case = case
         wholetumor_file = wholetumor_model.generate_outputs()[0][0]
@@ -108,8 +110,6 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
         enhancing_prediction.case = case
         enhancing_file = enhancing_model.generate_outputs()[0]
-
-        print '\nNext Case\n'
 
 if __name__ == '__main__':
 
