@@ -1,0 +1,111 @@
+{
+  "name": "DeepNeuro_Glioblastoma",
+  "number_of_inputs": 4,
+  "task": "Segmentation",
+  "organ": "Brain",
+  "modality": "MRI",
+  "train_test_data_details": "The model is trained on pre-processed brain MRIs from the BRATS2017 competition, as well as private datasets from multiple instituions.",
+  "briefdescription": "Segmentation of glioblastoma into whole tumor (peritumoral edema and necrosis) and enhancing tumor.",
+  "detaileddescription": "",
+  "website": "https://github.com/QTIM-Lab/DeepNeuro",
+  "citation": "",
+  "version": "0.1",
+  "docker": {
+    "dockerhub_repository": "qtimlab/deepneuro_segment_gbm",
+    "digest": "",
+    "size": "6.77 GB"
+  },
+  "model_name": "deepneuro_glioblastoma",
+  "data_path": "/INPUT_DATA",
+  "members": [
+    {
+      "name": "T2",
+      "type": "volume",
+      "iotype": "input",
+      "voltype": "ScalarVolume",
+      "detaileddescriptionSet": "T2-weighted MRI volume.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    },
+    {
+      "name": "T1",
+      "type": "volume",
+      "iotype": "input",
+      "voltype": "ScalarVolume",
+      "detaileddescriptionSet": "T1-weighted MRI volume.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    },
+    {
+      "name": "T1POST",
+      "type": "volume",
+      "iotype": "input",
+      "voltype": "ScalarVolume",
+      "detaileddescriptionSet": "T1-weighted MRI post-contrast volume.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    },
+    {
+      "name": "FLAIR",
+      "type": "volume",
+      "iotype": "input",
+      "voltype": "ScalarVolume",
+      "detaileddescriptionSet": "FLAIR MRI volume.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    },
+    {
+      "name": "debiased",
+      "type": "bool",
+      "default": "true",
+      "detaileddescriptionSet": "If data is already debiased, check this box.\n",
+      "iotype": "parameter"
+    },
+    {
+      "name": "resampled",
+      "type": "bool",
+      "default": "true",
+      "detaileddescriptionSet": "If data is already isotropically resampled, check this box.\n",
+      "iotype": "parameter"
+    },
+    {
+      "name": "registered",
+      "type": "bool",
+      "default": "true",
+      "detaileddescriptionSet": "If data is already registered, check this box.\n",
+      "iotype": "parameter"
+    },
+    {
+      "name": "skullstripped",
+      "type": "bool",
+      "default": "true",
+      "detaileddescriptionSet": "If data is already skullstripped, check this box.\n",
+      "iotype": "parameter"
+    },
+    {
+      "name": "GPU Number",
+      "type": "uint16_t",
+      "iotype": "parameter",
+      "param_name": "gpu_num",
+      "default": 0
+    },
+    {
+      "name": "Output_WholeTumor",
+      "type": "volume",
+      "iotype": "output",
+      "voltype": "LabelMap",
+      "detaileddescriptionSet": "Output labelmap for the segmentation results.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    },
+    {
+      "name": "Output_EnhancingTumor",
+      "type": "volume",
+      "iotype": "output",
+      "voltype": "LabelMap",
+      "detaileddescriptionSet": "Output labelmap for the segmentation results.\n",
+      "default": "std::vector<unsigned int>(3, 64)",
+      "itk_type": "typename FilterType::SizeType"
+    }
+  ]
+}

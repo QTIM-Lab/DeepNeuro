@@ -18,6 +18,8 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
         docker_command = ['nvidia-docker', 'run', '--rm', '-v', mounted_dir + ':/INPUT_DATA', docker_container] + command
 
         # This presumes everything is an optional arg, which is wrong.
+        # Rewrite this to accept command line strings, instead of Python variables.
+        # Would solve problem..
         for arg in cli_args:
             if cli_args[arg] == True:
                 docker_command += ['-' + str(arg)]
