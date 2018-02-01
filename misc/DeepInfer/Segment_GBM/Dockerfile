@@ -178,10 +178,10 @@ RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/wholetumor.h5 "https://ww
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 20
+RUN echo 21
 RUN git pull
 
 # Commands at startup.
-WORKDIR "/"
+WORKDIR "/home/DeepNeuro/misc/DeepInfer/Segment_GBM/"
 RUN chmod 777 /home/DeepNeuro/misc/DeepInfer/Segment_GBM/entrypoint.sh
 ENTRYPOINT ["/home/DeepNeuro/misc/DeepInfer/Segment_GBM/entrypoint.sh"]
