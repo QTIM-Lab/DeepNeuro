@@ -56,7 +56,7 @@ class Preprocessor(object):
 
                 self.base_file = file # Weird name for this, make more descriptive
 
-                if self.base_file.endswith('.nii') or self.base_file.endwith('.nii.gz'):
+                if self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz'):
                     self.output_filename = self.base_file
                 else:
                     self.output_filename = replace_suffix(file, '', self.preprocessor_string)
