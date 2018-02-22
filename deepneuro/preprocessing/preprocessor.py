@@ -51,23 +51,25 @@ class Preprocessor(object):
             for index, file in enumerate(data_group.preprocessed_case):
 
                 if self.verbose:
-                    print 'Preprocessor: ', self.name, '. Case: ', file
+                    print 'Preprocessor: ', self.name, ' Case: ', file
                     sys.stdout.flush()
 
                 self.base_file = file # Weird name for this, make more descriptive
-                self.output_filename = replace_suffix(file, '', self.preprocessor_string)
 
-                # if not os.path.exists(self.output_filename) or overwrite:
-                continue_status = self.preprocess() # Really weird
+                if self.base_file.endswith('.nii') or self.base_file.endwith('.nii.gz'):
+                    self.output_filename = self.base_file
+                else:
+                    self.output_filename = replace_suffix(file, '', self.preprocessor_string)
 
-                if not continue_status:
+                    # if not os.path.exists(self.output_filename) or overwrite:
+                    self.preprocess()
 
-                    if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
-                        os.remove(data_group.preprocessed_case[index])
+                if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
+                    os.remove(data_group.preprocessed_case[index])
 
-                    data_group.preprocessed_case[index] = self.output_filename
+                data_group.preprocessed_case[index] = self.output_filename
 
-                    self.outputs['outputs'] += [self.output_filename]
+                self.outputs['outputs'] += [self.output_filename]
 
     def preprocess(self):
 

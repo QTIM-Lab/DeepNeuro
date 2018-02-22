@@ -42,9 +42,6 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     # Step 2, Preprocess Data
     #--------------------------------------------------------------------#
 
-    save_all_steps = True
-    save_preprocess = True
-
     if not preprocessed:
         print 'ABOUT TO PREPROCESS....'
 

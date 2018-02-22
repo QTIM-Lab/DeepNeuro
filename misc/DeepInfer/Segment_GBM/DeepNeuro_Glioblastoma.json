@@ -11,9 +11,9 @@
   "citation": "",
   "version": "0.1",
   "docker": {
-    "dockerhub_repository": "qtimlab/deepneuro_segment_gbm",
-    "digest": "",
-    "size": "6.77 GB"
+    "dockerhub_repository": "qtimlab/deepneuro_segment_gbm:deepinfer",
+    "digest": "sha256:acaecad262a6dcabf0cf2480d5b25face8ded1e28a3836e8485fd39d1ff6ef4a",
+    "size": "5 GB"
   },
   "model_name": "deepneuro_glioblastoma",
   "data_path": "/INPUT_DATA",
