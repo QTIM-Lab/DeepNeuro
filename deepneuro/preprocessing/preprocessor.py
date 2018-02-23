@@ -73,7 +73,9 @@ class Preprocessor(object):
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
 
+                print data_group.preprocessed_case[index], self.output_filename, self.preprocessor_string
                 data_group.preprocessed_case[index] = self.output_filename
+                print data_group.preprocessed_case[index]
 
                 self.outputs['outputs'] += [self.output_filename]
 

@@ -178,7 +178,7 @@ RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/wholetumor.h5 "https://ww
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 30
+RUN echo 33
 RUN git fetch origin
 RUN git branch -f deepneuro_temp_file_bug origin/deepneuro_temp_file_bug
 RUN git checkout deepneuro_temp_file_bug
