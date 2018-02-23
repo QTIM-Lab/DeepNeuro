@@ -179,7 +179,9 @@ RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www
 
 # TODO: Check if Docker has solved this checkpointing problem.
 RUN echo 30
-RUN git pull
+RUN git fetch origin
+RUN git branch -f deepneuro_temp_file_bug origin/deepneuro_temp_file_bug
+RUN git checkout deepneuro_temp_file_bug
 
 # Commands at startup.
 WORKDIR "/"

@@ -10,7 +10,7 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 class Preprocessor(object):
 
 
-    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, verbose=False, **kwargs):
+    def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, verbose=False, output_folder=None, **kwargs):
 
         self.output_shape = None
         self.initialization = False
@@ -19,6 +19,8 @@ class Preprocessor(object):
 
         self.overwrite = overwrite
         self.save_output = save_output
+        self.output_folder = output_folder
+
         self.channel_dim = channel_dim
 
         add_parameter(self, kwargs, 'name', 'Conversion')
@@ -59,11 +61,15 @@ class Preprocessor(object):
                 if self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz'):
                     self.output_filename = self.base_file
                 else:
-                    self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+                    if self.output_folder is None:
+                        self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+                    else:
+                        self.output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.preprocessor_string)))
 
                     # if not os.path.exists(self.output_filename) or overwrite:
                     self.preprocess()
 
+                print self.save_output, data_group.preprocessed_case[index], data_group.data[case][index]
                 if not self.save_output and data_group.preprocessed_case[index] != data_group.data[case][index]:
                     os.remove(data_group.preprocessed_case[index])
 
