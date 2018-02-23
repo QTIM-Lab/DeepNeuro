@@ -58,7 +58,8 @@ class Preprocessor(object):
 
                 self.base_file = file # Weird name for this, make more descriptive
 
-                if self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz'):
+                # This is a little hacky.
+                if self.name == 'Conversion' and (self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz')):
                     self.output_filename = self.base_file
                 else:
                     if self.output_folder is None:
