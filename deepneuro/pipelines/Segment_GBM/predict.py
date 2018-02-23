@@ -61,7 +61,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
             preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
 
         if not normalized:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=True, verbose=verbose, mask=preprocessing_steps[-1], output_folder=output_folder, preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, mask=preprocessing_steps[-1], output_folder=output_folder, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -108,7 +108,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         enhancing_prediction.case = case
         enhancing_file = enhancing_model.generate_outputs()[0]
 
-    if not self.save_preprocess:
+    if not save_preprocess:
         for index, file in enumerate(data_collection['input_modalities'].preprocessed_case):
             os.remove(file)
 
