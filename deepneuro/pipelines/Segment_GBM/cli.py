@@ -37,6 +37,7 @@ class Segment_GBM_cli(object):
 
             -output_folder: A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz"
             -T2, -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
+            -wholetumor_output, -enhancing_output: Filepaths to output 
             -gpu_num: Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.
             -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.
             -resampled: If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step.
@@ -51,6 +52,8 @@ class Segment_GBM_cli(object):
         parser.add_argument('-T1POST', type=str)
         parser.add_argument('-FLAIR', type=str)
         parser.add_argument('-input_directory', type=str)
+        parser.add_argument('-wholetumor_output', type=str)
+        parser.add_argument('-enhancing_output', type=str)
         parser.add_argument('-gpu_num', nargs='?', const='0', type=str)
         parser.add_argument('-debiased', action='store_true')  
         parser.add_argument('-resampled', action='store_true')
