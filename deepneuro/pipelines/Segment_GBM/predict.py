@@ -109,7 +109,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         enhancing_file = enhancing_model.generate_outputs()[0]
 
     if not save_preprocess:
-        for index, file in enumerate(data_collection['input_modalities'].preprocessed_case):
+        for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):
             os.remove(file)
 
 if __name__ == '__main__':
