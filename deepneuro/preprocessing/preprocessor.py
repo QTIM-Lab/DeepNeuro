@@ -62,10 +62,17 @@ class Preprocessor(object):
                 if self.name == 'Conversion' and (self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz')):
                     self.output_filename = self.base_file
                 else:
+                    # Make a function for all of this filenaming nonsense.
                     if self.output_folder is None:
-                        self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+                        if os.path.isdir(file):
+                            self.output_filename = os.path.join(file, os.path.basename(os.path.dirname(file) + self.preprocessor_string + '.nii.gz'))
+                        else:
+                            self.output_filename = replace_suffix(file, '', self.preprocessor_string)
                     else:
-                        self.output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.preprocessor_string)))
+                        if os.path.isdir(file):
+                            self.output_filename = os.path.join(self.output_folder, os.path.basename(os.path.dirname(file) + self.preprocessor_string + '.nii.gz'))
+                        else:
+                            self.output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.preprocessor_string)))
 
                     # if not os.path.exists(self.output_filename) or overwrite:
                     self.preprocess()
