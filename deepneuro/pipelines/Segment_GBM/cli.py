@@ -77,15 +77,12 @@ class Segment_GBM_cli(object):
 
         from deepneuro.pipelines.Segment_GBM.predict import predict_GBM
 
-        print args
 
         predict_GBM(args.output_folder, args.T2, args.T1, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
 
     def docker_pipeline(self):
 
         args = self.parse_args()
-
-        print args
 
         nvidia_docker_wrapper(['segment_gbm', 'pipeline'], vars(args), ['output_folder', 'T2', 'T1', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_segment_gbm:latest')
 
