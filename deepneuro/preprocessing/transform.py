@@ -70,7 +70,11 @@ class Coregister(Preprocessor):
                     sys.stdout.flush()
 
                 self.base_file = file # Weird name for this, make more descriptive
-                self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+
+                if self.output_folder is None:
+                    self.output_filename = replace_suffix(file, '', self.preprocessor_string)
+                else:
+                    self.output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.preprocessor_string)))
 
                 if self.reference_channel is not None:
                     if self.reference_channel == index:
@@ -88,4 +92,5 @@ class Coregister(Preprocessor):
 
                 data_group.preprocessed_case[index] = self.output_filename
 
+                # Outputs is broken for multiple data groups.
                 self.outputs['outputs'] += [self.output_filename]

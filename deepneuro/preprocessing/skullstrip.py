@@ -44,15 +44,22 @@ class SkullStrip(Preprocessor):
         for label, data_group in self.data_groups.iteritems():
 
             index, file = self.reference_channel, data_group.preprocessed_case[self.reference_channel]
+
             output_filename = replace_suffix(file, '', self.mask_string)
+
+            if self.output_folder is None:
+                output_filename = replace_suffix(file, '', self.mask_string)
+            else:
+                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.mask_string)))
+
             specific_command = self.command + [file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
 
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
-            output_mask_filename = replace_suffix(file, '', self.mask_string)
-            os.rename(output_filename + '_mask.nii.gz', output_mask_filename)
+            os.rename(output_filename + '_mask.nii.gz', output_filename)
 
-            self.outputs['masks'] += [output_mask_filename]
+            # Outputs masks is causing a lot of problems, and doesn't fit with the data groups syntax.
+            self.outputs['masks'] += [output_filename]
 
         self.mask_numpy = read_image_files(self.outputs['masks'])
 

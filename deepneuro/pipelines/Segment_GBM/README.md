@@ -16,16 +16,18 @@ Pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deep
 You can then create a command using the following template to create a glioblastoma segmentation:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment pipeline -T2 <file> -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T2 <file> -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
 ```
 
 In order to use Docker, you must mount the directory containing all of your data and your output. All inputted filepaths must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/T2.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/T2.nii.gz. Note that the Python wrapper for Docker in this module will adjust paths for you.
 
 A brief explanation of this functions parameters follows:
 
+* 
 * -output_folder: A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz"
 * -T2, -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
-* -gpu_num: Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.
+* -wholetumor_output, -enhancing_output: Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing"
+* -gpu_num: Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.
 * -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.
 * -resampled: If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step.
 * -registered: If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step.

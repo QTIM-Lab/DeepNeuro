@@ -15,7 +15,7 @@ from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalizati
 from deepneuro.preprocessing.transform import Resample, Coregister
 from deepneuro.preprocessing.skullstrip import SkullStrip
 
-def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=True, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
+def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -46,22 +46,22 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         print 'ABOUT TO PREPROCESS....'
 
         # Random hack to save DICOMs to niftis for further processing.
-        preprocessing_steps = [Preprocessor(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose)]
+        preprocessing_steps = [Preprocessor(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not bias_corrected:
-            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose)]
+            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not resampled:
-            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose)]
+            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, reference_channel = 1)]
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
 
         if not skullstripped:
-            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, reference_channel = 1)]
+            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
 
         if not normalized:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_preprocess, verbose=verbose, mask=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, mask=preprocessing_steps[-1], output_folder=output_folder, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -107,6 +107,10 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
         enhancing_prediction.case = case
         enhancing_file = enhancing_model.generate_outputs()[0]
+
+    if not save_preprocess:
+        for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):
+            os.remove(file)
 
 if __name__ == '__main__':
 
