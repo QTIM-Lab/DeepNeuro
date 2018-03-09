@@ -1,16 +1,14 @@
-import math
-import numpy as np 
+
 import tensorflow as tf
 
-from tensorflow.python.framework import ops
 
 class batch_norm(object):
 
     # Taken from DCGAN-tensorflow on Github. In future, rewrite for multi-backend batchnorm.
 
-    def __init__(self, epsilon=1e-5, momentum = 0.9, name="batch_norm"):
+    def __init__(self, epsilon=1e-5, momentum=0.9, name="batch_norm"):
         with tf.variable_scope(name):
-            self.epsilon  = epsilon
+            self.epsilon = epsilon
             self.momentum = momentum
             self.name = name
         
@@ -21,7 +19,7 @@ class batch_norm(object):
 def leaky_relu(x, leak=0.2, backend='tf', name="lrelu"):
     
     if backend == 'tf':
-        return tf.maximum(x, leak*x)
+        return tf.maximum(x, leak * x)
 
 
 def relu(backend='tf'):
@@ -56,6 +54,7 @@ def dense(tensor, output_size, stddev=0.02, bias_start=0.0, with_w=False, backen
         else:
             return tf.matmul(tensor, matrix) + bias
 
+
 def reshape(backend='tf'):
 
     if backend == 'tf':
@@ -76,7 +75,8 @@ def conv2d(input_, output_dim, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name="co
 
         return conv
 
-def conv3d(input_, output_dim, kernel_size=(8,8,2), stride_size=(1,1,1), stddev=0.02, name="conv3d", backend='tf', padding='SAME'):
+
+def conv3d(input_, output_dim, kernel_size=(8, 8, 2), stride_size=(1, 1, 1), stddev=0.02, name="conv3d", backend='tf', padding='SAME'):
 
     with tf.variable_scope(name):
 
@@ -95,6 +95,7 @@ def conv3d(input_, output_dim, kernel_size=(8,8,2), stride_size=(1,1,1), stddev=
 
         return conv
 
+
 def deconv2d(input_, output_shape, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name="deconv2d", with_w=False):
 
     with tf.variable_scope(name):
@@ -103,23 +104,24 @@ def deconv2d(input_, output_shape, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name
                   initializer=tf.random_normal_initializer(stddev=stddev))
         
         try:
-          deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
+            deconv = tf.nn.conv2d_transpose(input_, w, output_shape=output_shape,
                     strides=[1, d_h, d_w, 1])
 
         # Support for verisons of TensorFlow before 0.7.0
         except AttributeError:
-          deconv = tf.nn.deconv2d(input_, w, output_shape=output_shape,
+            deconv = tf.nn.deconv2d(input_, w, output_shape=output_shape,
                     strides=[1, d_h, d_w, 1])
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.zeros_initializer())
         deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
 
         if with_w:
-          return deconv, w, biases
+            return deconv, w, biases
         else:
-          return deconv
+            return deconv
 
-def deconv3d(input_, output_shape, kernel_size=(5,5,5), stride_size=(2,2,2), stddev=0.02, name="deconv3d", with_w=False):
+
+def deconv3d(input_, output_shape, kernel_size=(5, 5, 5), stride_size=(2, 2, 2), stddev=0.02, name="deconv3d", with_w=False):
 
     with tf.variable_scope(name):
         # filter : [height, width, output_channels, in_channels]
@@ -128,17 +130,17 @@ def deconv3d(input_, output_shape, kernel_size=(5,5,5), stride_size=(2,2,2), std
                   initializer=tf.contrib.layers.xavier_initializer())
 
         try:
-          deconv = tf.nn.conv3d_transpose(input_, w, output_shape=output_shape, strides=[1, stride_size[0], stride_size[1], stride_size[2], 1])
+            deconv = tf.nn.conv3d_transpose(input_, w, output_shape=output_shape, strides=[1, stride_size[0], stride_size[1], stride_size[2], 1])
 
         # Support for verisons of TensorFlow before 0.7.0
         except AttributeError:
-          deconv = tf.nn.deconv3d(input_, w, output_shape=output_shape,
+            deconv = tf.nn.deconv3d(input_, w, output_shape=output_shape,
                     strides=[1, stride_size[0], stride_size[1], stride_size[2], 1])
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.zeros_initializer())
         deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
 
         if with_w:
-          return deconv, w, biases
+            return deconv, w, biases
         else:
-          return deconv
+            return deconv

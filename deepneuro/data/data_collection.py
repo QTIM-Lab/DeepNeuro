@@ -4,16 +4,15 @@ import os
 import glob
 import numpy as np
 import tables
-import nibabel as nib
 import copy
 
-from deepneuro.augmentation.augment import Augmentation, Copy
+from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
+
 
 class DataCollection(object):
 
-
-    def __init__(self, data_directory = None, data_storage=None, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
+    def __init__(self, data_directory=None, data_storage=None, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
 
         # Input vars
         self.data_directory = data_directory
@@ -306,7 +305,7 @@ class DataCollection(object):
             batch_size = self.multiplier
 
         for i in xrange(batch_size):
-            generate_data = next(recursive_augmentation_generator)
+            next(recursive_augmentation_generator)
 
             # TODO: Do this without if-statement and for loop?
             for data_idx, data_group in enumerate(data_groups):
@@ -350,7 +349,7 @@ class DataCollection(object):
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
                 for i in xrange(self.multiplier):
-                    generate_data = next(recursive_augmentation_generator)
+                    next(recursive_augmentation_generator)
 
                     if yield_data:
                         # TODO: Do this without if-statement and for loop?
@@ -397,14 +396,13 @@ class DataCollection(object):
 
                 # Why did I do this
                 sub_augmentation_iterations = self.multiplier
-                for i in xrange(augmentation_num+1):
+                for i in xrange(augmentation_num + 1):
                     sub_augmentation_iterations /= self.augmentations[i]['iterations']
 
                 for i in xrange(int(sub_augmentation_iterations)):
                     yield next(lower_recursive_generator)
 
             # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
-
 
     def clear_augmentations(self):
 
@@ -426,14 +424,13 @@ class DataCollection(object):
             for data_label, data_group in self.data_groups.iteritems():
                 if data_label not in data_group_labels:
                     continue
-                if not case_name in data_group.cases:
+                if case_name not in data_group.cases:
                     missing_case = True
                     break
             if not missing_case:
                 valid_cases += [case_name]
 
         return valid_cases, len(valid_cases)
-
 
     def create_hdf5_file(self, output_filepath, data_group_labels=None):
 
@@ -458,8 +455,8 @@ class DataCollection(object):
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
 
             # Naming convention is bad here, TODO, think about this.
-            data_group.casename_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'casenames']), tables.StringAtom(256), shape=(0,1), filters=filters, expectedrows=num_cases)
-            data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'affines']), tables.Float32Atom(), shape=(0,4,4), filters=filters, expectedrows=num_cases)
+            data_group.casename_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'casenames']), tables.StringAtom(256), shape=(0, 1), filters=filters, expectedrows=num_cases)
+            data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'affines']), tables.Float32Atom(), shape=(0, 4, 4), filters=filters, expectedrows=num_cases)
 
         return hdf5_file
 
@@ -473,7 +470,6 @@ class DataCollection(object):
             data_group_labels = self.data_groups.keys()
         if output_filepath is None:
             raise ValueError('No output_filepath provided; data cannot be written.')
-
 
         # Create Data File
         # try:
@@ -520,7 +516,6 @@ class DataCollection(object):
 
 class DataGroup(object):
 
-
     def __init__(self, label):
 
         self.label = label
@@ -550,7 +545,6 @@ class DataGroup(object):
 
         self.output_shape = None
         self.base_shape = None
-
 
     def add_case(self, case_name, item):
         self.data[case_name] = item
@@ -605,6 +599,7 @@ class DataGroup(object):
 
         self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
         self.affine_storage.append(self.base_affine[:][np.newaxis])
+
 
 if __name__ == '__main__':
     pass

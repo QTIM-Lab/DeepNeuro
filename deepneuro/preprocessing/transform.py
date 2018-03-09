@@ -2,13 +2,12 @@
 import subprocess
 import os
 import sys
-import glob
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, replace_suffix
-from deepneuro.utilities.conversion import save_numpy_2_nifti
 
 FNULL = open(os.devnull, 'w')
+
 
 class Resample(Preprocessor):
 
@@ -16,7 +15,7 @@ class Resample(Preprocessor):
 
         add_parameter(self, kwargs, 'command', ['Slicer', '--launch'])
 
-        add_parameter(self, kwargs, 'dimensions', [1,1,1])
+        add_parameter(self, kwargs, 'dimensions', [1, 1, 1])
         add_parameter(self, kwargs, 'interpolation', 'linear')
         add_parameter(self, kwargs, 'reference_file', None)
 
@@ -34,6 +33,7 @@ class Resample(Preprocessor):
             specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_file, '--interpolation', self.interpolation_dict[self.interpolation], self.base_file, self.output_filename]
         
         subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+
 
 class Coregister(Preprocessor):
 
@@ -59,7 +59,7 @@ class Coregister(Preprocessor):
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
 
-        self.initialize() # TODO: make overwrite work with initializations
+        self.initialize()  # TODO: make overwrite work with initializations
 
         for label, data_group in self.data_groups.iteritems():
 
@@ -69,7 +69,7 @@ class Coregister(Preprocessor):
                     print 'Preprocessor: ', self.name, '. Case: ', file
                     sys.stdout.flush()
 
-                self.base_file = file # Weird name for this, make more descriptive
+                self.base_file = file  # Weird name for this, make more descriptive
 
                 if self.output_folder is None:
                     self.output_filename = replace_suffix(file, '', self.preprocessor_string)

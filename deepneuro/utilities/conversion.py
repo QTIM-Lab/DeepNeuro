@@ -149,15 +149,14 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
 
                 flip_matrix = np.eye(4)
                 for i in xrange(3):
-                    if output_affine[i,i] < 0:
-                        flip_matrix[i,i] = -1
+                    if output_affine[i, i] < 0:
+                        flip_matrix[i, i] = -1
                         output_numpy = np.flip(output_numpy, i)
 
                 output_affine = np.matmul(output_affine, flip_matrix)
 
-
             if return_all:
-                return output_numpy, None, output_affine # TODO provide DICOM tags without doubling memory
+                return output_numpy, None, output_affine  # TODO provide DICOM tags without doubling memory
             else:
                 return output_numpy
 
@@ -193,13 +192,13 @@ def itk_transform_2_numpy(input_filepath, return_all=False):
         if row.startswith("FixedParameters:"):
             t_idx = row_idx
 
-    output_array = np.zeros((4,4))
+    output_array = np.zeros((4, 4))
 
     rotations = [float(r) for r in str.split(content[r_idx].replace("Parameters: ", '').rstrip(), ' ')]
     translations = [float(t) for t in str.split(content[t_idx].replace("FixedParameters: ", '').rstrip(), ' ')] + [1]
 
     for i in range(4):
-        output_array[i, 0:3] = rotations[i * 3:(i+1) * 3]
+        output_array[i, 0:3] = rotations[i * 3: (i + 1) * 3]
         output_array[i, 3] = translations[i]
 
     if return_all:
@@ -216,7 +215,7 @@ def img_2_numpy(input_image, return_all=False):
         in loading images.
     """
 
-    image_nifti = scipy.misc.imread(filepath)
+    image_nifti = scipy.misc.imread(input_image)
 
     if return_all:
         return image_nifti, None, None
@@ -271,18 +270,17 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data()
 
 
-# Consider merging these into one dictionary. Separating them
-# is easier to visaulize though.
-FORMAT_LIST = {'dicom':('.dcm','.ima'),
-                'nifti':('.nii','.nii.gz'),
-                'nrrd':('.nrrd','.nhdr'),
-                'image':('.jpg','.png'),
-                'itk_transform':('.txt')}
+# Consider merging these into one dictionary. Separating them is easier to visaulize though.
+FORMAT_LIST = {'dicom': ('.dcm', '.ima'), 
+                'nifti': ('.nii', '.nii.gz'), 
+                'nrrd': ('.nrrd', '.nhdr'), 
+                'image': ('.jpg', '.png'), 
+                'itk_transform': ('.txt')}
 
-NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
-                'nifti': nifti_2_numpy,
-                'nrrd': nrrd_2_numpy,
-                'image': img_2_numpy,
+NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
+                'nifti': nifti_2_numpy, 
+                'nrrd': nrrd_2_numpy, 
+                'image': img_2_numpy, 
                 'itk_transform': itk_transform_2_numpy}
 
 
@@ -329,8 +327,6 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
         type: str
             Internal code for image type.
     """
-
-    return_items = []
 
     if isinstance(input_data, basestring):
         if input_format is None:

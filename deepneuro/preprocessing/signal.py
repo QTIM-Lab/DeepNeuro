@@ -1,14 +1,14 @@
 
 import subprocess
 import os
-import glob
 import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
-from deepneuro.utilities.util import add_parameter, replace_suffix
+from deepneuro.utilities.util import add_parameter
 
 FNULL = open(os.devnull, 'w')
+
 
 class N4BiasCorrection(Preprocessor):
 
@@ -24,6 +24,7 @@ class N4BiasCorrection(Preprocessor):
         # specific_command = self.command + ['-i', self.base_file, '-o', self.output_filename]
 
         subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+
 
 class ZeroMeanNormalization(Preprocessor):
 

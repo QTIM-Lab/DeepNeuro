@@ -1,7 +1,6 @@
 
 import subprocess
 import os
-import glob
 import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
@@ -9,6 +8,7 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, replace_suffix
 
 FNULL = open(os.devnull, 'w')
+
 
 class SkullStrip(Preprocessor):
 
@@ -43,7 +43,7 @@ class SkullStrip(Preprocessor):
 
         for label, data_group in self.data_groups.iteritems():
 
-            index, file = self.reference_channel, data_group.preprocessed_case[self.reference_channel]
+            file = self.reference_channel, data_group.preprocessed_case[self.reference_channel]
 
             output_filename = replace_suffix(file, '', self.mask_string)
 

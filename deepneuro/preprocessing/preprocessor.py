@@ -7,8 +7,8 @@ from collections import defaultdict
 from deepneuro.utilities.util import add_parameter, replace_suffix
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 
-class Preprocessor(object):
 
+class Preprocessor(object):
 
     def __init__(self, data_groups=None, channel_dim=-1, save_output=True, overwrite=False, verbose=False, output_folder=None, **kwargs):
 
@@ -46,7 +46,7 @@ class Preprocessor(object):
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
 
-        self.initialize() # TODO: make overwrite work with initializations
+        self.initialize()  # TODO: make overwrite work with initializations
 
         for label, data_group in self.data_groups.iteritems():
 
@@ -56,7 +56,7 @@ class Preprocessor(object):
                     print 'Preprocessor: ', self.name, ' Case: ', file
                     sys.stdout.flush()
 
-                self.base_file = file # Weird name for this, make more descriptive
+                self.base_file = file  # Weird name for this, make more descriptive
 
                 # This is a little hacky.
                 if self.name == 'Conversion' and (self.base_file.endswith('.nii') or self.base_file.endswith('.nii.gz')):
