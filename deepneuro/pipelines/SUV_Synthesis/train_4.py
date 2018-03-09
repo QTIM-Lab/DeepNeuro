@@ -2,7 +2,7 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 
 from deepneuro.data.data_collection import DataCollection
 from deepneuro.augmentation.augment import Flip_Rotate_2D, ExtractPatches, MaskData, Downsample, Copy
@@ -19,17 +19,17 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
     # Define input modalities to load.
     training_modality_dict = {'input_modalities': 
-    ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz', '*-T2.*'], ['*MPRAGE_POST*nii.gz'], ['*MPRAGE_Pre*nii.gz','*MPRAGE_PRE*nii.gz'], ['DSC_GE_CBV_r_T2.nii.gz', '*RCBV*'],['DSC_GE_rBF_r_T2.nii.gz', '*RCBF*'],'*ktrans*'],
-    'ground_truth': [['*SUV_r_T2_raw.nii.gz*', '*SUV*']]}
+    ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz', '*-T2.*'], ['*MPRAGE_POST*nii.gz'], ['*MPRAGE_Pre*nii.gz','*MPRAGE_PRE*nii.gz']],
+    'ground_truth': [['*SUV_r_T2_raw.nii.gz*']]}
 
     load_data = False
-    train_model = False
+    train_model = True
     load_test_data = True
     predict = True
 
     training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/TMZ_7_323232.h5'
-    model_file = 'TMZ_7_323232_model.h5'
-    testing_data = './suv_test.h5'
+    model_file = '/mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/test_model.h5'
+    testing_data = './mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/train_data.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -61,7 +61,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
         training_data_collection.append_augmentation(flip_augmentation, multiplier=2)
 
         # Define model parameters
-        model_parameters = {'input_shape': (32, 32, 32, 7),
+        model_parameters = {'input_shape': (32, 32, 32, 4),
                         'downsize_filters_factor': 1,
                         'pool_size': (2, 2, 2), 
                         'filter_shape': (5, 5, 5), 

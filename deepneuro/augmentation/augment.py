@@ -1,4 +1,5 @@
 """ TODO: Break out these augmentations into submodules for easier reference.
+    TODO: Rewrite this code to be briefer. Take advantage of common python class structures
 """
 
 

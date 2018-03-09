@@ -60,7 +60,7 @@ class DataCollection(object):
         if self.data_directory is not None:
 
             if self.verbose:
-                print 'Gathering image data from...', self.data_directory
+                print 'Gathering image data from...', self.data_directory, '\n'
 
             # TODO: Add section for spreadsheets.
             # TODO: Add section for values.
@@ -105,9 +105,9 @@ class DataCollection(object):
                         else:
                             print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
                             if len(target_file) == 0:
-                                print 'No file found.'
+                                print 'No file found.\n'
                             else:
-                                print 'Multiple files found.'
+                                print 'Multiple files found.\n'
                             break
 
                     if len(modality_group_files) == len(modality_labels):
@@ -176,8 +176,8 @@ class DataCollection(object):
             for data_group_label in augmentation.data_groups.keys():
                 if augmentation.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
-                    self.data_group.augmentation_cases.append([None]) 
-                    self.data_group.augmentation_strings.append([''])
+                self.data_groups[data_group_label].augmentation_cases.append([None]) 
+                self.data_groups[data_group_label].augmentation_strings.append([''])
 
         # The total iterations variable allows for "total" augmentations later on.
         # For example, "augment until 5000 images is reached"
@@ -264,7 +264,7 @@ class DataCollection(object):
             data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
 
             if data_group.source == 'storage':
-                data_group.base_casename = data_group.data_casenames[case_name][0]
+                data_group.base_casename = data_group.data_casenames[casename][0]
             else:
                 data_group.base_casename = case
 
@@ -339,7 +339,7 @@ class DataCollection(object):
                     print 'Working on image.. ', case_idx, 'at', case_name
 
                 try:
-                    self.load_case_data(case)
+                    self.load_case_data(case_name)
                 except KeyboardInterrupt:
                     raise
                 except:
@@ -563,6 +563,7 @@ class DataGroup(object):
 
         if self.output_shape is None:
             if self.data == {}:
+                print 'No Data!'
                 return (0,)
             elif self.base_shape is None:
                 if self.source == 'directory':

@@ -22,14 +22,14 @@ def train_Segment_GBM(data_directory, val_data_directory):
     ['*FLAIR*', ['*T2SPACE*', '*T2_pp*']],
     'ground_truth': ['*FLAIR*']}
 
-    load_data = False
-    train_model = False
+    load_data = True
+    train_model = True
     load_test_data = True
     predict = True
 
     training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/FLAIR_upsampling_323232.h5'
-    model_file = 'FLAIR_upsampling_323232_model.h5'
-    testing_data = './FLAIR_upsampling_323232_test_case.h5'
+    model_file = '/mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/FLAIR_upsampling_323232_model.h5'
+    testing_data = '/mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/FLAIR_upsampling_323232_test_case.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -45,7 +45,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return data['ground_truth'] == 1
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0,1,2], 'input_modalities': [0,1,2]})
+        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, .5], [roi_region, .5]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0,1,2], 'input_modalities': [0,1,2]})
         training_data_collection.append_augmentation(patch_augmentation, multiplier=70)
 
         # Write data to hdf5
