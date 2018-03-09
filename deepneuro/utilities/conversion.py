@@ -10,19 +10,6 @@ from collections import defaultdict
 
 from deepneuro.utilities.util import grab_files_recursive
 
-# Consider merging these into one dictionary. Separating them
-# is easier to visaulize though.
-FORMAT_LIST = {'dicom':('.dcm','.ima'),
-                'nifti':('.nii','.nii.gz'),
-                'nrrd':('.nrrd','.nhdr'),
-                'image':('.jpg','.png'),
-                'itk_transform':('.txt')}
-
-NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
-                'nifti': nifti_2_numpy,
-                'nrrd': nrrd_2_numpy,
-                'image': img_2_numpy,
-                'itk_transform': itk_transform_2_numpy}
 
 def read_image_files(image_files, return_affine=False):
 
@@ -282,6 +269,21 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data(), nifti.header, nifti.affine
     else:
         return nifti.get_data()
+
+
+# Consider merging these into one dictionary. Separating them
+# is easier to visaulize though.
+FORMAT_LIST = {'dicom':('.dcm','.ima'),
+                'nifti':('.nii','.nii.gz'),
+                'nrrd':('.nrrd','.nhdr'),
+                'image':('.jpg','.png'),
+                'itk_transform':('.txt')}
+
+NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
+                'nifti': nifti_2_numpy,
+                'nrrd': nrrd_2_numpy,
+                'image': img_2_numpy,
+                'itk_transform': itk_transform_2_numpy}
 
 
 def check_format(filepath):
