@@ -3,12 +3,26 @@ import os
 import numpy as np
 import nibabel as nib
 import nrrd
-import scipy.misc
 import dicom
+import scipy
 
 from collections import defaultdict
 
 from deepneuro.utilities.util import grab_files_recursive
+
+# Consider merging these into one dictionary. Separating them
+# is easier to visaulize though.
+FORMAT_LIST = {'dicom':('.dcm','.ima'),
+                'nifti':('.nii','.nii.gz'),
+                'nrrd':('.nrrd','.nhdr'),
+                'image':('.jpg','.png'),
+                'itk_transform':('.txt')}
+
+NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
+                'nifti': nifti_2_numpy,
+                'nrrd': nrrd_2_numpy,
+                'image': img_2_numpy,
+                'itk_transform': itk_transform_2_numpy}
 
 def read_image_files(image_files, return_affine=False):
 
@@ -35,8 +49,10 @@ def read_image_files(image_files, return_affine=False):
     else:
         return array
 
+
 def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
+
 
 def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all=False):
 
@@ -65,7 +81,6 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
         print 'Found', len(dicom_files), 'DICOM files in directory. \n'
         print 'Counting volumes..'
 
-    dicom_headers = [] 
     unique_dicoms = defaultdict(list)
     for dicom_file in dicom_files:
         UID = dicom_file[1]
@@ -75,8 +90,6 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
         print 'Found', len(unique_dicoms.keys()), 'unique volumes \n'
         print 'Saving out files from these volumes.'
 
-    output_dict = {}
-    output_filenames = []
     for UID in unique_dicoms.keys():
     
         # Bad behavior: Currently outputs first DICOM found.
@@ -91,8 +104,8 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
 
             # Sort DICOMs by Instance.
             dicom_instances = [x.data_element('InstanceNumber').value for x in current_dicoms]
-            current_dicoms = [x for _,x in sorted(zip(dicom_instances,current_dicoms))]
-            current_files = [x for _,x in sorted(zip(dicom_instances,current_files))]
+            current_dicoms = [x for _, x in sorted(zip(dicom_instances, current_dicoms))]
+            current_files = [x for _, x in sorted(zip(dicom_instances, current_files))]
             first_dicom, last_dicom = current_dicoms[0], current_dicoms[-1]
 
             if verbose:
@@ -119,13 +132,12 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
 
             # Transformations from DICOM to Nifti Space (don't fully understand, TOO)
             cr_flip = np.eye(4)
-            cr_flip[0:2,0:2] = [[0,1],[1,0]]
+            cr_flip[0:2, 0:2] = [[0, 1], [1, 0]]
             neg_flip = np.eye(4)
-            neg_flip[0:2,0:2] = [[-1,0],[0,-1]]
+            neg_flip[0:2, 0:2] = [[-1, 0], [0, -1]]
             output_affine = np.matmul(neg_flip, np.matmul(output_affine, cr_flip))
 
             # Create numpy array data...
-            output_shape = get_dicom_pixel_array(current_dicoms[0], current_files[0]).shape
             output_numpy = []
             for i in xrange(len(current_dicoms)):
                 try:
@@ -138,13 +150,13 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
             # Also unsure of the dynamic here, but they work.
             if harden_orientation:
 
-                cx, cy, cz = np.argmax(np.abs(output_affine[0:3,0:3]), axis=0)
+                cx, cy, cz = np.argmax(np.abs(output_affine[0:3, 0:3]), axis=0)
 
-                output_numpy = np.transpose(output_numpy, (cx,cy,cz))
+                output_numpy = np.transpose(output_numpy, (cx, cy, cz))
 
                 harden_matrix = np.eye(4)
-                for dim, i in enumerate([cx,cy,cz]):
-                    harden_matrix[i,i] = 0
+                for dim, i in enumerate([cx, cy, cz]):
+                    harden_matrix[i, i] = 0
                     harden_matrix[dim, i] = 1
                 output_affine = np.matmul(output_affine, harden_matrix)
 
@@ -164,6 +176,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all
 
         # except:
             # print 'Could not read DICOM at folder...', input_folder
+
 
 def itk_transform_2_numpy(input_filepath, return_all=False):
 
@@ -199,7 +212,7 @@ def itk_transform_2_numpy(input_filepath, return_all=False):
     translations = [float(t) for t in str.split(content[t_idx].replace("FixedParameters: ", '').rstrip(), ' ')] + [1]
 
     for i in range(4):
-        output_array[i,0:3] = rotations[i*3:(i+1)*3]
+        output_array[i, 0:3] = rotations[i * 3:(i+1) * 3]
         output_array[i, 3] = translations[i]
 
     if return_all:
@@ -216,12 +229,13 @@ def img_2_numpy(input_image, return_all=False):
         in loading images.
     """
 
-    image_nifti = misc.imread(filepath)
+    image_nifti = scipy.misc.imread(filepath)
 
     if return_all:
         return image_nifti, None, None
     else:
         return image_nifti
+
 
 def nrrd_2_numpy(input_nrrd, return_all=False):
     
@@ -236,9 +250,10 @@ def nrrd_2_numpy(input_nrrd, return_all=False):
         nrrd_data = np.rollaxis(nrrd_data, 0, 4)
 
     if return_all:
-        return nrrd_data, nrrd_options, None # Affine not implemented yet whoops..
+        return nrrd_data, nrrd_options, None  #Affine not implemented yet..
     else:
         return nrrd_data
+
 
 def nifti_2_numpy(input_filepath, return_all=False):
 
@@ -268,19 +283,6 @@ def nifti_2_numpy(input_filepath, return_all=False):
     else:
         return nifti.get_data()
 
-# Consider merging these into one dictionary. Separating them
-# is easier to visaulize though.
-FORMAT_LIST = {'dicom':('.dcm','.ima'),
-                'nifti':('.nii','.nii.gz'),
-                'nrrd':('.nrrd','.nhdr'),
-                'image':('.jpg','.png'),
-                'itk_transform':('.txt')}
-
-NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
-                'nifti': nifti_2_numpy,
-                'nrrd': nrrd_2_numpy,
-                'image': img_2_numpy,
-                'itk_transform': itk_transform_2_numpy}
 
 def check_format(filepath):
 
@@ -300,6 +302,7 @@ def check_format(filepath):
         # print 'Error! Input file extension is not supported by qtim_tools. Returning None.'
     else:
         return format_type
+
 
 def convert_input_2_numpy(input_data, input_format=None, return_all=False):
     
@@ -348,6 +351,7 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
             return input_data, None, None, 'numpy'
         else:
             return input_data
+
 
 def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None):
 

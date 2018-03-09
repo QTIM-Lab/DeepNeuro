@@ -3,6 +3,7 @@ import numpy as np
 import os
 import fnmatch
 
+
 def round_up(x, y):
     return int(math.ceil(float(x) / float(y)))
 
@@ -85,6 +86,7 @@ def nifti_splitext(input_filepath):
         return split_filepath
     else:
         return [os.path.join(os.sep.join(path_split[0:-1]), split_filepath[0]), '.' + '.'.join(split_filepath[1:])]
+
 
 def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter=None, file_extension='.nii.gz'):
 
