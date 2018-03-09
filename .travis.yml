@@ -24,7 +24,7 @@ notifications:
 
 script:
   - tox -e $TOX_ENV
-  - travis-sphinx --nowarn build
+  - travis-sphinx build --nowarn
     
 after_success:
   - travis-sphinx deploy
