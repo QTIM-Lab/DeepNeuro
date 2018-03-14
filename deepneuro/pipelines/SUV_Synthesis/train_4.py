@@ -23,13 +23,13 @@ def train_Segment_GBM(data_directory, val_data_directory):
     'ground_truth': [['*SUV_r_T2_raw.nii.gz*']]}
 
     load_data = False
-    train_model = True
-    load_test_data = False
-    predict = False
+    train_model = False
+    load_test_data = True
+    predict = True
 
     training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/TMZ_7_323232.h5'
     model_file = '/mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/test_model.h5'
-    testing_data = './mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/train_data.h5'
+    testing_data = '/mnt/jk489/QTIM_Experiments/DEEPNEURO_EXAMPLE/train_data.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -79,14 +79,12 @@ def train_Segment_GBM(data_directory, val_data_directory):
         # Create U-Net
         unet_model = UNet(**model_parameters)
         plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
-
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
                         'output_model_filepath': model_file,
                         'training_batch_size': 64,
                         'num_epochs': 1000,
                         'training_steps_per_epoch': 20}
         unet_model.train(training_data_collection, **training_parameters)
-        
     else:
         unet_model = load_old_model(model_file)
 

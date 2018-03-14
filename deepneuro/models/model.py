@@ -11,6 +11,7 @@ from deepneuro.models.cost_functions import cost_function_dict
 
 import tensorflow as tf
 
+
 class DeepNeuroModel(object):
     
     def __init__(self, model=None, input_shape=(32, 32, 32, 1), input_tensor=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
@@ -171,6 +172,7 @@ class DeepNeuroModel(object):
 
         return callbacks
 
+
 def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={}):
 
     """ Temporary function; callbacks will be dealt with in more detail in the future.
@@ -186,7 +188,7 @@ def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={
     for callback in callbacks:
 
         if callback == 'save_model':
-            return_callbacks += [ ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
+            return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
 
     # filepath="weights-improvement-{epoch:02d}-{loss:.2f}.hdf5"
 
@@ -247,12 +249,12 @@ def load_old_model(model_file, backend='keras'):
     if backend == 'keras':
         custom_objects = cost_function_dict()
 
-        return DeepNeuroModel(model = load_model(model_file, custom_objects=custom_objects))
+        return DeepNeuroModel(model=load_model(model_file, custom_objects=custom_objects))
 
     if backend == 'tf':
         sess = tf.Session()    
-        #First let's load meta graph and restore weights
+        # First let's load meta graph and restore weights
         saver = tf.train.import_meta_graph(model_file)
-        saver.restore(sess,tf.train.latest_checkpoint('./'))
+        saver.restore(sess, tf.train.latest_checkpoint('./'))
         return sess
 
