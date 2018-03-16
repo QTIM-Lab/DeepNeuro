@@ -5,7 +5,7 @@
 from keras.engine import Input
 from keras.models import load_model
 from keras.layers import UpSampling3D
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, CSVLogger
 
 from deepneuro.models.cost_functions import cost_function_dict
 
@@ -14,7 +14,9 @@ import tensorflow as tf
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, input_shape=(32, 32, 32, 1), input_tensor=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, input_shape=(32, 32, 32, 1), input_tensor=None, downsize_filters_factor=1,
+                 pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001,
+                 output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -125,7 +127,10 @@ class DeepNeuroModel(object):
 
         return self.model
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None,
+              input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None,
+              validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None,
+              num_epochs=None, callbacks=['save_model'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -189,6 +194,9 @@ def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={
 
         if callback == 'save_model':
             return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
+        elif callback == 'save_log':
+            log_file = kwargs.get('log_file')
+            return_callbacks += [CSVLogger(log_file, append=True)]
 
     # filepath="weights-improvement-{epoch:02d}-{loss:.2f}.hdf5"
 
