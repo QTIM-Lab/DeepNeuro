@@ -54,7 +54,7 @@ class DataCollection(object):
         self.cases.append(case_name)
         self.total_cases = len(self.cases)
 
-    def fill_data_groups(self):
+    def fill_data_groups(self, directory_list=None):
 
         if self.data_directory is not None:
 
@@ -71,13 +71,15 @@ class DataCollection(object):
                     self.data_groups[modality_group].source = 'directory'
 
             # Iterate through directories.. Always looking for a better way to check optional list typing.
-            if isinstance(self.data_directory, basestring):
-                directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
-            else:
-                directory_list = []
-                for d in self.data_directory:
-                    directory_list += glob.glob(os.path.join(d, "*/"))
-                directory_list = sorted(directory_list)
+            if directory_list is None:
+                
+                if isinstance(self.data_directory, basestring):
+                    directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
+                else:
+                    directory_list = []
+                    for d in self.data_directory:
+                        directory_list += glob.glob(os.path.join(d, "*/"))
+                    directory_list = sorted(directory_list)
 
             for subject_dir in directory_list:
 
