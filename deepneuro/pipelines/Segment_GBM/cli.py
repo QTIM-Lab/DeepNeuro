@@ -10,7 +10,7 @@ class Segment_GBM_cli(object):
 
         parser = argparse.ArgumentParser(
             description='A number of pre-packaged command used by the Quantiative Tumor Imaging Lab at the Martinos Center',
-            usage='''segment <command> [<args>]
+            usage='''segment_gbm <command> [<args>]
 
                     The following commands are available:
                        pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
@@ -31,7 +31,7 @@ class Segment_GBM_cli(object):
     def parse_args(self):
 
         parser = argparse.ArgumentParser(
-            description='''segment pipeline <T2> <T1pre> <T1post> <FLAIR> <output_folder> [-gpu_num <int> -niftis -nobias -preprocessed -keep_outputs]
+            description='''segment_gbm pipeline
 
             Segment an image from DICOMs with all preprocessing steps included.
 

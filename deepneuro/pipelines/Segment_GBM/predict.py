@@ -6,14 +6,12 @@ from deepneuro.models.unet import UNet
 from deepneuro.models.timenet import TimeNet
 from deepneuro.outputs.inference import ModelPatchesInference
 from deepneuro.models.model import load_old_model
-
 from deepneuro.load.load import load
-from deepneuro.data.data_collection import DataCollection
-
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
 from deepneuro.preprocessing.skullstrip import SkullStrip
+
 
 def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
 
@@ -55,10 +53,10 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
             preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not skullstripped:
-            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
+            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not normalized:
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, mask=preprocessing_steps[-1], output_folder=output_folder, preprocessor_string='_preprocessed')]

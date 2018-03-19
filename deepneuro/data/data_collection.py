@@ -592,7 +592,7 @@ class DataGroup(object):
     # @profile
     def write_to_storage(self):
 
-        if len(self.augmentation_cases) == 0:
+        if len(self.augmentation_cases) == 1:
             self.data_storage.append(self.base_case[np.newaxis])
         else:
             self.data_storage.append(self.augmentation_cases[-1][np.newaxis])

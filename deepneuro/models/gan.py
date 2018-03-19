@@ -8,9 +8,9 @@ from keras.optimizers import Nadam
 from keras.layers.merge import concatenate
 
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
-from deepneuro.models.model import DeepNeuroModel, UpConvolution
+from deepneuro.models.model import DeepNeuroModel
 from deepneuro.utilities.conversion import round_up
-from deepneuro.models.dn_ops import batch_norm, relu, tanh, leaky_relu, dense, reshape, sigmoid, conv2d, deconv2d, conv3d, deconv3d
+from deepneuro.models.dn_ops import batch_norm, relu, tanh, leaky_relu, dense, reshape, sigmoid, conv2d, deconv2d, conv3d, deconv3d, UpConvolution
 
 from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
 
@@ -21,6 +21,7 @@ from glob import glob
 import tensorflow as tf
 import numpy as np
 import csv
+
 
 class GAN(DeepNeuroModel):
     

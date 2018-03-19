@@ -1,5 +1,6 @@
 
 import tensorflow as tf
+from keras.layers import UpSampling3D
 
 
 class batch_norm(object):
@@ -144,3 +145,34 @@ def deconv3d(input_, output_shape, kernel_size=(5, 5, 5), stride_size=(2, 2, 2),
             return deconv, w, biases
         else:
             return deconv
+
+
+def UpConvolution(deconvolution=False, pool_size=(2, 2, 2), implementation='keras'):
+
+    """ Keras doesn't have native support for deconvolution yet, but keras_contrib does.
+        If deconvolution is not specified, normal upsampling will be used.
+
+        TODO: Currently only works in 2D.
+        TODO: Rewrite in style of other dn_ops
+
+        Parameters
+        ----------
+        deconvolution : bool, optional
+            If true, will attempt to load Deconvolutio from keras_contrib
+        pool_size : tuple, optional
+            Upsampling ratio along each axis.
+        implementation : str, optional
+            Specify 'keras' or 'tensorflow' implementation.
+        
+        Returns
+        -------
+        Keras Tensor Operation
+            Either Upsampling3D() or Deconvolution()
+    """
+
+    if implementation == 'keras':
+        if not deconvolution:
+            return UpSampling3D(size=pool_size)
+        else:
+            return None
+            # deconvolution not yet implemented // required from keras_contrib

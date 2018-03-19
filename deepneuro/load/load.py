@@ -9,6 +9,7 @@ dataset_dict = {'Segment_GBM_downsampled_wholetumor': [os.path.join(current_dir,
                 'Segment_GBM_upsample_wholetumor': [os.path.join(current_dir, 'Segment_GBM', 'upsample_wholetumor.h5'), "https://www.dropbox.com/s/r4pelwcsscnuvc9/upsample_wholetumor_BRATS_submission.h5?dl=1"],
                 'Segment_GBM_wholetumor': [os.path.join(current_dir, 'Segment_GBM', 'wholetumor.h5'), "https://www.dropbox.com/s/74tjx14ue11rc0q/wholetumor.h5?dl=1"],
                 'Segment_GBM_enhancing': [os.path.join(current_dir, 'Segment_GBM', 'enhancing.h5'), "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"],
+                'Skull_Strip_T1Post_FLAIR': [os.path.join(current_dir, 'Skull_Strip', 'Skull_Stripping.h5'), "https://www.dropbox.com/s/gn2w4u4vw1orcyj/FLAIRT1post_ss.h5?dl=1"]
                 }
 
 
