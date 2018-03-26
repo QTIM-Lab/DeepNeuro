@@ -88,23 +88,21 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     wholetumor_model = load_old_model(load('Segment_GBM_wholetumor'))
     enhancing_model = load_old_model(load('Segment_GBM_enhancing'))
 
-    wholetumor_prediction = ModelPatchesInference(data_collection, **wholetumor_prediction_parameters)
+    wholetumor_prediction = ModelPatchesInference(**wholetumor_prediction_parameters)
     wholetumor_model.append_output([wholetumor_prediction])
 
-    enhancing_prediction = ModelPatchesInference(data_collection, **enhancing_prediction_parameters)
+    enhancing_prediction = ModelPatchesInference(**enhancing_prediction_parameters)
     enhancing_model.append_output([enhancing_prediction])
 
     for case in data_collection.cases:
 
         print '\nStarting New Case...\n'
         
-        wholetumor_prediction.case = case
-        wholetumor_file = wholetumor_model.generate_outputs()[0][0]
+        wholetumor_file = wholetumor_model.generate_outputs(data_collection, case)[0][0]
 
         data_collection.add_channel(case, wholetumor_file)
 
-        enhancing_prediction.case = case
-        enhancing_file = enhancing_model.generate_outputs()[0]
+        enhancing_file = enhancing_model.generate_outputs(data_collection, case)[0]
 
     if not save_preprocess:
         for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):

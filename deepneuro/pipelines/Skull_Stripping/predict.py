@@ -7,6 +7,7 @@ from deepneuro.load.load import load
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
+from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
 
 def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, mask_output='skullstrip_mask.nii.gz', verbose=True):
 
@@ -71,7 +72,14 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
 
     skull_stripping_model = load_old_model(load('Skull_Strip_T1Post_FLAIR'))
 
-    skull_stripping_prediction = ModelPatchesInference(data_collection, **skullstrip_prediction_parameters)
+    skull_stripping_prediction = ModelPatchesInference(**skullstrip_prediction_parameters)
+
+    label_binarization = BinarizeLabel()
+    largest_component = LargestComponents()
+    hole_filler = FillHoles(postprocessor_string='_mask')
+
+    skull_stripping_prediction.append_postprocessor([label_binarization, largest_component, hole_filler])
+
     skull_stripping_model.append_output([skull_stripping_prediction])
 
     for case in data_collection.cases:
@@ -79,7 +87,12 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
         print '\nStarting New Case...\n'
         
         skull_stripping_prediction.case = case
-        skull_stripping_mask = skull_stripping_model.generate_outputs()[0][0]
+        skull_stripping_mask = skull_stripping_model.generate_outputs(data_collection)[0]
+
+        print len(skull_stripping_mask)
+        for item in skull_stripping_mask:
+            print item
+        # print 'Finished...', skull_stripping_mask
 
     if not save_preprocess:
         for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):
@@ -87,5 +100,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
 
 
 if __name__ == '__main__':
+
+    # skull_strip pipeline -T1POST /qtim2/users/data/BAV/ANALYSIS/COREGISTRATION/BAV_01/VISIT_01/BAV_01-VISIT_01-MPRAGE_POST_r_T2.nii.gz -FLAIR /qtim2/users/data/BAV/ANALYSIS/COREGISTRATION/BAV_01/VISIT_01/BAV_01-VISIT_01-FLAIR_r_T2.nii.gz -output_folder /home/abeers/Junk/DEEPNEURO_TEST -gpu_num 0 -debiased -registered -resampled
 
     pass
