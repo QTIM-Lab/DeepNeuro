@@ -1,9 +1,8 @@
 
-import os
 import sys
 
 from deepneuro.outputs.output import Output
-from deepneuro.utilities.util import add_parameter, replace_suffix
+from deepneuro.utilities.util import add_parameter
 
 import numpy as np
 

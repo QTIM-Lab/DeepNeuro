@@ -13,122 +13,122 @@ ARG KERAS_VERSION=2.0.6
 
 # Install some dependencies
 RUN apt-get update && apt-get install -y \
-        bc \
-        build-essential \
-        cmake \
-        curl \
-        g++ \
-        gfortran \
-        git \
-        libffi-dev \
-        libfreetype6-dev \
-        libhdf5-dev \
-        libjpeg-dev \
-        liblcms2-dev \
-        libopenblas-dev \
-        liblapack-dev \
-        libopenjpeg2 \
-        libpng12-dev \
-        libssl-dev \
-        libtiff5-dev \
-        libwebp-dev \
-        libzmq3-dev \
-        nano \
-        pkg-config \
-        python-dev \
-        software-properties-common \
-        unzip \
-        vim \
-        wget \
-        zlib1g-dev \
-        qt5-default \
-        libvtk6-dev \
-        zlib1g-dev \
-        libjpeg-dev \
-        libwebp-dev \
-        libpng-dev \
-        libtiff5-dev \
-        libjasper-dev \
-        libopenexr-dev \
-        libgdal-dev \
-        libdc1394-22-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libswscale-dev \
-        libtheora-dev \
-        libvorbis-dev \
-        libxvidcore-dev \
-        libx264-dev \
-        yasm \
-        libopencore-amrnb-dev \
-        libopencore-amrwb-dev \
-        libv4l-dev \
-        libxine2-dev \
-        libtbb-dev \
-        libeigen3-dev \
-        python-dev \
-        python-tk \
-        python-numpy \
-        python3-dev \
-        python3-tk \
-        python3-numpy \
-        ant \
-        default-jdk \
-        doxygen \
-        && \
-    apt-get clean && \
-    apt-get autoremove && \
-    rm -rf /var/lib/apt/lists/* && \
+		bc \
+		build-essential \
+		cmake \
+		curl \
+		g++ \
+		gfortran \
+		git \
+		libffi-dev \
+		libfreetype6-dev \
+		libhdf5-dev \
+		libjpeg-dev \
+		liblcms2-dev \
+		libopenblas-dev \
+		liblapack-dev \
+		libopenjpeg2 \
+		libpng12-dev \
+		libssl-dev \
+		libtiff5-dev \
+		libwebp-dev \
+		libzmq3-dev \
+		nano \
+		pkg-config \
+		python-dev \
+		software-properties-common \
+		unzip \
+		vim \
+		wget \
+		zlib1g-dev \
+		qt5-default \
+		libvtk6-dev \
+		zlib1g-dev \
+		libjpeg-dev \
+		libwebp-dev \
+		libpng-dev \
+		libtiff5-dev \
+		libjasper-dev \
+		libopenexr-dev \
+		libgdal-dev \
+		libdc1394-22-dev \
+		libavcodec-dev \
+		libavformat-dev \
+		libswscale-dev \
+		libtheora-dev \
+		libvorbis-dev \
+		libxvidcore-dev \
+		libx264-dev \
+		yasm \
+		libopencore-amrnb-dev \
+		libopencore-amrwb-dev \
+		libv4l-dev \
+		libxine2-dev \
+		libtbb-dev \
+		libeigen3-dev \
+		python-dev \
+		python-tk \
+		python-numpy \
+		python3-dev \
+		python3-tk \
+		python3-numpy \
+		ant \
+		default-jdk \
+		doxygen \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/lib/apt/lists/* && \
 # Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
-    update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
+	update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
 
 # Install pip
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
-    python get-pip.py && \
-    rm get-pip.py
+	python get-pip.py && \
+	rm get-pip.py
 
 # Add SNI support to Python
 RUN pip --no-cache-dir install \
-        pyopenssl \
-        ndg-httpsclient \
-        pyasn1
+		pyopenssl \
+		ndg-httpsclient \
+		pyasn1
 
 # Install useful Python packages using apt-get to avoid version incompatibilities with Tensorflow binary
 # especially numpy, scipy, skimage and sklearn (see https://github.com/tensorflow/tensorflow/issues/2034)
 RUN apt-get update && apt-get install -y \
-        python-numpy \
-        python-scipy \
-        python-nose \
-        python-h5py \
-        python-skimage \
-        python-matplotlib \
-        python-pandas \
-        python-sklearn \
-        python-sympy \
-        && \
-    apt-get clean && \
-    apt-get autoremove && \
-    rm -rf /var/lib/apt/lists/*
+		python-numpy \
+		python-scipy \
+		python-nose \
+		python-h5py \
+		python-skimage \
+		python-matplotlib \
+		python-pandas \
+		python-sklearn \
+		python-sympy \
+		&& \
+	apt-get clean && \
+	apt-get autoremove && \
+	rm -rf /var/lib/apt/lists/*
 
 # Install other useful Python packages using pip
 RUN pip --no-cache-dir install --upgrade ipython && \
-    pip --no-cache-dir install \
-        Cython \
-        ipykernel \
-        jupyter \
-        path.py \
-        Pillow \
-        pygments \
-        six \
-        sphinx \
-        wheel \
-        zmq \
-        && \
-    python -m ipykernel.kernelspec
+	pip --no-cache-dir install \
+		Cython \
+		ipykernel \
+		jupyter \
+		path.py \
+		Pillow \
+		pygments \
+		six \
+		sphinx \
+		wheel \
+		zmq \
+		&& \
+	python -m ipykernel.kernelspec
 
 # Install TensorFlow
 RUN pip --no-cache-dir install \
-    https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+	https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
 
 # Install Keras
 RUN pip --no-cache-dir install git+git://github.com/fchollet/keras.git@${KERAS_VERSION}
@@ -168,6 +168,7 @@ ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 # Setup Scripts
 RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
 
+RUN echo 40
 RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
 WORKDIR /home/DeepNeuro
 RUN python /home/DeepNeuro/setup.py develop
@@ -178,7 +179,6 @@ RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/wholetumor.h5 "https://ww
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 39
 RUN git fetch origin
 RUN git branch -f skull_stripping origin/skull_stripping
 RUN git checkout skull_stripping

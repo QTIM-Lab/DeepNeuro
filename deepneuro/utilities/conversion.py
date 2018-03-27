@@ -236,7 +236,7 @@ def nrrd_2_numpy(input_nrrd, return_all=False):
         nrrd_data = np.rollaxis(nrrd_data, 0, 4)
 
     if return_all:
-        return nrrd_data, nrrd_options, None  #Affine not implemented yet..
+        return nrrd_data, nrrd_options, None  # Affine not implemented yet..
     else:
         return nrrd_data
 

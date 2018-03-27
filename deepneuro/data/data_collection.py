@@ -10,6 +10,7 @@ from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
 
+
 class DataCollection(object):
 
     def __init__(self, data_directory=None, data_storage=None, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):

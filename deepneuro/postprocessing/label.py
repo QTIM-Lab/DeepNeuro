@@ -7,6 +7,7 @@ from scipy.ndimage.morphology import binary_fill_holes
 from deepneuro.postprocessing.postprocessor import Postprocessor
 from deepneuro.utilities.util import add_parameter
 
+
 class BinarizeLabel(Postprocessor):
 
     def load(self, kwargs):
@@ -20,6 +21,7 @@ class BinarizeLabel(Postprocessor):
     def postprocess(self, input_data):
 
         return (input_data > self.binarization_threshold).astype(float)
+
 
 class LargestComponents(Postprocessor):
 
@@ -57,6 +59,7 @@ class LargestComponents(Postprocessor):
 
         return input_data
 
+
 class FillHoles(Postprocessor):
 
     def load(self, kwargs):
@@ -77,24 +80,3 @@ class FillHoles(Postprocessor):
                 input_data[batch, ..., channel] = binary_fill_holes(input_data[batch, ..., channel]).astype(np.float)
 
         return input_data
-
-        # filled_dataa = np.copy(input_data)
-        # for i in range(mask.shape[0]):
-        #     filled_mask[i,:,:] = binary_fill_holes(mask[i,:,:]).astype(np.float)
-        # for j in range(mask.shape[1]):
-        #     filled_mask[:,j,:] = binary_fill_holes(mask[:,j,:]).astype(np.float)
-        # for k in range(mask.shape[2]):
-        #     filled_mask[:,:,k] = binary_fill_holes(mask[:,:,k]).astype(np.float)
-        # return filled_mask
-   
-# def largest_component(mask):
-   # conn_comp = label(mask,connectivity=2)
-   # unique_val = np.unique(conn_comp)
-   # unique_val = unique_val[np.nonzero(unique_val)]
-   # count_val = np.zeros(len(unique_val))
-   # for i in range(len(unique_val)):
-   #     count_val[i] = np.sum(conn_comp == unique_val[i])
-   # largest_comp = np.zeros(conn_comp.shape)
-   # max_val = unique_val[np.argmax(count_val)]
-   # largest_comp[np.where(conn_comp==max_val)] = 1
-   # return largest_comp

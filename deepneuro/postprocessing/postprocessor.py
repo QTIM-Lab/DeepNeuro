@@ -1,12 +1,4 @@
-import os
-import sys
-import numpy as np
-
-from collections import defaultdict
-
-from deepneuro.utilities.util import add_parameter, replace_suffix
-from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
-
+from deepneuro.utilities.util import add_parameter
 
 class Postprocessor(object):
 
