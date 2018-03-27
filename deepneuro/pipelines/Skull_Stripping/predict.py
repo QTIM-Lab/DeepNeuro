@@ -63,7 +63,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
     skullstrip_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, mask_output),
                         'batch_size': 25,
-                        'patch_overlaps': 1,
+                        'patch_overlaps': 8,
                         'channels_first': True,
                         'patch_dimensions': [-3, -2, -1],
                         'output_patch_shape': (1, 64, 64, 32),
