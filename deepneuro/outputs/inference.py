@@ -1,10 +1,8 @@
 
-import os
 import sys
 
 from deepneuro.outputs.output import Output
-from deepneuro.utilities.util import add_parameter, replace_suffix
-from deepneuro.utilities.conversion import save_numpy_2_nifti
+from deepneuro.utilities.util import add_parameter
 
 import numpy as np
 
@@ -24,12 +22,13 @@ class ModelInference(Output):
 
         """
 
+        # Evaluation Params
         add_parameter(self, kwargs, 'ground_truth', None)
 
-        add_parameter(self, kwargs, 'save_to_file', True)
-        add_parameter(self, kwargs, 'output_types', ['probability', 'binary_label'])
-        add_parameter(self, kwargs, 'binarize_probability', .5)
+        # Saving Params
+        add_parameter(self, kwargs, 'postprocessor_string', '_pseudoprobability')
 
+        # Model Parameters
         add_parameter(self, kwargs, 'channels_first', False)
         add_parameter(self, kwargs, 'input_channels', None)
 
@@ -40,55 +39,12 @@ class ModelInference(Output):
         else:
             self.channels_dim = -1
 
-        self.return_objects = []
-
-    def execute(self):
-
-        # Create output directory. If not provided, output into original patient folder.
-        if self.output_directory is not None:
-            if not os.path.exists(self.output_directory):
-                os.makedirs(self.output_directory)
-
-        print 'CURRENT CASE: ', self.case
-
-        if self.case is None:
-
-            # At present, this only works for one input, one output patch networks.
-            data_generator = self.data_collection.data_generator()
-
-            input_data = next(data_generator)
-            while input_data is not None:
-
-                self.process_case(input_data)
-
-                input_data = next(data_generator)
-        else:
-            self.process_case(self.data_collection.get_data(self.case))
-
-        return self.return_objects
-
     def process_case(self, input_data):
 
         # A little bit strange to access casename this way. Maybe make it an optional
         # return of the generator.
-        casename = self.data_collection.data_groups[self.inputs[0]].base_casename
-        affine = self.data_collection.data_groups[self.inputs[0]].base_affine
 
-        if self.data_collection.augmentations != []:
-            augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
-        else:
-            augmentation_string = ''
-
-        if self.output_directory is None:
-            output_directory = casename
-        else:
-            output_directory = self.output_directory
-
-        output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string))
-
-        # If prediction already exists, skip it. Useful if process is interrupted.
-        if os.path.exists(output_filepath) and not self.replace_existing:
-            return
+        # Note that input_modalities as the first input is hard-coded here. Very fragile.
 
         # If an image is being repatched, its output shape is not certain. We attempt to infer it from
         # the input data. This is wonky. Move this to PatchInference, maybe.
@@ -112,10 +68,7 @@ class ModelInference(Output):
         if self.channels_first:
             output_data = np.swapaxes(output_data, 1, -1)
 
-        if self.save_to_file:
-            self.return_objects.append(self.save_prediction(output_data, output_filepath, input_affine=affine, ground_truth=input_data[0]))
-        else:
-            self.return_objects.append(output_data)
+        self.return_objects.append(output_data)
 
     def predict(self, input_data, model, batch_size):
 
@@ -123,56 +76,6 @@ class ModelInference(Output):
         prediction = model.predict(input_data)
 
         return prediction
-
-    def save_prediction(self, input_data, output_filepath, input_affine=None, ground_truth=None, stack_outputs=False):
-
-        """ This is a temporary function borrowed from qtim_ChallengePipeline. In the future, will be rewritten in a more
-            DeepNeuro way..
-        """
-
-        output_shape = input_data.shape
-        input_data = np.squeeze(input_data)
-
-        return_filenames = []
-
-        # If there is only one channel, only save one file.
-        if output_shape[-1] == 1:
-
-            if 'probability' in self.output_types:
-                return_filenames += [save_numpy_2_nifti(input_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-probability'))]
-
-            if 'binary_label' in self.output_types:
-                binary_data = self.threshold_binarize(threshold=self.binarize_probability, input_data=input_data)
-                return_filenames += [save_numpy_2_nifti(binary_data, input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='-label'))]
-
-        else:
-            pass
-            # Return to case for multiple outputs.
-
-        return_filenames = replace_suffix(output_filepath, input_suffix='', output_suffix='-label')
-
-        return return_filenames
-
-    def threshold_binarize(self, input_data, threshold):
-
-        return (input_data > threshold).astype(float)
-
-    def calculate_prediction_dice(self, label_volume_1, label_volume_2):
-
-        im1 = np.asarray(label_volume_1).astype(np.bool)
-        im2 = np.asarray(label_volume_2).astype(np.bool)
-
-        if im1.shape != im2.shape:
-            raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
-
-        im_sum = im1.sum() + im2.sum()
-        if im_sum == 0:
-            return 0
-
-        # Compute Dice coefficient
-        intersection = np.logical_and(im1, im2)
-
-        return 2. * intersection.sum() / im_sum
 
 
 class ModelPatchesInference(ModelInference):
@@ -227,7 +130,7 @@ class ModelPatchesInference(ModelInference):
         else:
             self.check_empty_patch = True
 
-    def execute(self):
+    def generate(self):
 
         # Determine patch shape. Currently only extends to spatial patching.
         # This leading dims business has got to have a better solution..
@@ -235,9 +138,7 @@ class ModelPatchesInference(ModelInference):
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model.layers[-1].output_shape
 
-        super(ModelPatchesInference, self).execute()
-
-        return self.return_objects
+        return super(ModelPatchesInference, self).generate()
 
     def predict(self, input_data):
 

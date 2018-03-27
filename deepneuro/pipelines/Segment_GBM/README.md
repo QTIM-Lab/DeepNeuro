@@ -23,7 +23,6 @@ In order to use Docker, you must mount the directory containing all of your data
 
 A brief explanation of this functions parameters follows:
 
-* 
 * -output_folder: A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz"
 * -T2, -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
 * -wholetumor_output, -enhancing_output: Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing"

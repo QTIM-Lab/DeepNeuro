@@ -44,6 +44,7 @@ class Preprocessor(object):
     def execute(self, case):
 
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
+            NOTE: "file" is protected in Python, duh. Replace "file" in all preprocessors with a different variable name.
         """
 
         self.initialize()  # TODO: make overwrite work with initializations

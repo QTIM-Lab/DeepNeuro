@@ -236,7 +236,7 @@ def nrrd_2_numpy(input_nrrd, return_all=False):
         nrrd_data = np.rollaxis(nrrd_data, 0, 4)
 
     if return_all:
-        return nrrd_data, nrrd_options, None  #Affine not implemented yet..
+        return nrrd_data, nrrd_options, None  # Affine not implemented yet..
     else:
         return nrrd_data
 
@@ -374,3 +374,4 @@ def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepa
         return output_nifti
     else:
         nib.save(output_nifti, output_filepath)
+        return output_filepath

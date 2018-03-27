@@ -23,13 +23,14 @@ setup(
   description = DOCLINES[0],
   packages = find_packages(),
   entry_points =  {
-                  "console_scripts": ['segment_gbm = deepneuro.pipelines.Segment_GBM.cli:main'], 
+                  "console_scripts": ['segment_gbm = deepneuro.pipelines.Segment_GBM.cli:main',
+                                      'skull_strip = deepneuro.pipelines.Skull_Stripping.cli:main'], 
                   },
   author = 'Andrew Beers',
   author_email = 'abeers@mgh.harvard.edu',
   url = 'https://github.com/QTIM-Lab/DeepNeuro', # use the URL to the github repo
   download_url = 'https://github.com/QTIM-Lab/DeepNeuro/tarball/0.1.1',
   keywords = ['neuroimaging', 'neuroncology', 'neural networks', 'neuroscience', 'neurology', 'deep learning', 'fmri', 'pet', 'mri', 'dce', 'dsc', 'dti', 'machine learning', 'computer vision', 'learning', 'keras', 'theano', 'tensorflow', 'nfiti', 'nrrd', 'dicom'],
-  install_requires=['keras', 'pydicom', 'pynrrd', 'nibabel'],
+  install_requires=['keras', 'pydicom', 'pynrrd', 'nibabel', 'numpy', 'scipy', 'scikit-image==0.12.3'],
   classifiers = [],
 )

@@ -8,6 +8,7 @@ import copy
 
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
+from deepneuro.data.data_group import DataGroup
 
 
 class DataCollection(object):
@@ -222,7 +223,7 @@ class DataCollection(object):
             if data_group.base_case is None:
                 self.load_case_data(case)
 
-            data_group.base_case = np.concatenate((data_group.base_case, input_data), axis=channel_dim)
+            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
 
             # # Perhaps should not use tuples for output shape.
             # output_shape = list(data_group.output_shape)
@@ -249,10 +250,27 @@ class DataCollection(object):
 
         return
 
+    def get_data(self, case, data_group_labels=None):
+
+        data_groups = self.get_data_groups(data_group_labels)
+
+        if self.verbose:
+            print 'Working on image.. ', case
+
+        if case != self.current_case:
+            self.load_case_data(case)
+
+        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+        next(recursive_augmentation_generator)
+                    
+        return tuple([data_group.base_case for data_group in data_groups])
+
     def load_case_data(self, case, casename=None):
 
         data_groups = self.get_data_groups()
 
+        # Don't remember what's going on here, maybe delete extra variable.
+        # May have to do with indexing via hdf5s or file collections
         if casename is None:
             casename = case
 
@@ -261,14 +279,12 @@ class DataCollection(object):
         for data_group in data_groups:
 
             data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+            data_group.base_case = data_group.base_case[np.newaxis, ...]
 
             if data_group.source == 'storage':
                 data_group.base_casename = data_group.data_casenames[casename][0]
             else:
                 data_group.base_casename = case
-
-            if len(self.augmentations) != 0:
-                data_group.augmentation_cases[0] = data_group.base_case
 
         self.current_case = case
 
@@ -282,40 +298,6 @@ class DataCollection(object):
         for preprocessor in self.preprocessors:
             preprocessor.reset()
             preprocessor.execute(case)
-
-    def get_data(self, case, data_group_labels=None, batch_size=None):
-
-        data_groups = self.get_data_groups(data_group_labels)
-
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
-
-        if self.verbose:
-            print 'Working on image.. ', case
-
-        if case != self.current_case:
-            self.load_case_data(case)
-
-        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
-
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
-
-        if batch_size is None:
-            batch_size = self.multiplier
-
-        for i in xrange(batch_size):
-            next(recursive_augmentation_generator)
-
-            # TODO: Do this without if-statement and for loop?
-            for data_idx, data_group in enumerate(data_groups):
-                if len(self.augmentations) == 0:
-                    # Return; currently broken.
-                    data_batch[data_idx].append(data_group.base_case)
-                else:
-                    data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-                    
-        return tuple([np.stack(data_list) for data_list in data_batch])
 
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):
@@ -334,18 +316,21 @@ class DataCollection(object):
 
             for case_idx, case_name in enumerate(case_list):
 
-                if self.verbose and verbose:
+                if self.verbose or verbose:
                     print 'Working on image.. ', case_idx, 'at', case_name
 
-                try:
+                if True:
+                # try:
                     self.load_case_data(case_name)
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    print 'Hit error on', case_name, 'skipping.'
-                    yield False
-                    continue
+                # except KeyboardInterrupt:
+                #     raise
+                # except:
+                #     print 'Hit error on', case_name, 'skipping.'
+                #     yield None
+                #     continue
 
+                if len(self.augmentations) != 0:
+                    data_group.augmentation_cases[0] = data_group.base_case
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
                 for i in xrange(self.multiplier):
@@ -512,93 +497,6 @@ class DataCollection(object):
             data_groups = [self.data_groups[label] for label in data_group_labels]
 
         return data_groups
-
-
-class DataGroup(object):
-
-    def __init__(self, label):
-
-        self.label = label
-        self.augmentations = []
-        self.data = {}
-        self.cases = []
-        self.case_num = 0
-
-        # HDF5 variables
-        self.source = None
-        self.data_casenames = None
-        self.data_affines = None
-
-        # TODO: More distinctive naming for "base" and "current" cases.
-        self.preprocessed_case = None
-        self.base_case = None
-        self.base_casename = None
-        self.base_affine = None
-
-        self.augmentation_cases = [None]
-        self.augmentation_strings = ['']
-        self.preprocessing_data = []
-
-        self.data_storage = None
-        self.casename_storage = None
-        self.affine_storage = None
-
-        self.output_shape = None
-        self.base_shape = None
-
-    def add_case(self, case_name, item):
-        self.data[case_name] = item
-        self.cases.append(case_name)
-
-    def get_shape(self):
-
-        # TODO: Add support for non-nifti files.
-        # Also this is not good. Perhaps specify shape in input?
-
-        if self.output_shape is None:
-            if self.data == {}:
-                print 'No Data!'
-                return (0,)
-            elif self.base_shape is None:
-                if self.source == 'directory':
-                    self.base_shape = read_image_files(self.data.values()[0]).shape
-                elif self.source == 'storage':
-                    self.base_shape = self.data[0].shape
-                self.output_shape = self.base_shape
-            else:
-                return None
-        
-        return self.output_shape
-
-    def get_modalities(self):
-
-        if self.data == []:
-            return 0
-        else:
-            return len(self.data[0])
-
-    def get_data(self, index, return_affine):
-
-        if self.source == 'directory':
-            return read_image_files(self.preprocessed_case, return_affine)
-        elif self.source == 'storage':
-            if return_affine:
-                return self.data[index][:][np.newaxis], self.data_affines[index]
-            else:
-                return self.data[index][:][np.newaxis]
-
-        return None
-
-    # @profile
-    def write_to_storage(self):
-
-        if len(self.augmentation_cases) == 0:
-            self.data_storage.append(self.base_case[np.newaxis])
-        else:
-            self.data_storage.append(self.augmentation_cases[-1][np.newaxis])
-
-        self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
-        self.affine_storage.append(self.base_affine[:][np.newaxis])
 
 
 if __name__ == '__main__':

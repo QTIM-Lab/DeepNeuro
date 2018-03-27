@@ -6,10 +6,10 @@ ARG TENSORFLOW_ARCH=gpu
 ARG KERAS_VERSION=2.0.6
 
 #RUN echo -e "\n**********************\nNVIDIA Driver Version\n**********************\n" && \
-#	cat /proc/driver/nvidia/version && \
-#	echo -e "\n**********************\nCUDA Version\n**********************\n" && \
-#	nvcc -V && \
-#	echo -e "\n\nBuilding your Deep Learning Docker Image...\n"
+#   cat /proc/driver/nvidia/version && \
+#   echo -e "\n**********************\nCUDA Version\n**********************\n" && \
+#   nvcc -V && \
+#   echo -e "\n\nBuilding your Deep Learning Docker Image...\n"
 
 # Install some dependencies
 RUN apt-get update && apt-get install -y \
@@ -168,12 +168,17 @@ ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 # Setup Scripts
 RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
 
+# Install DeepNeuro. Scikit-image has installation problems with EasyInstall and setup.py
+RUN pip install scikit-image==0.12.3
 RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
 WORKDIR /home/DeepNeuro
 RUN python /home/DeepNeuro/setup.py develop
 
+RUN mkdir -p /home/DeepNeuro/deepneuro/load/Skull_Strip
+RUN wget -O /home/DeepNeuro/deepneuro/load/Skull_Strip/Skull_Stripping.h5 "https://www.dropbox.com/s/gn2w4u4vw1orcyj/FLAIRT1post_ss.h5?dl=1"
+
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 40
+RUN echo 45
 RUN git pull
 
 # Commands at startup.

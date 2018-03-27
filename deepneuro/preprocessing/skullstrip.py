@@ -43,7 +43,7 @@ class SkullStrip(Preprocessor):
 
         for label, data_group in self.data_groups.iteritems():
 
-            file = self.reference_channel, data_group.preprocessed_case[self.reference_channel]
+            file = data_group.preprocessed_case[self.reference_channel]
 
             output_filename = replace_suffix(file, '', self.mask_string)
 

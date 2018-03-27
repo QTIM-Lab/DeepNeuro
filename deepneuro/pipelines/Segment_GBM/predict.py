@@ -6,14 +6,12 @@ from deepneuro.models.unet import UNet
 from deepneuro.models.timenet import TimeNet
 from deepneuro.outputs.inference import ModelPatchesInference
 from deepneuro.models.model import load_old_model
-
 from deepneuro.load.load import load
-from deepneuro.data.data_collection import DataCollection
-
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
 from deepneuro.preprocessing.skullstrip import SkullStrip
+from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
 
 def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
 
@@ -55,10 +53,10 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
             preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not skullstripped:
-            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel = 1)]
+            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not normalized:
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, mask=preprocessing_steps[-1], output_folder=output_folder, preprocessor_string='_preprocessed')]
@@ -90,27 +88,31 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     wholetumor_model = load_old_model(load('Segment_GBM_wholetumor'))
     enhancing_model = load_old_model(load('Segment_GBM_enhancing'))
 
-    wholetumor_prediction = ModelPatchesInference(data_collection, **wholetumor_prediction_parameters)
+    wholetumor_prediction = ModelPatchesInference(**wholetumor_prediction_parameters)
     wholetumor_model.append_output([wholetumor_prediction])
 
-    enhancing_prediction = ModelPatchesInference(data_collection, **enhancing_prediction_parameters)
+    enhancing_prediction = ModelPatchesInference(**enhancing_prediction_parameters)
     enhancing_model.append_output([enhancing_prediction])
+
+    label_binarization = BinarizeLabel(postprocessor_string='_label')
+
+    wholetumor_prediction.append_postprocessor([label_binarization])
+    enhancing_prediction.append_postprocessor([label_binarization])
 
     for case in data_collection.cases:
 
         print '\nStarting New Case...\n'
         
-        wholetumor_prediction.case = case
-        wholetumor_file = wholetumor_model.generate_outputs()[0][0]
+        wholetumor_file = wholetumor_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
         data_collection.add_channel(case, wholetumor_file)
 
-        enhancing_prediction.case = case
-        enhancing_file = enhancing_model.generate_outputs()[0]
+        enhancing_file = enhancing_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
     if not save_preprocess:
         for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):
             os.remove(file)
+
 
 if __name__ == '__main__':
 

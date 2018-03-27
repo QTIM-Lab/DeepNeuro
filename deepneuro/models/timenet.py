@@ -4,15 +4,15 @@
 
 import numpy as np
 
-from model import DeepNeuroModel, UpConvolution
-
 from keras.engine import Model
 from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization, TimeDistributed, Reshape, Dense, LSTM, Lambda, Permute
 from keras.optimizers import Nadam
 from keras.layers.merge import concatenate
 from keras import backend as K
 
-from cost_functions import dice_coef_loss, dice_coef
+from deepneuro.models.model import DeepNeuroModel
+from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
+from deepneuro.models.dn_ops import UpConvolution
 
 
 class TimeNet(DeepNeuroModel):
