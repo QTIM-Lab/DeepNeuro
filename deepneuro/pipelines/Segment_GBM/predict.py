@@ -70,7 +70,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, output_wholetumor_filename),
                         'batch_size': 75,
-                        'patch_overlaps': 1,
+                        'patch_overlaps': 8,
                         'channels_first': True,
                         'patch_dimensions': [-3,-2,-1],
                         'output_patch_shape': (1,26,26,26),
@@ -80,7 +80,7 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
     enhancing_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, output_enhancing_filename),
                         'batch_size': 75,
-                        'patch_overlaps': 1,
+                        'patch_overlaps': 8,
                         'channels_first': True,
                         'output_patch_shape': (1,26,26,26),
                         'patch_dimensions': [-3,-2,-1]}
@@ -105,7 +105,6 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         
         wholetumor_file = wholetumor_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
-        print wholetumor_file
         data_collection.add_channel(case, wholetumor_file)
 
         enhancing_file = enhancing_model.generate_outputs(data_collection, case)[0]['filenames'][-1]

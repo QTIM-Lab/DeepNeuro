@@ -86,7 +86,6 @@ class Output(object):
         else:
             self.return_objects = []
             self.return_filenames = []
-            print 'CURRENT CASE: ', self.case
             self.process_case(self.data_collection.get_data(self.case))
             self.postprocess()         
 
