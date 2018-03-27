@@ -177,8 +177,10 @@ RUN mkdir -p /home/DeepNeuro/deepneuro/load/Skull_Stripping
 RUN wget -O /home/DeepNeuro/deepneuro/load/Skull_Stripping/Skull_Stripping.h5 "https://www.dropbox.com/s/gn2w4u4vw1orcyj/FLAIRT1post_ss.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 40
-RUN git pull
+RUN echo 39
+RUN git fetch origin
+RUN git branch -f skull_stripping origin/skull_stripping
+RUN git checkout skull_stripping
 
 # Commands at startup.
 WORKDIR "/"

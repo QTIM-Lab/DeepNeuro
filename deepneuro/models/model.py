@@ -190,8 +190,6 @@ def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={
         if callback == 'save_model':
             return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
 
-    # filepath="weights-improvement-{epoch:02d}-{loss:.2f}.hdf5"
-
     return return_callbacks
 
 

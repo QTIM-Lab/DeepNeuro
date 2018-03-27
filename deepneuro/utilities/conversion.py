@@ -374,3 +374,4 @@ def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepa
         return output_nifti
     else:
         nib.save(output_nifti, output_filepath)
+        return output_filepath

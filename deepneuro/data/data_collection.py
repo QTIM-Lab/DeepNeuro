@@ -222,7 +222,7 @@ class DataCollection(object):
             if data_group.base_case is None:
                 self.load_case_data(case)
 
-            data_group.base_case = np.concatenate((data_group.base_case, input_data), axis=channel_dim)
+            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
 
             # # Perhaps should not use tuples for output shape.
             # output_shape = list(data_group.output_shape)

@@ -23,11 +23,13 @@ class ModelInference(Output):
 
         """
 
+        # Evaluation Params
         add_parameter(self, kwargs, 'ground_truth', None)
 
+        # Saving Params
         add_parameter(self, kwargs, 'postprocessor_string', '_pseudoprobability')
-        add_parameter(self, kwargs, 'stack_outputs', False)
 
+        # Model Parameters
         add_parameter(self, kwargs, 'channels_first', False)
         add_parameter(self, kwargs, 'input_channels', None)
 
@@ -137,9 +139,7 @@ class ModelPatchesInference(ModelInference):
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model.layers[-1].output_shape
 
-        super(ModelPatchesInference, self).generate()
-
-        return self.return_objects
+        return super(ModelPatchesInference, self).generate()
 
     def predict(self, input_data):
 

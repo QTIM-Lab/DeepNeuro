@@ -25,8 +25,8 @@ class SkullStrip(Preprocessor):
 
         """
 
-        # add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
-        add_parameter(self, kwargs, 'command', ['bet2'])
+        add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
+        # add_parameter(self, kwargs, 'command', ['bet2'])
 
         add_parameter(self, kwargs, 'same_mask', True)
         add_parameter(self, kwargs, 'reference_channel', None)
@@ -43,7 +43,7 @@ class SkullStrip(Preprocessor):
 
         for label, data_group in self.data_groups.iteritems():
 
-            file = self.reference_channel, data_group.preprocessed_case[self.reference_channel]
+            file = data_group.preprocessed_case[self.reference_channel]
 
             output_filename = replace_suffix(file, '', self.mask_string)
 

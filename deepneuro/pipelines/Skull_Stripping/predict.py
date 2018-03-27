@@ -63,7 +63,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
     skullstrip_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, mask_output),
                         'batch_size': 25,
-                        'patch_overlaps': 8,
+                        'patch_overlaps': 1,
                         'channels_first': True,
                         'patch_dimensions': [-3, -2, -1],
                         'output_patch_shape': (1, 64, 64, 32),
@@ -76,7 +76,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
 
     label_binarization = BinarizeLabel()
     largest_component = LargestComponents()
-    hole_filler = FillHoles(postprocessor_string='_mask')
+    hole_filler = FillHoles(postprocessor_string='_label')
 
     skull_stripping_prediction.append_postprocessor([label_binarization, largest_component, hole_filler])
 
@@ -87,12 +87,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
         print '\nStarting New Case...\n'
         
         skull_stripping_prediction.case = case
-        skull_stripping_mask = skull_stripping_model.generate_outputs(data_collection)[0]
-
-        print len(skull_stripping_mask)
-        for item in skull_stripping_mask:
-            print item
-        # print 'Finished...', skull_stripping_mask
+        skull_stripping_mask = skull_stripping_model.generate_outputs(data_collection)[0]['filenames'][-1]
 
     if not save_preprocess:
         for index, file in enumerate(data_collection.data_groups['input_modalities'].preprocessed_case):

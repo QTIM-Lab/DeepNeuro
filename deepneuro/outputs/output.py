@@ -7,26 +7,27 @@ from deepneuro.utilities.util import add_parameter, replace_suffix
 
 class Output(object):
 
-    def __init__(self, data_collection=None, inputs=['input_modalities'], output_directory=None, output_filename='prediction.nii.gz', batch_size=32, verbose=True, replace_existing=True, case=None, save_to_file=True, save_initial=True, save_all_steps=False, **kwargs):
+    def __init__(self, **kwargs):
 
         # Data Parameters
-        self.data_collection = data_collection
-        self.inputs = inputs
+        add_parameter(self, kwargs, 'data_collection', None)
+        add_parameter(self, kwargs, 'inputs', ['input_modalities'])
 
-        # Output Parameters
-        self.save_to_file = save_to_file
-        self.save_initial = save_initial
-        self.save_all_steps = save_all_steps
-        self.output_directory = output_directory
-        self.output_filename = output_filename
+        # Saving Parameters
+        add_parameter(self, kwargs, 'save_to_file', True)
+        add_parameter(self, kwargs, 'save_initial', True)
+        add_parameter(self, kwargs, 'save_all_steps', False)
+        add_parameter(self, kwargs, 'output_directory', None)
+        add_parameter(self, kwargs, 'output_filename', 'prediction.nii.gz')
+        add_parameter(self, kwargs, 'stack_outputs', False)
 
         # Implementation Parameters
-        self.batch_size = batch_size
+        add_parameter(self, kwargs, 'batch_size', 32)
 
         # Internal Parameters
-        self.replace_existing = replace_existing
-        self.verbose = verbose
-        self.case = case
+        add_parameter(self, kwargs, 'replace_existing', True)
+        add_parameter(self, kwargs, 'verbose', True)
+        add_parameter(self, kwargs, 'case', None)
 
         # Derived Parameters
         self.return_objects = []
@@ -50,10 +51,6 @@ class Output(object):
 
         return None
 
-    def save_output(self):
-
-        return None
-
     def append_postprocessor(self, postprocessors):
 
         for postprocessor in postprocessors:
@@ -65,8 +62,7 @@ class Output(object):
 
         # Very ambiguous naming scheme here.
         # The conditionals are a little cagey here.
-
-        print 'ABOUT TO EXECUTE...'
+        # Also the duplicated code.
 
         # Create output directory. If not provided, output into original patient folder.
         if self.output_directory is not None:
@@ -94,7 +90,8 @@ class Output(object):
             self.process_case(self.data_collection.get_data(self.case))
             self.postprocess()         
 
-        return self.return_objects, self.return_filenames
+        return_dict = {'data': self.return_objects, 'filenames': self.return_filenames}
+        return return_dict
 
     def postprocess(self):
 
@@ -108,8 +105,6 @@ class Output(object):
 
         if self.save_to_file and self.postprocessors != []:
             self.save_output()
-
-        return self.return_objects
 
     def save_output(self):
 
