@@ -171,6 +171,12 @@ RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
 RUN echo 40
 RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
 WORKDIR /home/DeepNeuro
+
+# TODO: Check if Docker has solved this checkpointing problem.
+RUN git fetch origin
+RUN git branch -f skull_stripping origin/skull_stripping
+RUN git checkout skull_stripping
+
 RUN python /home/DeepNeuro/setup.py develop
 
 # Copy in models -- do this with Python module in future.
@@ -178,10 +184,10 @@ RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_GBM
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/wholetumor.h5 "https://www.dropbox.com/s/74tjx14ue11rc0q/wholetumor.h5?dl=1"
 RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/enhancing.h5 "https://www.dropbox.com/s/usdal6cbkw3bceu/enhancingtumor_BRATS_submission.h5?dl=1"
 
-# TODO: Check if Docker has solved this checkpointing problem.
-RUN git fetch origin
-RUN git branch -f skull_stripping origin/skull_stripping
-RUN git checkout skull_stripping
+# # TODO: Check if Docker has solved this checkpointing problem.
+# RUN git fetch origin
+# RUN git branch -f skull_stripping origin/skull_stripping
+# RUN git checkout skull_stripping
 
 # Commands at startup.
 WORKDIR "/"
