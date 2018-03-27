@@ -1,5 +1,6 @@
 from deepneuro.utilities.util import add_parameter
 
+
 class Postprocessor(object):
 
     def __init__(self, **kwargs):
