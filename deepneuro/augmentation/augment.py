@@ -79,7 +79,7 @@ class Flip_Rotate_2D(Augmentation):
         # Flip and Rotate options
         add_parameter(self, kwargs, 'flip', True)
         add_parameter(self, kwargs, 'rotate', True)
-        add_parameter(self, kwargs, 'flip_axis', 1)
+        add_parameter(self, kwargs, 'flip_axis', 2)
 
         # TODO: This is incredibly over-elaborate, return to fix.
         self.transforms_list = []
@@ -254,6 +254,9 @@ class ExtractPatches(Augmentation):
                 self.output_shape[label][self.patch_dimensions[label]] = list(self.patch_shape)
                 self.output_shape[label] = tuple(self.output_shape[label])
 
+                # Batch dimension correction, revisit
+                self.patch_dimensions[label] = [x + 1 for x in self.patch_dimensions[label]]
+
             self.initialization = True
 
     def iterate(self):
@@ -293,13 +296,14 @@ class ExtractPatches(Augmentation):
 
         acceptable_patch = False
 
-        data_group_labels = self.data_groups.keys()
-
-        # Hmm... How to make corner search process dimension-agnostic.
-        leader_data_group = self.data_groups[data_group_labels[0]]
-        data_shape = leader_data_group.augmentation_cases[augmentation_num].shape
-
         if self.patch_regions == []:
+            
+            data_group_labels = self.data_groups.keys()
+
+            # Hmm... How to make corner search process dimension-agnostic.
+            leader_data_group = self.data_groups[data_group_labels[0]]
+            data_shape = leader_data_group.augmentation_cases[augmentation_num].shape
+
             # Currently non-functional, non-masked based sampling.
             while not acceptable_patch:
 
@@ -348,11 +352,11 @@ class ExtractPatches(Augmentation):
                 # TODO: Some redundancy here
                 corner = np.array([d[corner_idx] for d in region])[self.patch_dimensions[label]]
 
-                patch_slice = [slice(None)] * len(self.input_shape[label])
+                patch_slice = [slice(None)] * (len(self.input_shape[label]) + 1)
                 # Will run into problems with odd-shaped patches.
                 for idx, patch_dim in enumerate(self.patch_dimensions[label]):
                     patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx] / 2), corner[idx] + self.patch_shape[idx] / 2, 1)
-                
+
                 input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
 
                 self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
@@ -399,7 +403,7 @@ class MaskData(Augmentation):
                 if label not in self.mask_axis.keys():
                     self.mask_axis[label] = np.arange(self.input_shape[label][-1])
                 else:
-                    self.mask_axis[label] = np.arange(self.input_shape[label][self.mask_axis[label]])
+                    self.mask_axis[label] = np.arange(self.input_shape[label][self.mask_axis[label] + 1])
 
             self.initialization = True
 

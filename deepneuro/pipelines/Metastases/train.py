@@ -46,9 +46,11 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return (data['ground_truth'] != 1) & (data['input_modalities'] != 0)
         def roi_region(data):
             return data['ground_truth'] == 1
+        def empty_region(data):
+            return data['input_modalities'] == 0
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[brain_region, .3], [roi_region, .7]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0, 1, 2], 'input_modalities': [0, 1, 2]})
+        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[empty_region, .05], [brain_region, .25], [roi_region, .7]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0, 1, 2], 'input_modalities': [0, 1, 2]})
         training_data_collection.append_augmentation(patch_augmentation, multiplier=2000)
 
         # Write data to hdf5
@@ -84,13 +86,12 @@ def train_Segment_GBM(data_directory, val_data_directory):
         plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
                         'output_model_filepath': model_file,
-                        'training_batch_size': 64,
+                        'training_batch_size': 32,
                         'num_epochs': 1000,
                         'training_steps_per_epoch': 20}
         unet_model.train(training_data_collection, **training_parameters)
     else:
         unet_model = load_old_model(model_file)
-
 
     if predict:
         testing_data_collection = DataCollection(val_data_directory, modality_dict=testing_modality_dict, verbose=True)
@@ -109,11 +110,9 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
         prediction = ModelPatchesInference(**testing_parameters)
 
-        label_binarization = BinarizeLabel()
-        largest_component = LargestComponents()
-        hole_filler = FillHoles(postprocessor_string='_label')
+        label_binarization = BinarizeLabel(postprocessor_string='_label')
 
-        prediction.append_postprocessor([label_binarization, largest_component, hole_filler])
+        prediction.append_postprocessor([label_binarization])
 
         unet_model.append_output([prediction])
         unet_model.generate_outputs(testing_data_collection)
@@ -121,7 +120,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/TRAIN'
-    val_data_directory = '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/VAL'
+    data_directory = ['/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/TRAIN', '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/BRE/TRAIN']
+    val_data_directory = ['/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/VAL', '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/BRE/VAL']
 
     train_Segment_GBM(data_directory, val_data_directory)
