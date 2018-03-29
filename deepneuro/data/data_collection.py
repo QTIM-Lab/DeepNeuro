@@ -176,8 +176,8 @@ class DataCollection(object):
             for data_group_label in augmentation.data_groups.keys():
                 if augmentation.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
-                self.data_groups[data_group_label].augmentation_cases.append([None]) 
-                self.data_groups[data_group_label].augmentation_strings.append([''])
+                self.data_groups[data_group_label].augmentation_cases.append(None) 
+                self.data_groups[data_group_label].augmentation_strings.append('')
 
         # The total iterations variable allows for "total" augmentations later on.
         # For example, "augment until 5000 images is reached"
@@ -279,12 +279,15 @@ class DataCollection(object):
         for data_group in data_groups:
 
             data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
-            data_group.base_case = data_group.base_case[np.newaxis, ...]
 
             if data_group.source == 'storage':
                 data_group.base_casename = data_group.data_casenames[casename][0]
             else:
+                data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
+
+            if len(self.augmentations) != 0:
+                data_group.augmentation_cases[0] = data_group.base_case
 
         self.current_case = case
 
@@ -316,21 +319,17 @@ class DataCollection(object):
 
             for case_idx, case_name in enumerate(case_list):
 
-                if self.verbose or verbose:
+                if verbose:
                     print 'Working on image.. ', case_idx, 'at', case_name
 
-                if True:
-                # try:
+                try:
                     self.load_case_data(case_name)
-                # except KeyboardInterrupt:
-                #     raise
-                # except:
-                #     print 'Hit error on', case_name, 'skipping.'
-                #     yield None
-                #     continue
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    print 'Hit error on', case_name, 'skipping.'
+                    continue
 
-                if len(self.augmentations) != 0:
-                    data_group.augmentation_cases[0] = data_group.base_case
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
                 for i in xrange(self.multiplier):
@@ -417,6 +416,29 @@ class DataCollection(object):
 
         return valid_cases, len(valid_cases)
 
+    def write_data_to_file(self, output_filepath=None, data_group_labels=None):
+
+        """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
+        """
+
+        # Sanitize Inputs
+        if data_group_labels is None:
+            data_group_labels = self.data_groups.keys()
+        if output_filepath is None:
+            raise ValueError('No output_filepath provided; data cannot be written.')
+
+        # Create Data File
+        # try:
+        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
+        # except Exception as e:
+            # os.remove(output_filepath)
+            # raise e
+
+        # Write data
+        self.write_image_data_to_storage(data_group_labels)
+
+        hdf5_file.close()
+
     def create_hdf5_file(self, output_filepath, data_group_labels=None):
 
         if data_group_labels is None:
@@ -444,29 +466,6 @@ class DataCollection(object):
             data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'affines']), tables.Float32Atom(), shape=(0, 4, 4), filters=filters, expectedrows=num_cases)
 
         return hdf5_file
-
-    def write_data_to_file(self, output_filepath=None, data_group_labels=None):
-
-        """ Interesting question: Should all passed data_groups be assumed to have equal size? Nothing about hdf5 requires that, but it makes things a lot easier to assume.
-        """
-
-        # Sanitize Inputs
-        if data_group_labels is None:
-            data_group_labels = self.data_groups.keys()
-        if output_filepath is None:
-            raise ValueError('No output_filepath provided; data cannot be written.')
-
-        # Create Data File
-        # try:
-        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
-        # except Exception as e:
-            # os.remove(output_filepath)
-            # raise e
-
-        # Write data
-        self.write_image_data_to_storage(data_group_labels)
-
-        hdf5_file.close()
 
     def write_image_data_to_storage(self, data_group_labels=None, repeat=1):
 

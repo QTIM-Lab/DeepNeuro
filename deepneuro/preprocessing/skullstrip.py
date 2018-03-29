@@ -25,8 +25,8 @@ class SkullStrip(Preprocessor):
 
         """
 
-        # add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
-        add_parameter(self, kwargs, 'command', ['bet2'])
+        add_parameter(self, kwargs, 'command', ['fsl4.1-bet2'])
+        # add_parameter(self, kwargs, 'command', ['bet2'])
 
         add_parameter(self, kwargs, 'same_mask', True)
         add_parameter(self, kwargs, 'reference_channel', None)
@@ -43,16 +43,16 @@ class SkullStrip(Preprocessor):
 
         for label, data_group in self.data_groups.iteritems():
 
-            file = data_group.preprocessed_case[self.reference_channel]
+            input_file = data_group.preprocessed_case[self.reference_channel]
 
-            output_filename = replace_suffix(file, '', self.mask_string)
+            output_filename = replace_suffix(input_file, '', self.mask_string)
 
             if self.output_folder is None:
-                output_filename = replace_suffix(file, '', self.mask_string)
+                output_filename = replace_suffix(input_file, '', self.mask_string)
             else:
-                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(file, '', self.mask_string)))
+                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(input_file, '', self.mask_string)))
 
-            specific_command = self.command + [file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
+            specific_command = self.command + [input_file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
 
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 

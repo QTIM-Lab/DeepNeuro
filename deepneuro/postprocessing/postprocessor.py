@@ -20,7 +20,6 @@ class Postprocessor(object):
 
     def execute(self, output):
 
-        output.postprocessor_string = self.postprocessor_string
         postprocessed_objects = []
 
         for return_object in output.return_objects:

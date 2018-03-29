@@ -100,12 +100,12 @@ class Output(object):
         for p_idx, postprocessor in enumerate(self.postprocessors):
             postprocessor.execute(self)
             if self.save_all_steps and p_idx != len(self.postprocessors) - 1:
-                self.save_output()
+                self.save_output(postprocessor)
 
         if self.save_to_file and self.postprocessors != []:
-            self.save_output()
+            self.save_output(self.postprocessors[-1])
 
-    def save_output(self):
+    def save_output(self, postprocessor=None):
 
         # Currently assumes Nifti output. TODO: Make automatically detect output or determine with a class variable.
         # Ideally, split also this out into a saving.py function in utils.
@@ -123,7 +123,10 @@ class Output(object):
             else:
                 output_directory = self.output_directory
 
-            output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string + self.postprocessor_string))
+            if postprocessor is None:
+                output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string + self.postprocessor_string))
+            else:
+                output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string + postprocessor.postprocessor_string))
 
             # If prediction already exists, skip it. Useful if process is interrupted.
             if os.path.exists(output_filepath) and not self.replace_existing:

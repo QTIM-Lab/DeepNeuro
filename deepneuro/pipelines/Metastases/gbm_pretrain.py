@@ -25,8 +25,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
     testing_modality_dict = {'input_modalities': 
     ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz'], ['MPRAGE_POST_r_T2.nii.gz'], ['MPRAGE_Pre_r_T2.nii.gz']]}
 
-    load_data = False
-    train_model = False
+    load_data = True
+    train_model = True
     load_test_data = False
     predict = True
 
@@ -86,7 +86,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
         plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
                         'output_model_filepath': model_file,
-                        'training_batch_size': 32,
+                        'training_batch_size': 64,
                         'num_epochs': 1000,
                         'training_steps_per_epoch': 20}
         unet_model.train(training_data_collection, **training_parameters)
@@ -110,9 +110,11 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
         prediction = ModelPatchesInference(**testing_parameters)
 
-        label_binarization = BinarizeLabel(postprocessor_string='_label')
+        label_binarization = BinarizeLabel()
+        largest_component = LargestComponents()
+        hole_filler = FillHoles(postprocessor_string='_label')
 
-        prediction.append_postprocessor([label_binarization])
+        prediction.append_postprocessor([label_binarization, largest_component, hole_filler])
 
         unet_model.append_output([prediction])
         unet_model.generate_outputs(testing_data_collection)

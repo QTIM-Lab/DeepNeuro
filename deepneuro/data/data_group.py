@@ -82,9 +82,9 @@ class DataGroup(object):
     def write_to_storage(self):
 
         if len(self.augmentation_cases) == 1:
-            self.data_storage.append(self.base_case[np.newaxis])
+            self.data_storage.append(self.base_case)
         else:
-            self.data_storage.append(self.augmentation_cases[-1][np.newaxis])
+            self.data_storage.append(self.augmentation_cases[-1])
 
         self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
         self.affine_storage.append(self.base_affine[:][np.newaxis])

@@ -169,6 +169,7 @@ ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
 
 # Install DeepNeuro. Scikit-image has installation problems with EasyInstall and setup.py
+RUN echo 2
 RUN pip install scikit-image==0.12.3
 RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
 WORKDIR /home/DeepNeuro
@@ -178,7 +179,7 @@ RUN mkdir -p /home/DeepNeuro/deepneuro/load/Skull_Strip
 RUN wget -O /home/DeepNeuro/deepneuro/load/Skull_Strip/Skull_Stripping.h5 "https://www.dropbox.com/s/gn2w4u4vw1orcyj/FLAIRT1post_ss.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 45
+RUN echo 46
 RUN git pull
 
 # Commands at startup.
