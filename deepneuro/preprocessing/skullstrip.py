@@ -39,11 +39,18 @@ class SkullStrip(Preprocessor):
 
         self.mask_string = '_Skullstrip_Mask'
 
-    def initialize(self):
+    def initialize(self, data_collection):
 
-        for label, data_group in self.data_groups.iteritems():
+        super(Preprocessor, self).initialize(self)
 
-            input_file = data_group.preprocessed_case[self.reference_channel]
+        for label, data_group in data_collection.data_groups.iteritems():
+
+            if type(data_group.preprocessed_case) is list:
+                input_file = data_group.preprocessed_case[self.reference_channel]
+            else:
+                save_numpy_2_nifti()
+
+
 
             output_filename = replace_suffix(input_file, '', self.mask_string)
 
@@ -53,13 +60,14 @@ class SkullStrip(Preprocessor):
                 output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(input_file, '', self.mask_string)))
 
             specific_command = self.command + [input_file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
-
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-
             os.rename(output_filename + '_mask.nii.gz', output_filename)
 
             # Outputs masks is causing a lot of problems, and doesn't fit with the data groups syntax.
             self.outputs['masks'] += [output_filename]
+
+            data_dictionary = data_collection.preprocessed_cases[data_collection.current_case][data_group.label][self.name]
+            data_dictionary['output_filenames'] = self.output_filenames
 
         self.mask_numpy = read_image_files(self.outputs['masks'])
 
@@ -68,4 +76,25 @@ class SkullStrip(Preprocessor):
         input_numpy = read_image_files([self.base_file])
         input_numpy[self.mask_numpy == 0] = 0
 
-        save_numpy_2_nifti(np.squeeze(input_numpy), self.base_file, self.output_filename)      
+        save_numpy_2_nifti(np.squeeze(input_numpy), self.base_file, self.output_filename)
+
+    def preprocess(self, data_group):
+
+        if type(data_group.preprocessed_case) is list:
+            input_numpy = read_image_files([self.base_file])
+            self.output_array, self.output_affines = read_image_files(data_group.preprocessed_case, return_affine=True)
+        else:
+            self.output_array = data_group.preprocessed_data
+
+        data_group.preprocessed_case = self.output_array
+
+    def store_outputs(self, data_collection, data_group):
+
+        data_dictionary = data_collection.preprocessed_cases[data_collection.current_case][data_group.label][self.name]
+
+        data_dictionary['output_filenames'] = self.output_filenames
+
+        if self.output_affines is not None:
+            data_dictionary['output_affine'] = self.output_affines
+
+        return   

@@ -6,6 +6,8 @@ import numpy as np
 import tables
 import copy
 
+from collections import defaultdict
+
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
@@ -31,11 +33,12 @@ class DataCollection(object):
 
         # Empty vars
         self.cases = []
+        self.preprocessed_cases = {}
         self.total_cases = 0
         self.current_case = None
+
+        # Data group variables
         self.data_groups = {}
-        self.data_shape = None
-        self.data_shape_augment = None
 
     def add_case(self, case_dict, case_name=None):
 
@@ -53,6 +56,7 @@ class DataCollection(object):
             self.data_groups[data_group].add_case(case_name, list(modality_group_files))
         
         self.cases.append(case_name)
+        self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
     def fill_data_groups(self):
@@ -73,10 +77,15 @@ class DataCollection(object):
 
             # Iterate through directories.. Always looking for a better way to check optional list typing.
             if isinstance(self.data_directory, basestring):
+                if not os.path.exist(self.data_directory):
+                    print 'The data directory you have input does not exist!'
+                    exit(1)   
                 directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
             else:
                 directory_list = []
                 for d in self.data_directory:
+                    if not os.path.exists(d):
+                        print 'WARNING: One of the data directories you have input,', d, 'does not exist!'
                     directory_list += glob.glob(os.path.join(d, "*/"))
                 directory_list = sorted(directory_list)
 
@@ -113,10 +122,17 @@ class DataCollection(object):
                     if len(modality_group_files) == len(modality_labels):
                         self.data_groups[data_group].add_case(os.path.abspath(subject_dir), list(modality_group_files))
 
-                self.cases.append(os.path.abspath(subject_dir))
+                case_name = os.path.abspath(subject_dir)
+                self.cases.append(case_name)
+                self.preprocessed_cases[case_name] = defaultdict(list)
 
             self.total_cases = len(self.cases)
-            print 'Found', self.total_cases, 'number of cases..'
+
+            if self.total_cases == 0:
+                print 'Found zero cases. Are you sure you have the right path for your input directory?'
+                exit(1)
+            else:
+                print 'Found', self.total_cases, 'number of cases..'
 
         elif self.data_storage is not None:
 
@@ -143,6 +159,10 @@ class DataCollection(object):
                     self.data_groups[data_group.name].case_num = data_group.shape[0]
                     self.total_cases = data_group.shape[0]
                     self.cases = range(data_group.shape[0])
+
+            if self.total_cases == 0:
+                print 'No cases could be extracted from the provided HDF5 file.'
+                exit(1)
 
         else:
             print 'No directory or data storage file specified. No data groups can be filled.'
@@ -194,15 +214,13 @@ class DataCollection(object):
             preprocessors = [preprocessors]
 
         for preprocessor in preprocessors:
-            for data_group_label in preprocessor.data_groups:
-                preprocessor.append_data_group(self.data_groups[data_group_label])
             self.preprocessors.append(preprocessor)
 
-        # This is so bad.
-        for preprocessor in preprocessors:
-            for data_group_label in preprocessor.data_groups:
-                if preprocessor.output_shape is not None:
-                    self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
+        # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
+        # for preprocessor in preprocessors:
+        #     for data_group_label in preprocessor.data_groups:
+        #         if preprocessor.output_shape is not None:
+        #             self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
 
         return
 
@@ -265,16 +283,14 @@ class DataCollection(object):
                     
         return tuple([data_group.base_case for data_group in data_groups])
 
-    def load_case_data(self, case, casename=None):
+    def load_case_data(self, case):
 
         data_groups = self.get_data_groups()
 
-        # Don't remember what's going on here, maybe delete extra variable.
-        # May have to do with indexing via hdf5s or file collections
-        if casename is None:
-            casename = case
+        # This is weird.
+        self.current_case = case
 
-        self.preprocess(case)
+        self.preprocess()
 
         for data_group in data_groups:
 
@@ -289,18 +305,23 @@ class DataCollection(object):
             if len(self.augmentations) != 0:
                 data_group.augmentation_cases[0] = data_group.base_case
 
-        self.current_case = case
 
-    def preprocess(self, case):
+    def preprocess(self):
+
+        print self.preprocessed_cases, self.current_case
+        self.preprocessed_cases[self.current_case] = defaultdict(list)
 
         data_groups = self.get_data_groups()
 
         for data_group in data_groups:
-            data_group.preprocessed_case = copy.copy(data_group.data[case])
+            if self.preprocessors != []:
+                data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
+            else:
+                data_group.preprocessed_case = data_group.data[self.current_case]
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
-            preprocessor.execute(case)
+            preprocessor.execute(self)
 
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):

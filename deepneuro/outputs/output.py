@@ -53,6 +53,9 @@ class Output(object):
 
     def append_postprocessor(self, postprocessors):
 
+        if type(postprocessors) is not list:
+            postprocessors = [postprocessors]
+
         for postprocessor in postprocessors:
             self.postprocessors += [postprocessor]
 
