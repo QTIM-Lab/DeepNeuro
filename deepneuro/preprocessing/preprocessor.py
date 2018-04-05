@@ -10,16 +10,13 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 
 class Preprocessor(object):
 
-    def __init__(self, data_groups=None, save_output=True, overwrite=False, verbose=False, output_folder=None, **kwargs):
-
-        self.output_shape = None
-        self.initialization = False
+    def __init__(self, data_groups=None, save_output=True, verbose=False, output_folder=None, **kwargs):
 
         # File-Saving Parameters
-        self.overwrite = overwrite
-        self.save_output = save_output
-        self.output_folder = output_folder
-        self.return_array = True
+        add_parameter(self, kwargs, 'overwrite', False)
+        add_parameter(self, kwargs, 'save_output', True)
+        add_parameter(self, kwargs, 'output_folder', None)
+        add_parameter(self, kwargs, 'return_arrary', True)
 
         # Input Parameters
         add_parameter(self, kwargs, 'file_input', False)
@@ -32,10 +29,20 @@ class Preprocessor(object):
         add_parameter(self, kwargs, 'verbose', True)
 
         # Derived Parameters
-        self.outputs = defaultdict(list)
+
+        self.array_input = True
         self.input_data = defaultdict(list)
+
+        self.outputs = defaultdict(list)
         self.output_data = None
         self.output_array = None
+        self.output_shape = None
+        self.initialization = False
+
+        # Dreams of linked lists here.
+        self.next_prepreprocessor = None
+        self.previous_preprocessor = None
+        self.order_index = 0
 
         self.load(kwargs)
 
@@ -49,7 +56,7 @@ class Preprocessor(object):
 
         return
 
-    def execute(self, data_collection, input_data=None):
+    def execute(self, data_collection, return_data=True):
 
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
@@ -72,18 +79,16 @@ class Preprocessor(object):
 
     def generate_input_data(self, data_collection, data_group):
 
-        if data_group.preprocessed_case is None:
-            
-        else:
-            self.input_data[data_group.label] = data_group.preprocessed_case
+        self.input_data[data_group.label] = data_group.preprocessed_case
 
 
     def preprocess(self, data_group):
 
-        if type(data_group.preprocessed_case) is list:
-            self.output_array, self.output_affines = read_image_files(data_group.preprocessed_case, return_affine=True)
-        else:
-            self.output_array = data_group.preprocessed_data
+        # Currently a nonsense function.
+
+        self.output_array = data_group.preprocessed_data
+
+        # Processing happens here.
 
         data_group.preprocessed_data = self.output_array
 
@@ -115,9 +120,7 @@ class Preprocessor(object):
         """ No idea how this will work if the amount of output files is changed in a preprocessing step
         """
 
-        output_filenames = self.generate_output_filenames(self, data_group)
-
-        for output_filename in output_filenames:
+        for file_idx, output_filename in self.output_filenames:
             save_numpy_2_nifti(np.squeeze(array), affine, self.output_filename)
 
         return
@@ -157,6 +160,12 @@ class Preprocessor(object):
         for label, data_group in data_collection.data_groups.iteritems():
             if data_collection.preprocessed_cases[data_collection.current_case][self.name].get(label) is None:
                 data_collection.preprocessed_cases[data_collection.current_case][self.name][label] = defaultdict(list)
+
+        if self.order_index > 0:
+            self.previous_preprocessor = data_collection.preprocessors[order_index - 1]
+
+        if self.order_index != len(data_collection.preprocessors) - 1:
+            self.next_prepreprocessor = data_collection.preprocessors[order_index + 1]
 
         return
 

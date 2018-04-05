@@ -214,6 +214,7 @@ class DataCollection(object):
             preprocessors = [preprocessors]
 
         for preprocessor in preprocessors:
+            prepocessor.order_index = len(self.preprocessors)
             self.preprocessors.append(preprocessor)
 
         # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
@@ -308,7 +309,7 @@ class DataCollection(object):
 
     def preprocess(self):
 
-        print self.preprocessed_cases, self.current_case
+        # print self.preprocessed_cases, self.current_case
         self.preprocessed_cases[self.current_case] = defaultdict(list)
 
         data_groups = self.get_data_groups()

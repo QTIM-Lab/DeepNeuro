@@ -111,10 +111,6 @@ class Flip_Rotate_2D(Augmentation):
 
             self.initialization = True
 
-    def iterate(self):
-
-        super(Flip_Rotate_2D, self).iterate()
-
     def augment(self, augmentation_num=0):
 
         for label, data_group in self.data_groups.iteritems():
@@ -127,78 +123,61 @@ class Flip_Rotate_2D(Augmentation):
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
                 data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis])
 
-# class Flip_Rotate_3D(Augmentation):
+class Flip_Rotate_3D(Augmentation):
 
-#     def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
+    def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
 
-#         """
-#         """
+        """
+        """
 
-#         # Get rid of these with super??
-#         self.multiplier = multiplier
-#         self.total = total
-#         self.flip_axis = 1
-
-#         self.output_shape = None
-#         self.initialization = False
-#         self.iteration = 0
-
-#         self.total_iterations = multiplier
-
-#         self.data_groups = {data_group: None for data_group in data_groups}
-
-#         self.available_transforms = []
+        # Flip and Rotate options
+        add_parameter(self, kwargs, 'rotation_axes', [1,2,3])
 
 
-#     def rotations24(array):
 
-#         while True:
-#             # imagine shape is pointing in axis 0 (up)
+    def rotations24(self, array, axes=[1,2,3]):
 
-#             # 4 rotations about axis 0
-#             yield rotations4(array, 0)
+        while True:
+            # imagine shape is pointing in axis 0 (up)
 
-#             # rotate 180 about axis 1, now shape is pointing down in axis 0
-#             # 4 rotations about axis 0
-#             yield rotations4(rot90(array, 2, axis=1), 0)
+            # 4 rotations about axis 0
+            yield rotations4(array, self.rotation_axes[0])
 
-#             # rotate 90 or 270 about axis 1, now shape is pointing in axis 2
-#             # 8 rotations about axis 2
-#             yield rotations4(rot90(array, axis=1), 2)
-#             yield rotations4(rot90(array, -1, axis=1), 2)
+            # rotate 180 about axis 1, now shape is pointing down in axis 0
+            # 4 rotations about axis 0
+            yield rotations4(rot90_3d(array, 2, axis=self.rotation_axes[1]), self.rotation_axes[0])
 
-#             # rotate about axis 2, now shape is pointing in axis 1
-#             # 8 rotations about axis 1
-#             yield rotations4(rot90(array, axis=2), 1)
-#             yield rotations4(rot90(array, -1, axis=2), 1)
+            # rotate 90 or 270 about axis 1, now shape is pointing in axis 2
+            # 8 rotations about axis 2
+            yield rotations4(rot90_3d(array, axis=self.rotation_axes[1]), self.rotation_axes[2])
+            yield rotations4(rot90_3d(array, -1, axis=self.rotation_axes[1]), self.rotation_axes[2])
 
-
-#     def rotations4(array, axis):
-#         """List the four rotations of the given cube about the given axis."""
-
-#         while True:
-#             for i in range(4):
-#                 yield rot90(array, i, axis)
+            # rotate about axis 2, now shape is pointing in axis 1
+            # 8 rotations about axis 1
+            yield rotations4(rot90_3d(array, axis=self.rotation_axes[2]), self.rotation_axes[1])
+            yield rotations4(rot90_3d(array, -1, axis=self.rotation_axes[2]), self.rotation_axes[1])
 
 
-#     def initialize_augmentation(self):
+    def rotations4(array, axis):
+        """List the four rotations of the given cube about the given axis."""
 
-#         if not self.initialization:
+        while True:
+            for i in range(4):
+                yield rot90_3d(array, i, axis)
 
-#             self.initialization = True
+    def rot90_3d(m, k=1, axis=2):
+        """Rotate an array by 90 degrees in the counter-clockwise direction around the given axis"""
+        m = numpy.swapaxes(m, 2, axis)
+        m = numpy.rot90(m, k)
+        m = numpy.swapaxes(m, 2, axis)
+        return m
 
+    def augment(self, augmentation_num=0):
 
-#     def iterate(self):
+        for label, data_group in self.data_groups.iteritems():
 
-#         super(Flip_Rotate_3D, self).iterate()
-
-
-#     def augment(self, augmentation_num=0):
-
-#         for label, data_group in self.data_groups.iteritems():
-
-#             if self.available_transforms[self.iteration % self.total_transforms, 0]:
-#                 data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
+            if self.available_transforms[self.iteration % self.total_transforms, 0]:
+                data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
 
 
 class ExtractPatches(Augmentation):
@@ -222,6 +201,9 @@ class ExtractPatches(Augmentation):
         self.augmentation_string = '_patch_'
 
     def initialize_augmentation(self):
+
+        """ There are some batch dimension problems with output_shape here. Hacky fixes for now, but revisit. TODO
+        """
 
         if not self.initialization:
 
@@ -248,14 +230,17 @@ class ExtractPatches(Augmentation):
                 self.input_shape[label] = data_group.get_shape()
                 if label not in self.patch_dimensions.keys():
                     # If no provided patch dimensions, just presume the format is [batch, patch_dimensions, channel]
-                    self.patch_dimensions[label] = [-2 - x for x in xrange(len(self.input_shape[label]) - 1)]
+                    # self.patch_dimensions[label] = [-4 + x for x in xrange(len(self.input_shape[label]) - 1)]
+                    self.patch_dimensions[label] = [x + 1 for x in xrange(len(self.input_shape[label]) - 1)]
+
                 # This is a little goofy.
                 self.output_shape[label] = np.array(self.input_shape[label])
-                self.output_shape[label][self.patch_dimensions[label]] = list(self.patch_shape)
+                # self.output_shape[label][self.patch_dimensions[label]] = list(self.patch_shape)
+                self.output_shape[label][[x - 1 for x in self.patch_dimensions[label]]] = list(self.patch_shape)
                 self.output_shape[label] = tuple(self.output_shape[label])
 
                 # Batch dimension correction, revisit
-                self.patch_dimensions[label] = [x + 1 for x in self.patch_dimensions[label]]
+                # self.patch_dimensions[label] = [x + 1 for x in self.patch_dimensions[label]]
 
             self.initialization = True
 

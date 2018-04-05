@@ -20,19 +20,17 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
     # Define input modalities to load.
     training_modality_dict = {'input_modalities': 
-    ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz'], ['MPRAGE_POST_r_T2.nii.gz'], ['MPRAGE_Pre_r_T2.nii.gz']],
-    'ground_truth': [['MPRAGE_POST_r_T2_AUTO-label_EG.nii.gz']]}
-    testing_modality_dict = {'input_modalities': 
-    ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz'], ['MPRAGE_POST_r_T2.nii.gz'], ['MPRAGE_Pre_r_T2.nii.gz']]}
+    ['*FLAIR_pp.*', '*T2_pp.*', '*T1_pp.*', '*T1post_pp.*'],
+    'ground_truth': ['enhancingmask_pp.nii.gz']}
 
     load_data = True
     train_model = True
     load_test_data = False
     predict = True
 
-    training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/METS_Prediction_training_data.h5'
-    model_file = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/METS_Prediction.h5'
-    testing_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/METS_Prediction_testing_data.h5'
+    training_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/BRATS_enhancing_prediction_only_data.h5'
+    model_file = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/BRATS_enhancing_prediction_only_model.h5'
+    testing_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/BRATS_enhancing_prediction_only_data.h5'
 
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
@@ -122,7 +120,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = ['/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/TRAIN', '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/BRE/TRAIN']
+    data_directory = ['/mnt/jk489/sharedfolder/BRATS2017/Train', '/mnt/jk489/sharedfolder/BRATS2017/Val']
     val_data_directory = ['/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/PEM/VAL', '/mnt/jk489/QTIM_Databank/QTIM_CLINICAL/Preprocessed/BRE/VAL']
 
     train_Segment_GBM(data_directory, val_data_directory)
