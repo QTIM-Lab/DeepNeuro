@@ -92,7 +92,7 @@ class DataCollection(object):
             for subject_dir in directory_list:
 
                 # If a predefined case list is provided, only choose these cases.
-                if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
+                if self.case_list is not None and os.path.basename(os.path.normpath(subject_dir)) not in self.case_list:
                     continue
 
                 # Search for modality files, and skip those missing with files modalities.
