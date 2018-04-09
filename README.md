@@ -33,9 +33,11 @@ This package is in an initial testing phase, and will be released soon. Currentl
 
 ## Modules
 
+<p align="center">
 <a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_GBM">
 <img src="./deepneuro/pipelines/Segment_GBM/resources/icon.png?raw=true" width="684" alt=""></img>
 </a>
+</p>
 
 ## Contact
 
