@@ -15,6 +15,14 @@ def read_image_files(image_files, return_affine=False):
 
     # Rename this function to something more descriptive?
 
+    if type(image_files) is np.ndarray:
+        if return_affine:
+            return image_files, None
+        else:
+            return image_files
+    elif type(image_files) is str:
+        image_files = [image_files]
+
     image_list = []
     affine = None
     for image_file in image_files:

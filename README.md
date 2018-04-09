@@ -1,4 +1,4 @@
-![Alt text](./package_resources/logos/DeepNeuro_alt.PNG?raw=true "Title")
+![Alt text](./package_resources/logos/DeepNeuro_alt.PNG?raw=true "DeepNeuro")
 
 [![Build Status](https://travis-ci.org/QTIM-Lab/DeepNeuro.svg?branch=master)](https://travis-ci.org/QTIM-Lab/DeepNeuro)
 
@@ -34,6 +34,9 @@ This package is in an initial testing phase, and will be released soon. Currentl
 ## Modules
 
 - Glioblastoma Segmentation (Edema and Enhancing Tumor) -- [Documentation](https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_GBM)
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_GBM">
+<img src="./deepneuro/pipelines/Segment_GBM/resources/icon.png?raw=true" width="500" alt=""></img>
+</a>
 
 ## Contact
 

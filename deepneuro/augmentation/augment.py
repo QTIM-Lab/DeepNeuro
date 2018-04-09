@@ -125,7 +125,7 @@ class Flip_Rotate_2D(Augmentation):
 
 class Flip_Rotate_3D(Augmentation):
 
-    def __init__(self, data_groups=None, multiplier=None, total=None, flip=True, rotate=True):
+    def load(self, kwargs):
 
         """
         """
@@ -133,51 +133,72 @@ class Flip_Rotate_3D(Augmentation):
         # Flip and Rotate options
         add_parameter(self, kwargs, 'rotation_axes', [1,2,3])
 
+        # Derived Parameters
+        self.rotation_generator = {}
+        self.augmentation_num = 0
 
+    def initialize_augmentation(self):
 
-    def rotations24(self, array, axes=[1,2,3]):
+        if not self.initialization:
+
+            for label, data_group in self.data_groups.iteritems():
+                self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[0])
+
+            self.initialization = True
+
+    def rotations24(self, array):
 
         while True:
             # imagine shape is pointing in axis 0 (up)
 
             # 4 rotations about axis 0
-            yield rotations4(array, self.rotation_axes[0])
+            for i in range(4):
+                yield self.rot90_3d(array, i, self.rotation_axes[0])
 
             # rotate 180 about axis 1, now shape is pointing down in axis 0
             # 4 rotations about axis 0
-            yield rotations4(rot90_3d(array, 2, axis=self.rotation_axes[1]), self.rotation_axes[0])
+            rotated_array = self.rot90_3d(array, 2, axis=self.rotation_axes[1])
+            for i in range(4):
+                yield self.rot90_3d(rotated_array, i, self.rotation_axes[0])
 
             # rotate 90 or 270 about axis 1, now shape is pointing in axis 2
             # 8 rotations about axis 2
-            yield rotations4(rot90_3d(array, axis=self.rotation_axes[1]), self.rotation_axes[2])
-            yield rotations4(rot90_3d(array, -1, axis=self.rotation_axes[1]), self.rotation_axes[2])
+            rotated_array = self.rot90_3d(array, axis=self.rotation_axes[1])
+            for i in range(4):
+                yield self.rot90_3d(rotated_array, i, self.rotation_axes[2])
+
+            rotated_array = self.rot90_3d(array, -1, axis=self.rotation_axes[1])
+            for i in range(4):
+                yield self.rot90_3d(rotated_array, i, self.rotation_axes[2])
 
             # rotate about axis 2, now shape is pointing in axis 1
             # 8 rotations about axis 1
-            yield rotations4(rot90_3d(array, axis=self.rotation_axes[2]), self.rotation_axes[1])
-            yield rotations4(rot90_3d(array, -1, axis=self.rotation_axes[2]), self.rotation_axes[1])
-
-
-    def rotations4(array, axis):
-        """List the four rotations of the given cube about the given axis."""
-
-        while True:
+            rotated_array = self.rot90_3d(array, axis=self.rotation_axes[2])
             for i in range(4):
-                yield rot90_3d(array, i, axis)
+                yield self.rot90_3d(rotated_array, i, self.rotation_axes[1])
 
-    def rot90_3d(m, k=1, axis=2):
+            rotated_array = self.rot90_3d(array, -1, axis=self.rotation_axes[2])
+            for i in range(4):
+                yield self.rot90_3d(rotated_array, i, self.rotation_axes[1])
+
+    def rot90_3d(self, m, k=1, axis=2):
         """Rotate an array by 90 degrees in the counter-clockwise direction around the given axis"""
-        m = numpy.swapaxes(m, 2, axis)
-        m = numpy.rot90(m, k)
-        m = numpy.swapaxes(m, 2, axis)
+        m = np.swapaxes(m, 2, axis)
+        m = np.rot90(m, k)
+        m = np.swapaxes(m, 2, axis)
         return m
 
     def augment(self, augmentation_num=0):
 
+        # Hacky -- the rotation generator is weird here.
+        if augmentation_num != self.augmentation_num:
+            self.augmentation_num = augmentation_num
+        for label, data_group in self.data_groups.iteritems():
+            self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[self.augmentation_num])
+
         for label, data_group in self.data_groups.iteritems():
 
-            if self.available_transforms[self.iteration % self.total_transforms, 0]:
-                data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
+            data_group.augmentation_cases[augmentation_num + 1] = next(self.rotation_generator[label])
 
 
 class ExtractPatches(Augmentation):
@@ -312,7 +333,6 @@ class ExtractPatches(Augmentation):
                     acceptable_patch = self.patch_extraction_conditions[self.condition_list[self.iteration]][0](self.patches)
                 else:
                     acceptable_patch = True
-                    print self.patch_extraction_conditions[self.condition_list[self.iteration]][0]
 
         else:
             region = self.patch_regions[self.region_list[self.iteration]]
@@ -357,8 +377,6 @@ class ExtractPatches(Augmentation):
                     pad_dims[patch_dim] = tuple(pad)
 
                 self.patches[label] = np.lib.pad(self.patches[label], tuple(pad_dims), 'edge')
-
-            print self.patch_region_conditions[self.region_list[self.iteration]][0]
 
         return
 

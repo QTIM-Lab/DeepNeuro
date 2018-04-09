@@ -20,8 +20,8 @@ class DataGroup(object):
 
         # TODO: More distinctive naming for "base" and "current" cases.
         self.preprocessed_case = None
+        self.preprocessed_affine = None
         self.base_case = None
-        self.base_casename = None
         self.base_affine = None
 
         self.augmentation_cases = [None]
@@ -66,15 +66,31 @@ class DataGroup(object):
         else:
             return len(self.data[0])
 
-    def get_data(self, index, return_affine):
+    def get_data(self, index, return_affine=False):
 
         if self.source == 'directory':
-            return read_image_files(self.preprocessed_case, return_affine)
+            self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
+            if return_affine:
+                return self.preprocessed_case, self.preprocessed_affine
+            else:
+                return self.preprocessed_case
         elif self.source == 'storage':
             if return_affine:
                 return self.data[index][:][np.newaxis], self.data_affines[index]
             else:
                 return self.data[index][:][np.newaxis]
+
+        return None
+
+    def get_affine(self, index):
+
+        if self.source == 'directory':
+            if self.preprocessed_affine is None:
+                self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
+            return self.preprocessed_affine
+        # A little unsure of the practical implication of the storage code below.
+        elif self.source == 'storage':
+            return self.data[index][:][np.newaxis], self.data_affines[index]
 
         return None
 

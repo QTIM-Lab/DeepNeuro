@@ -37,64 +37,45 @@ class SkullStrip(Preprocessor):
         add_parameter(self, kwargs, 'name', 'SkullStrip')
         add_parameter(self, kwargs, 'preprocessor_string', '_SkullStripped')
 
+        self.array_input = True
+
         self.mask_string = '_Skullstrip_Mask'
+        self.mask_filename = None
 
     def initialize(self, data_collection):
 
-        super(Preprocessor, self).initialize(self)
+        super(SkullStrip, self).initialize(data_collection)
 
         for label, data_group in data_collection.data_groups.iteritems():
 
             if type(data_group.preprocessed_case) is list:
                 input_file = data_group.preprocessed_case[self.reference_channel]
             else:
-                save_numpy_2_nifti()
+                # What to do about affines here...
+                input_file = save_numpy_2_nifti(data_group.preprocessed_case[..., self.reference_channel], data_group.preprocessed_affine, 'DEEPNEURO_TEMP_FILE.nii.gz')
+            
+            base_filename = data_group.data[data_collection.current_case][self.reference_channel]
 
+            self.mask_filename = self.generate_output_filename(base_filename, self.mask_string)
 
+            specific_command = self.command + [input_file, self.mask_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
 
-            output_filename = replace_suffix(input_file, '', self.mask_string)
-
-            if self.output_folder is None:
-                output_filename = replace_suffix(input_file, '', self.mask_string)
-            else:
-                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(input_file, '', self.mask_string)))
-
-            specific_command = self.command + [input_file, output_filename, '-f', str(self.bet2_f), '-g', str(self.bet2_g), '-m']
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-            os.rename(output_filename + '_mask.nii.gz', output_filename)
+            os.rename(self.mask_filename + '_mask.nii.gz', self.mask_filename)
 
-            # Outputs masks is causing a lot of problems, and doesn't fit with the data groups syntax.
-            self.outputs['masks'] += [output_filename]
-
-            data_dictionary = data_collection.preprocessed_cases[data_collection.current_case][data_group.label][self.name]
-            data_dictionary['output_filenames'] = self.output_filenames
-
-        self.mask_numpy = read_image_files(self.outputs['masks'])
-
-    def preprocess(self):
-
-        input_numpy = read_image_files([self.base_file])
-        input_numpy[self.mask_numpy == 0] = 0
-
-        save_numpy_2_nifti(np.squeeze(input_numpy), self.base_file, self.output_filename)
+        self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
 
     def preprocess(self, data_group):
 
-        if type(data_group.preprocessed_case) is list:
-            input_numpy = read_image_files([self.base_file])
-            self.output_array, self.output_affines = read_image_files(data_group.preprocessed_case, return_affine=True)
-        else:
-            self.output_array = data_group.preprocessed_data
+        self.output_data = data_group.preprocessed_case
 
-        data_group.preprocessed_case = self.output_array
+        # Ineffective numpy broadcasting happening here..
+        self.output_data[self.mask_numpy[..., 0] == 0] = 0
+
+        data_group.preprocessed_data = self.output_data
 
     def store_outputs(self, data_collection, data_group):
 
-        data_dictionary = data_collection.preprocessed_cases[data_collection.current_case][data_group.label][self.name]
-
-        data_dictionary['output_filenames'] = self.output_filenames
-
-        if self.output_affines is not None:
-            data_dictionary['output_affine'] = self.output_affines
+        self.data_dictionary[data_group.label]['skullstrip_mask'] = [self.mask_filename]
 
         return   

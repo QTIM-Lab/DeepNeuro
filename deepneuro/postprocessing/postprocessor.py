@@ -34,3 +34,7 @@ class Postprocessor(object):
     def postprocess(self, input_data):
 
         return input_data
+
+    def clear_outputs(self):
+
+        return

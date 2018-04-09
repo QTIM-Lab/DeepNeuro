@@ -92,7 +92,7 @@ class DataCollection(object):
             for subject_dir in directory_list:
 
                 # If a predefined case list is provided, only choose these cases.
-                if self.case_list is not None and os.path.basename(os.path.normpath(subject_dir)) not in self.case_list:
+                if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
                     continue
 
                 # Search for modality files, and skip those missing with files modalities.
@@ -214,7 +214,7 @@ class DataCollection(object):
             preprocessors = [preprocessors]
 
         for preprocessor in preprocessors:
-            prepocessor.order_index = len(self.preprocessors)
+            preprocessor.order_index = len(self.preprocessors)
             self.preprocessors.append(preprocessor)
 
         # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
@@ -295,10 +295,11 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
-            data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+            data_group.base_case = data_group.get_data(index=case)
+            data_group.base_affine = data_group.get_affine(index=case)
 
             if data_group.source == 'storage':
-                data_group.base_casename = data_group.data_casenames[casename][0]
+                data_group.base_casename = data_group.data_casenames[case][0]
             else:
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
@@ -480,7 +481,7 @@ class DataCollection(object):
 
             # Add batch dimension
             data_shape = (0,) + output_shape
-
+            
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
 
             # Naming convention is bad here, TODO, think about this.
@@ -518,6 +519,12 @@ class DataCollection(object):
             data_groups = [self.data_groups[label] for label in data_group_labels]
 
         return data_groups
+
+    def clear_outputs(self, clear_files_only=True):
+
+        for data_group in self.get_data_groups():
+            for preprocessor in self.preprocessors:
+                preprocessor.clear_outputs(self, data_group, clear_files_only)
 
 
 if __name__ == '__main__':
