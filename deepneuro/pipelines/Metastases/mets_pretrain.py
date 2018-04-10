@@ -40,7 +40,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
     ['*FLAIR*nii.gz', ['*T2SPACE*nii.gz'], ['MPRAGE_Pre_r_T2.nii.gz'], ['MPRAGE_POST_r_T2.nii.gz']]}
 
     load_data = False
-    train_model = True
+    train_model = False
     load_test_data = False
     predict = True
 
@@ -126,7 +126,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
             testing_data_collection.write_data_to_file(testing_data)
 
         testing_parameters = {'inputs': ['input_modalities'], 
-                        'output_filename': 'mets_prediction.nii.gz',
+                        'output_filename': 'mets_prediction_pretrained.nii.gz',
                         'batch_size': 250,
                         'patch_overlaps': 1,
                         'output_patch_shape': (26, 26, 26, 4),

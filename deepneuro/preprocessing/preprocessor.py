@@ -1,5 +1,6 @@
 import os
 import sys
+import filecmp
 import numpy as np
 
 from collections import defaultdict
@@ -165,11 +166,12 @@ class Preprocessor(object):
 
     def clear_outputs(self, data_collection, data_group, clear_files_only=False):
 
+        # Really weird.
         for key in self.data_dictionary[data_group.label]:
             for item in self.data_dictionary[data_group.label][key]:
                 if type(item) is str:
                     if os.path.exists(item):
-                        if not self.save_output:
+                        if not self.save_output and all([filecmp.cmp(item, base_filename) for base_filename in data_group.data[data_collection.current_case]]):
                             os.remove(item)
                 elif not clear_files_only:
                     self.data_dictionary[data_group.label][key] = []

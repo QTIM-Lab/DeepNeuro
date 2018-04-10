@@ -2,7 +2,7 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '2'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 from deepneuro.data.data_collection import DataCollection
 from deepneuro.augmentation.augment import Flip_Rotate_2D, ExtractPatches, MaskData, Downsample, Copy
@@ -104,7 +104,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
         testing_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': 'mets_prediction.nii.gz',
                         'batch_size': 250,
-                        'patch_overlaps': 1,
+                        'patch_overlaps': 6,
                         'output_patch_shape': (26, 26, 26, 4),
                         'save_all_steps': True}
 

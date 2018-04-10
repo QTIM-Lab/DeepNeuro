@@ -142,22 +142,26 @@ class ModelPatchesInference(ModelInference):
 
     def predict(self, input_data):
 
-        repatched_image = np.zeros(self.output_shape)
-
         repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
 
         if self.pad_borders:
-            # I use this three-line loop construciton a lot. Is there a more sensible way?
+            # TODO -- Clean up this border-padding code and make it more readable.
             input_pad_dimensions = [(0, 0)] * input_data.ndim
-            output_pad_dimensions = [(0, 0)] * repatched_image.ndim
+            repatched_shape = self.output_shape
+            new_input_shape = list(input_data.shape)
             for idx, dim in enumerate(self.patch_dimensions):
                 # Might not work for odd-shaped patches; check.
                 input_pad_dimensions[dim] = (int(self.input_patch_shape[dim] / 2), int(self.input_patch_shape[dim] / 2))
+                new_input_shape[dim] += self.input_patch_shape[dim]
             for idx, dim in enumerate(self.output_patch_dimensions):
-                output_pad_dimensions[dim] = (int(self.input_patch_shape[dim] / 2), int(self.input_patch_shape[dim] / 2))
+                repatched_shape[dim] += self.input_patch_shape[dim]
 
-            input_data = self.pad_data(input_data, input_pad_dimensions)
-            repatched_image = self.pad_data(repatched_image, output_pad_dimensions)
+            padded_input_data = np.zeros(new_input_shape)
+            input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+            padded_input_data[input_slice] = input_data
+            input_data = padded_input_data
+
+        repatched_image = np.zeros(repatched_shape)
 
         corner_data_dims = [input_data.shape[axis] for axis in self.patch_dimensions]
         corner_patch_dims = [self.output_patch_shape[axis] for axis in self.patch_dimensions]
