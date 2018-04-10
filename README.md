@@ -39,6 +39,12 @@ This package is in an initial testing phase, and will be released soon. Currentl
 </a>
 </p>
 
+<p align="center">
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Skull_Stripping">
+<img src="./deepneuro/pipelines/Skull_Stripping/resources/icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
 ## Contact
 
 DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.

@@ -307,7 +307,6 @@ class DataCollection(object):
             if len(self.augmentations) != 0:
                 data_group.augmentation_cases[0] = data_group.base_case
 
-
     def preprocess(self):
 
         # print self.preprocessed_cases, self.current_case

@@ -34,6 +34,8 @@ def train_Segment_GBM(data_directory, val_data_directory):
     model_file = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/METS_Prediction.h5'
     testing_data = '/mnt/jk489/QTIM_Databank/DeepNeuro_Datasets/METS_Prediction_testing_data.h5'
 
+    pretrained_model_file = None
+
     # Write the data to hdf5
     if (not os.path.exists(training_data) and train_model) or load_data:
 
@@ -50,7 +52,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return data['input_modalities'] == 0
 
         # Add patch augmentation
-        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[empty_region, .05], [brain_region, .25], [roi_region, .7]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [0, 1, 2], 'input_modalities': [0, 1, 2]})
+        patch_augmentation = ExtractPatches(patch_shape=(32, 32, 32), patch_region_conditions=[[empty_region, .05], [brain_region, .25], [roi_region, .7]], data_groups=['input_modalities', 'ground_truth'], patch_dimensions={'ground_truth': [1, 2, 3], 'input_modalities': [1, 2, 3]})
         training_data_collection.append_augmentation(patch_augmentation, multiplier=2000)
 
         # Write data to hdf5
@@ -65,24 +67,26 @@ def train_Segment_GBM(data_directory, val_data_directory):
         flip_augmentation = Flip_Rotate_2D(flip=True, rotate=False, data_groups=['input_modalities', 'ground_truth'])
         training_data_collection.append_augmentation(flip_augmentation, multiplier=2)
 
-        # Define model parameters
-        model_parameters = {'input_shape': (32, 32, 32, 4),
-                        'downsize_filters_factor': 1,
-                        'pool_size': (2, 2, 2), 
-                        'filter_shape': (5, 5, 5), 
-                        'dropout': 0, 
-                        'batch_norm': True, 
-                        'initial_learning_rate': 0.000001, 
-                        'output_type': 'binary_label',
-                        'num_outputs': 1, 
-                        'activation': 'relu',
-                        'padding': 'same', 
-                        'implementation': 'keras',
-                        'depth': 4,
-                        'max_filter': 512}
+        if pretrained_model_file is None:
+            # Define model parameters and Create U-Net
+            model_parameters = {'input_shape': (32, 32, 32, 4),
+                            'downsize_filters_factor': 1,
+                            'pool_size': (2, 2, 2), 
+                            'filter_shape': (5, 5, 5), 
+                            'dropout': 0, 
+                            'batch_norm': True, 
+                            'initial_learning_rate': 0.000001, 
+                            'output_type': 'binary_label',
+                            'num_outputs': 1, 
+                            'activation': 'relu',
+                            'padding': 'same', 
+                            'implementation': 'keras',
+                            'depth': 4,
+                            'max_filter': 512}
+            unet_model = UNet(**model_parameters)
+        else:
+            unet_model = load_old_model(pretrained_model_file)
 
-        # Create U-Net
-        unet_model = UNet(**model_parameters)
         plot_model(unet_model.model, to_file='model_image_dn.png', show_shapes=True)
         training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
                         'output_model_filepath': model_file,
