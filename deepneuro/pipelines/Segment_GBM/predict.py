@@ -42,18 +42,15 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
         if not skullstripped:
 
             # Skullstripping model included
-            skullstripping_model = load_old_model('/mnt/jk489/sharedfolder/skullstripping_3/DeepNeuro-master/ss/ss_FLAIRT1post.h5')
-            wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
-                                'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
-                                'batch_size': 50,
-                                'patch_overlaps': 3,
-                                'channels_first': False,
-                                'patch_dimensions': [-4, -3, -2],
-                                'output_patch_shape': (56, 56, 6, 1),
-                                'save_to_file': False}
-            skullstripping_prediction = ModelPatchesInference(**wholetumor_prediction_parameters)
-            skullstripping_model.append_output([skullstripping_prediction])
-            skullstripping_prediction.append_postprocessor([BinarizeLabel(), FillHoles(), LargestComponents()])
+            skullstripping_prediction_parameters = {'inputs': ['input_modalities'], 
+                    'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
+                    'batch_size': 50,
+                    'patch_overlaps': 3,
+                    'channels_first': False,
+                    'patch_dimensions': [-4, -3, -2],
+                    'output_patch_shape': (56, 56, 6, 1),
+                    'save_to_file': False}
+            skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[ModelPatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents()])
 
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_normed')]
 

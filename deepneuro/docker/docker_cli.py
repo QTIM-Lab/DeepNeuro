@@ -1,5 +1,8 @@
 import os
+
 from subprocess import call
+
+from deepneuro.utilities.util import quotes
 
 
 def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
@@ -8,7 +11,7 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
         filename_args = [arg for arg in filename_args if cli_args[arg] is not None]
         mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([cli_args[arg] for arg in filename_args])))
         for arg in filename_args:
-            cli_args[arg] = os.path.join('/INPUT_DATA', os.path.abspath(cli_args[arg]).split(mounted_dir, 1)[1])
+            cli_args[arg] = quotes(os.path.join('/INPUT_DATA', os.path.abspath(cli_args[arg]).split(mounted_dir, 1)[1]))
     else:
         pass  # TODO: Default behavior when mounted directory not needed.
 
@@ -29,4 +32,5 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
             else:
                 docker_command += ['-' + str(arg) + ' ' + cli_args[arg]]
 
+    print(' '.join(docker_command))
     call(' '.join(docker_command), shell=True)
