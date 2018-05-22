@@ -12,7 +12,7 @@ def load_data(inputs, output_folder, input_directory=None, ground_truth=None, in
     inputs = [os.path.abspath(input_filename) for input_filename in inputs]
     output_folder = os.path.abspath(output_folder)
 
-    input_data = {'input_modalities': [inputs]}
+    input_data = {'input_modalities': inputs}
 
     if ground_truth is not None:
         input_data['ground_truth'] = [ground_truth]
@@ -44,7 +44,7 @@ def load_model_with_output(model_path=None, model_name=None, outputs=None, postp
         model = load_old_model(model_path)
 
     elif model_name is not None:
-        model = load(model_name)
+        model = load_old_model(load(model_name))
 
     else:
         print 'Error. No model provided.'

@@ -2,6 +2,7 @@ import numpy as np
 
 from skimage.morphology import label
 from skimage.measure import regionprops, mesh_surface_area, marching_cubes
+from scipy import signal
 
 from deepneuro.utilities.conversion import read_image_files
 
