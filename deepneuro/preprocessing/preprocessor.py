@@ -5,8 +5,8 @@ import numpy as np
 
 from collections import defaultdict
 
-from deepneuro.utilities.util import add_parameter, replace_suffix
-from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
+from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize
+from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti, save_data
 
 
 class Preprocessor(object):
@@ -45,9 +45,6 @@ class Preprocessor(object):
         self.previous_preprocessor = None
         self.order_index = 0
 
-        # Get rid of this parameter somehow.
-        self.saved = False
-
         self.load(kwargs)
 
         return
@@ -77,7 +74,7 @@ class Preprocessor(object):
             self.preprocess(data_group)
 
             if self.save_output:
-                output_filenames = self.save_to_file(data_group)
+                self.save_to_file(data_group)
 
             # Duplicated code here. In general, this is pretty messy.
             if self.next_prepreprocessor is not None:
@@ -93,7 +90,9 @@ class Preprocessor(object):
             self.store_outputs(data_collection, data_group)
 
     def convert_to_array_data(self, data_group):
+
         data_group.preprocessed_case, affine = read_image_files(self.output_data, return_affine=True)
+
         if affine is not None:
             data_group.preprocessed_affine = affine
 
@@ -111,36 +110,38 @@ class Preprocessor(object):
 
         data_group.preprocessed_case = self.output_data
 
-    def generate_output_filenames(self, data_collection, data_group):
+    def generate_output_filenames(self, data_collection, data_group, file_extension='.nii.gz'):
 
         self.output_filenames = []
 
         for file_idx, filename in enumerate(data_group.data[data_collection.current_case]):
 
-            self.output_filenames += [self.generate_output_filename(filename)]
+            self.output_filenames += [self.generate_output_filename(filename, file_extension=file_extension)]
 
         return
 
-    def generate_output_filename(self, filename, suffix=None):
+    def generate_output_filename(self, filename, suffix=None, file_extension='.nii.gz'):
 
         if suffix is None:
             suffix = self.preprocessor_string
 
-        # A bit hacky, here.
+        filename = os.path.abspath(filename)
+
+        # A bit hacky
         if self.name == 'Conversion' and (filename.endswith('.nii') or filename.endswith('.nii.gz')):
             output_filename = filename
         elif self.output_folder is None:
             if os.path.isdir(filename):
-                output_filename = os.path.join(filename, os.path.basename(os.path.dirname(filename) + suffix + '.nii.gz'))
+                output_filename = os.path.join(filename, os.path.basename(os.path.dirname(filename) + suffix + file_extension))
             else:
-                output_filename = replace_suffix(filename, '', suffix)
+                output_filename = replace_suffix(filename, '', suffix, file_extension=file_extension)
         else:
             if os.path.isdir(filename):
-                output_filename = os.path.join(self.output_folder, os.path.basename(os.path.dirname(filename) + suffix + '.nii.gz'))
+                output_filename = os.path.join(self.output_folder, os.path.basename(filename + suffix + file_extension))
             else:
-                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(filename, '', suffix)))
+                output_filename = os.path.join(self.output_folder, os.path.basename(replace_suffix(filename, '', suffix, file_extension=file_extension)))
 
-        return output_filename
+        return cli_sanitize(output_filename)
 
     def save_to_file(self, data_group):
 
@@ -171,7 +172,7 @@ class Preprocessor(object):
             for item in self.data_dictionary[data_group.label][key]:
                 if type(item) is str:
                     if os.path.exists(item):
-                        if not self.save_output and all([filecmp.cmp(item, base_filename) for base_filename in data_group.data[data_collection.current_case]]):
+                        if not self.save_output and all([not (os.path.abspath(item) == os.path.abspath(base_filename)) for base_filename in data_group.data[data_collection.current_case]]):
                             os.remove(item)
                 elif not clear_files_only:
                     self.data_dictionary[data_group.label][key] = []
@@ -182,8 +183,6 @@ class Preprocessor(object):
     def initialize(self, data_collection):
 
         # Absolute madness here. Four nested dicts, sounds like a JSON object.
-
-        self.saved = False
 
         if data_collection.preprocessed_cases[data_collection.current_case].get(self.name) is None:
             data_collection.preprocessed_cases[data_collection.current_case][self.name] = defaultdict(list)
@@ -226,5 +225,20 @@ class DICOMConverter(Preprocessor):
 
         # Not yet implemented
         add_parameter(self, kwargs, 'output_dictionary', None)
+
+        return
+
+    def save_to_file(self, data_group):
+
+        """ No idea how this will work if the amount of output files is changed in a preprocessing step
+            Also missing affines is a problem.
+        """
+
+        for file_idx, output_filename in enumerate(self.output_filenames):
+            if self.overwrite or not os.path.exists(output_filename):
+                if type(self.output_data) is list:
+                    save_data(self.output_data[file_idx], output_filename, affine=data_group.preprocessed_affine)
+                else:
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, affine=data_group.preprocessed_affine)
 
         return

@@ -42,22 +42,29 @@ class LargestComponents(Postprocessor):
         for batch in xrange(input_data.shape[0]):
             for channel in xrange(input_data.shape[-1]):
 
-                connected_components = label(input_data[batch, ..., channel], connectivity=self.connectivity)
-                total_components = np.max(connected_components)
-
-                component_sizes = []
-                for i in xrange(1, total_components):
-                    component_sizes += [np.sum(connected_components == i)]
-
-                component_rankings = np.argsort(np.array(component_sizes))
-                component_rankings = component_rankings[:-self.component_number]
-
-                # I think this would be slower than doing it with one fell swoop,
-                # Perhapse with many or statements. Consider doing that.
-                for i in component_rankings:
-                    input_data[batch, ..., channel][connected_components == i + 1] = 0
+                    input_data[batch, ..., channel] = largest_components(input_data[batch, ..., channel], component_number=1, connectivity=self.connectivity)
 
         return input_data
+
+
+def largest_components(input_data, component_number=1, connectivity=2):
+
+    connected_components = label(input_data, connectivity=connectivity)
+    total_components = np.max(connected_components)
+
+    component_sizes = []
+    for i in xrange(1, total_components):
+        component_sizes += [np.sum(connected_components == i)]
+
+    component_rankings = np.argsort(np.array(component_sizes))
+    component_rankings = component_rankings[:-component_number]
+
+    # I think this would be slower than doing it with one fell swoop,
+    # Perhaps with many or statements. Consider doing that.
+    for i in component_rankings:
+        input_data[connected_components == i + 1] = 0
+
+    return input_data
 
 
 class FillHoles(Postprocessor):
@@ -68,6 +75,9 @@ class FillHoles(Postprocessor):
         add_parameter(self, kwargs, 'name', 'FillHoles')
         add_parameter(self, kwargs, 'postprocessor_string', '_holes_filled')
 
+        # Hole-Filling Parameters
+        add_parameter(self, kwargs, 'slice_dimension', -2)  # Currently not operational
+
     def postprocess(self, input_data):
 
         """ Although I don't know, this seems a bit ineffecient. See if there's a better 3D hole-filler out there
@@ -76,7 +86,7 @@ class FillHoles(Postprocessor):
 
         for batch in xrange(input_data.shape[0]):
             for channel in xrange(input_data.shape[-1]):
-
-                input_data[batch, ..., channel] = binary_fill_holes(input_data[batch, ..., channel]).astype(np.float)
+                for slice_idx in xrange(input_data.shape[self.slice_dimension]):
+                        input_data[batch, ..., slice_idx, channel] = binary_fill_holes(input_data[batch, ..., slice_idx, channel]).astype(np.float)
 
         return input_data

@@ -22,6 +22,7 @@ class Output(object):
         add_parameter(self, kwargs, 'stack_outputs', False)
 
         # Implementation Parameters
+        add_parameter(self, kwargs, 'channels_first', False)
         add_parameter(self, kwargs, 'batch_size', 32)
 
         # Internal Parameters
@@ -97,7 +98,7 @@ class Output(object):
 
     def postprocess(self):
 
-        if self.save_initial or (self.save_to_file and self.postprocessors == []):
+        if self.save_to_file and (self.save_initial or self.postprocessors == []):
             self.save_output()
 
         for p_idx, postprocessor in enumerate(self.postprocessors):
@@ -153,21 +154,4 @@ class Output(object):
                 self.return_filenames += [return_filenames]
 
         return
-
-    def calculate_prediction_dice(self, label_volume_1, label_volume_2):
-
-        im1 = np.asarray(label_volume_1).astype(np.bool)
-        im2 = np.asarray(label_volume_2).astype(np.bool)
-
-        if im1.shape != im2.shape:
-            raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
-
-        im_sum = im1.sum() + im2.sum()
-        if im_sum == 0:
-            return 0
-
-        # Compute Dice coefficient
-        intersection = np.logical_and(im1, im2)
-
-        return 2. * intersection.sum() / im_sum
 

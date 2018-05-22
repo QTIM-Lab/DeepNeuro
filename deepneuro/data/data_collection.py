@@ -61,6 +61,10 @@ class DataCollection(object):
 
     def fill_data_groups(self):
 
+        """ Populates data collection variables from either a directory structure or an hdf5 file.
+            Repeated usage may have unexpected results.
+        """
+
         if self.data_directory is not None:
 
             if self.verbose:
@@ -91,40 +95,7 @@ class DataCollection(object):
 
             for subject_dir in directory_list:
 
-                # If a predefined case list is provided, only choose these cases.
-                if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
-                    continue
-
-                # Search for modality files, and skip those missing with files modalities.
-                for data_group, modality_labels in self.modality_dict.iteritems():
-
-                    modality_group_files = []
-                    for modality in modality_labels:
-
-                        # Iterate through patterns.. Always looking for a better way to check optional list typing.
-                        if isinstance(modality, basestring):
-                            target_file = glob.glob(os.path.join(subject_dir, modality))
-                        else:
-                            target_file = []
-                            for m in modality:
-                                target_file += glob.glob(os.path.join(subject_dir, m))
-
-                        if len(target_file) == 1:
-                            modality_group_files.append(target_file[0])
-                        else:
-                            print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
-                            if len(target_file) == 0:
-                                print 'No file found.\n'
-                            else:
-                                print 'Multiple files found.\n'
-                            break
-
-                    if len(modality_group_files) == len(modality_labels):
-                        self.data_groups[data_group].add_case(os.path.abspath(subject_dir), list(modality_group_files))
-
-                case_name = os.path.abspath(subject_dir)
-                self.cases.append(case_name)
-                self.preprocessed_cases[case_name] = defaultdict(list)
+                self.parse_subject_directory(subject_dir)
 
             self.total_cases = len(self.cases)
 
@@ -167,7 +138,53 @@ class DataCollection(object):
         else:
             print 'No directory or data storage file specified. No data groups can be filled.'
 
+    def parse_subject_directory(self, subject_dir):
+
+        """ Broken out from fill_data_groups.
+        """
+
+        # If a predefined case list is provided, only choose these cases.
+        if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
+            return
+
+        # Search for modality files, and skip those missing with files modalities.
+        for data_group, modality_labels in self.modality_dict.iteritems():
+
+            modality_group_files = []
+            for modality in modality_labels:
+
+                # Iterate through patterns.. Always looking for a better way to check optional list typing.
+                if isinstance(modality, basestring):
+                    target_file = glob.glob(os.path.join(subject_dir, modality))
+                else:
+                    target_file = []
+                    for m in modality:
+                        target_file += glob.glob(os.path.join(subject_dir, m))
+
+                if len(target_file) == 1:
+                    modality_group_files.append(target_file[0])
+                else:
+                    print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
+                    if len(target_file) == 0:
+                        print 'No file found.\n'
+                    else:
+                        print 'Multiple files found.\n'
+                    return
+
+            if len(modality_group_files) == len(modality_labels):
+                self.data_groups[data_group].add_case(os.path.abspath(subject_dir), list(modality_group_files))
+
+        case_name = os.path.abspath(subject_dir)
+        self.cases.append(case_name)
+        self.preprocessed_cases[case_name] = defaultdict(list)
+
+        return
+
     def append_augmentation(self, augmentations, multiplier=None):
+
+        """ Associates a DataCollection with an Augmentation.
+            Augmentation objects are in need of refactoring to avoid overwrought functions like these.
+        """
 
         # TODO: Add checks for unequal multiplier, or take multiplier specification out of the hands of individual augmentations.
         # TODO: Add checks for incompatible augmentations. Maybe make this whole thing better in general..
@@ -245,9 +262,11 @@ class DataCollection(object):
             data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
 
             # # Perhaps should not use tuples for output shape.
-            # output_shape = list(data_group.output_shape)
-            # output_shape[channel_dim] = output_shape[channel_dim] + 1
-            # data_group.output_shape = tuple(output_shape)
+            # This is broken.
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] = output_shape[channel_dim] + 1
+                data_group.output_shape = tuple(output_shape)
 
     def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
 
@@ -263,9 +282,10 @@ class DataCollection(object):
             data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
 
             # Perhaps should not use tuples for output shape.
-            output_shape = list(data_group.output_shape)
-            output_shape[channel_dim] -= 1
-            data_group.output_shape = tuple(output_shape)
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] -= 1
+                data_group.output_shape = tuple(output_shape)
 
         return
 

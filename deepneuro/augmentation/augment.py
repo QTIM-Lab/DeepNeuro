@@ -96,7 +96,7 @@ class Flip_Rotate_2D(Augmentation):
 
         self.available_transforms = np.array(np.meshgrid(self.flip_list, self.rotations_90)).T.reshape(-1, 2)
         self.total_transforms = self.available_transforms.shape[0]
-        self.augmentation_string = '_flip_rotate_'
+        self.augmentation_string = '_roate3D_'
 
     def initialize_augmentation(self):
 
@@ -122,6 +122,52 @@ class Flip_Rotate_2D(Augmentation):
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
                 data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis])
+
+
+class Shift_Squeeze_Intensities(Augmentation):
+
+    """ TODO: extend to be more flexible and useful.
+        Ponder about how best to apply to multiple dimensions
+    """
+
+    def load(self, kwargs):
+
+        # Flip and Rotate options
+        add_parameter(self, kwargs, 'shift', True)
+        add_parameter(self, kwargs, 'squeeze', True)
+        add_parameter(self, kwargs, 'shift_amount', [-.5, .5])
+        add_parameter(self, kwargs, 'squeeze_factor', [.7, 1.3])
+
+        # TODO: This is incredibly over-elaborate, return to fix.
+        self.transforms_list = []
+
+        if self.shift:
+            self.shift_list = [False, True]
+        else:
+            self.shift_list = [False]
+
+        if self.squeeze:
+            self.squeeze_list = [False, True]
+        else:
+            self.squeeze_list = [False]
+
+        self.available_transforms = np.array(np.meshgrid(self.shift_list, self.squeeze_list)).T.reshape(-1, 2)
+        self.total_transforms = self.available_transforms.shape[0]
+        self.augmentation_string = '_shift_squeeze_'
+
+    def augment(self, augmentation_num=0):
+
+        for label, data_group in self.data_groups.iteritems():
+
+            if self.available_transforms[self.iteration % self.total_transforms, 0]:
+                data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num] + np.random.uniform(self.shift_amount[0], self.shift_amount[1])
+            else:
+                data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
+
+            if self.available_transforms[self.iteration % self.total_transforms, 0]:
+                data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num] * np.random.uniform(self.squeeze_factor[0], self.squeeze_factor[1])
+            else:
+                data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
 
 
 class Flip_Rotate_3D(Augmentation):
@@ -301,7 +347,7 @@ class ExtractPatches(Augmentation):
 
         # TODO: Escape clause in case acceptable patches cannot be found.
 
-        acceptable_patch = False
+        # acceptable_patch = False
 
         region = self.patch_regions[self.region_list[self.iteration]]
 
@@ -356,7 +402,7 @@ class MaskData(Augmentation):
         # Add functionality for masking multiples axes.
 
         # Mask Parameters
-        add_parameter(self, kwargs, 'mask_axis', {})
+        add_parameter(self, kwargs, 'mask_channels', {})
         add_parameter(self, kwargs, 'num_masked', 1)
         add_parameter(self, kwargs, 'masked_value', -10)
         add_parameter(self, kwargs, 'random_sample', True)
@@ -370,11 +416,12 @@ class MaskData(Augmentation):
         if not self.initialization:
 
             for label, data_group in self.data_groups.iteritems():
-                self.input_shape[label] = data_group.get_shape()
-                if label not in self.mask_axis.keys():
-                    self.mask_axis[label] = np.arange(self.input_shape[label][-1])
-                else:
-                    self.mask_axis[label] = np.arange(self.input_shape[label][self.mask_axis[label] + 1])
+                self.mask_channels[label] = np.array(self.mask_channels[label])
+                # self.input_shape[label] = data_group.get_shape()
+                # if label not in self.mask_channels.keys():
+                    # self.mask_channels[label] = np.arange(self.input_shape[label][-1])
+                # else:
+                    # self.mask_channels[label] = np.arange(self.input_shape[label][self.mask_channels[label] + 1])
 
             self.initialization = True
 
@@ -387,14 +434,17 @@ class MaskData(Augmentation):
         for label, data_group in self.data_groups.iteritems():
 
             if self.random_sample:
-                channels = np.random.choice(self.mask_axis[label], self.num_masked, replace=False)
+                channels = np.random.choice(self.mask_channels[label], self.num_masked, replace=False)
             else:
-                idx = [x % len(self.mask_axis[label]) for x in xrange(self.iteration, self.iteration + self.num_masked)]
-                channels = self.mask_axis[label][idx]
+                idx = [x % len(self.mask_channels[label]) for x in xrange(self.iteration, self.iteration + self.num_masked)]
+                channels = self.mask_channels[label][idx]
 
             # Currently only works if applied to channels; revisit
             masked_data = np.copy(data_group.augmentation_cases[augmentation_num])
+
+            # for channel in channels:
             masked_data[..., channels] = self.masked_value
+            
             data_group.augmentation_cases[augmentation_num + 1] = masked_data
             data_group.augmentation_strings[augmentation_num + 1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(channels).strip('[]').replace(' ', '')
 

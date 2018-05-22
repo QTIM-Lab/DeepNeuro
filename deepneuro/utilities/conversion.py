@@ -5,13 +5,20 @@ import nibabel as nib
 import nrrd
 import dicom
 import scipy
+import subprocess
 
 from collections import defaultdict
+# from subprocess import call, PIPE
 
 from deepneuro.utilities.util import grab_files_recursive
 
+def _modify_dims(input_data, channels=False, batch=False, dim=None):
 
-def read_image_files(image_files, return_affine=False):
+    
+
+    return
+
+def read_image_files(image_files, return_affine=False, channels=True, batch=False):
 
     # Rename this function to something more descriptive?
 
@@ -43,7 +50,6 @@ def read_image_files(image_files, return_affine=False):
         return array, affine
     else:
         return array
-
 
 def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
@@ -278,18 +284,46 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data()
 
 
+def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None, metadata=None):
+
+    """ This is a bit convoluted.
+
+        TODO: Documentation, rearrange reference_nifti and output_filepath, and
+        propagate changes to the rest of qtim_tools.
+    """
+
+    if reference_nifti_filepath is not None:
+        if isinstance(reference_nifti_filepath, basestring):
+            nifti_image = nib.load(reference_nifti_filepath)
+            image_affine = nifti_image.affine
+        else:
+            image_affine = reference_nifti_filepath
+    else:
+        image_affine = np.eye(4)
+
+    output_nifti = nib.Nifti1Image(image_numpy, image_affine)
+
+    if output_filepath is None:
+        return output_nifti
+    else:
+        nib.save(output_nifti, output_filepath)
+        return output_filepath
+
+
 # Consider merging these into one dictionary. Separating them is easier to visaulize though.
 FORMAT_LIST = {'dicom': ('.dcm', '.ima'), 
                 'nifti': ('.nii', '.nii.gz'), 
                 'nrrd': ('.nrrd', '.nhdr'), 
                 'image': ('.jpg', '.png'), 
-                'itk_transform': ('.txt')}
+                'itk_transform': ('.txt', '.tfm')}
 
 NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
                 'nifti': nifti_2_numpy, 
                 'nrrd': nrrd_2_numpy, 
                 'image': img_2_numpy, 
                 'itk_transform': itk_transform_2_numpy}
+
+SAVE_EXPORTER_LIST = {'nifti': save_numpy_2_nifti}
 
 
 def check_format(filepath):
@@ -359,7 +393,7 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
             return input_data
 
 
-def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None):
+def save_data(input_data, output_filename, reference_data=None, metadata=None, affine=None, output_format='.nii.gz'):
 
     """ This is a bit convoluted.
 
@@ -367,19 +401,59 @@ def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepa
         propagate changes to the rest of qtim_tools.
     """
 
-    if reference_nifti_filepath is not None:
-        if isinstance(reference_nifti_filepath, basestring):
-            nifti_image = nib.load(reference_nifti_filepath)
-            image_affine = nifti_image.affine
+    output_filetype = check_format(output_format)
+
+    if isinstance(input_data, str) and output_filetype is not 'text':
+        input_data, metadata, reference_data, data_format = convert_input_2_numpy(input_data, return_all=True)
+
+    return SAVE_EXPORTER_LIST[output_filetype](input_data, reference_data, output_filename, metadata)
+
+
+def execute(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line 
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def save_input_2_dso(input_data, reference_dicom_filepath, dso_metadata, reference_nifti_filepath=None, output_filepath=None, command='/home/abeers/Software/dcmqi-1.0.9-linux/bin/itkimage2segimage', verbose=True):
+
+    """ Given an DICOM directory to reference and a list of files (and in the future Nifti files), save these files
+       to a DSO object.
+   """
+
+    reference_dicom_filepath = os.path.abspath(reference_dicom_filepath)
+    output_filepath = os.path.abspath(output_filepath)
+    dso_metadata = os.path.abspath(dso_metadata)
+
+    base_command = [command, '--inputDICOMDirectory', reference_dicom_filepath, '--outputDICOM', output_filepath, '--inputMetadata', dso_metadata, '--inputImageList']
+
+    if type(input_data) is not list:
+        input_data = [input_data]
+
+    input_data_string = ''
+    for data_object in input_data:
+
+        if input_data_string != '':
+            input_data_string += ','
+
+        # Check this typing syntax for Python 3
+        if type(data_object) is str:
+            data_object = os.path.abspath(data_object)
+            input_data_string += data_object
         else:
-            image_affine = reference_nifti_filepath
-    else:
-        image_affine = np.eye(4)
+            pass
+            # TODO: Put in utility for converting numpy to DSO.
 
-    output_nifti = nib.Nifti1Image(image_numpy, image_affine)
+    base_command += [input_data_string]
 
-    if output_filepath is None:
-        return output_nifti
-    else:
-        nib.save(output_nifti, output_filepath)
-        return output_filepath
+    # for path in execute(' '.join(base_command)):
+        # print(path)
+    subprocess.call(' '.join(base_command), shell=True)
+
+    return output_filepath
+
+# itkimage2segimage --inputImageList OUTPUT_SEGMENTATIONS/wholetumor_segmentation_label.nii.gz OUTPUT_SEGMENTATIONS/enhancing_segmentation_label.nii.gz --inputDICOMDirectory FLAIR --outputDICOM FLAIR_segmentations.dso

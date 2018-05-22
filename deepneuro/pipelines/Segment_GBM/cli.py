@@ -4,6 +4,7 @@ import os
 
 from deepneuro.docker.docker_cli import nvidia_docker_wrapper
 
+
 class Segment_GBM_cli(object):
 
     def __init__(self):
@@ -47,7 +48,6 @@ class Segment_GBM_cli(object):
                 ''')
 
         parser.add_argument('-output_folder', type=str)
-        parser.add_argument('-T2', type=str)
         parser.add_argument('-T1', type=str)
         parser.add_argument('-T1POST', type=str)
         parser.add_argument('-FLAIR', type=str)
@@ -58,7 +58,7 @@ class Segment_GBM_cli(object):
         parser.add_argument('-debiased', action='store_true')  
         parser.add_argument('-resampled', action='store_true')
         parser.add_argument('-registered', action='store_true')
-        parser.add_argument('-skullstripped', action='store_true') # Currently non-functional
+        parser.add_argument('-skullstripped', action='store_true') 
         parser.add_argument('-normalized', action='store_true') 
         parser.add_argument('-save_preprocess', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
@@ -66,7 +66,6 @@ class Segment_GBM_cli(object):
         args = parser.parse_args(sys.argv[2:])
 
         return args
-       
 
     def pipeline(self):
 
@@ -77,14 +76,14 @@ class Segment_GBM_cli(object):
 
         from deepneuro.pipelines.Segment_GBM.predict import predict_GBM
 
-
-        predict_GBM(args.output_folder, args.T2, args.T1, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
+        predict_GBM(args.output_folder, args.T1, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
 
     def docker_pipeline(self):
 
         args = self.parse_args()
 
-        nvidia_docker_wrapper(['segment_gbm', 'pipeline'], vars(args), ['output_folder', 'T2', 'T1', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_segment_gbm:latest')
+        nvidia_docker_wrapper(['segment_gbm', 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_segment_gbm:latest')
+
 
 def main():
     Segment_GBM_cli()

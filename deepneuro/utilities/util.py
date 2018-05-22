@@ -88,7 +88,30 @@ def nifti_splitext(input_filepath):
         return [os.path.join(os.sep.join(path_split[0:-1]), split_filepath[0]), '.' + '.'.join(split_filepath[1:])]
 
 
-def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter=None, file_extension='.nii.gz'):
+def replace_extension(input_filepath, extension):
+
+    """Convenience function to safely switch out an extension.
+    
+    Parameters
+    ----------
+    input_filepath : str
+        Description
+    extension : str
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    """
+
+    input_filepath = os.path.abspath(input_filepath)
+    basename = os.path.basename(input_filepath)
+    pre_extension = str.split(basename, '.')[0]
+    return os.path.join(os.path.dirname(input_filepath), pre_extension + extension)
+
+
+def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter=None, file_extension=None):
 
     """ Replaces an input_suffix in a filename with an output_suffix. Can be used
         to generate or remove suffixes by leaving one or the other option blank.
@@ -138,7 +161,41 @@ def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter
             output_filepath = prefix + split_filename[1]
 
             if file_extension is not None:
-                if not output_filepath.endswith(file_extension):
-                    output_filepath = output_filepath + file_extension
+                replace_extension(output_filepath, file_extension)
 
             return output_filepath
+
+
+def make_dir(input_directory):
+
+    """ Convenience function that adds os.path.exists to os.makedirs
+    """
+
+    if not os.path.exists(input_directory):
+        os.makedirs(input_directory)
+
+
+def quotes(input_string):
+
+    """ Some command line function require filepaths with spaces in them to be in quotes.
+    """
+
+    return '"' + input_string + '"'
+
+
+def cli_sanitize(input_filepath, save=False, delete=False):
+
+    """ Copies out a filename without spaces, or deletes that file.
+        Filename invertibility is not 
+        Will not work for directories with spaces in their names.
+    """
+
+    input_filepath = os.path.abspath(input_filepath)
+    new_filepath = os.path.join(os.path.dirname(input_filepath), os.path.basename(input_filepath).replace(' ', '__'))
+
+    if delete:
+        os.remove(new_filepath)
+    if save:
+        os.copy(input_filepath, new_filepath)
+
+    return new_filepath

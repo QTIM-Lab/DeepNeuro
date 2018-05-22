@@ -29,7 +29,6 @@ class ModelInference(Output):
         add_parameter(self, kwargs, 'postprocessor_string', '_pseudoprobability')
 
         # Model Parameters
-        add_parameter(self, kwargs, 'channels_first', False)
         add_parameter(self, kwargs, 'input_channels', None)
 
         if 'channels_dim' in kwargs:
@@ -95,10 +94,12 @@ class ModelPatchesInference(ModelInference):
 
         super(ModelPatchesInference, self).load(kwargs)
 
-        if 'patch_overlaps' in kwargs:
-            self.patch_overlaps = kwargs.get('patch_overlaps')
-        else:
-            self.patch_overlaps = 1
+        # Patching Parameters
+        add_parameter(self, kwargs, 'patch_overlaps', 1)
+        add_parameter(self, kwargs, 'output_patch_shape', None)
+        add_parameter(self, kwargs, 'patch_overlaps', True)
+        add_parameter(self, kwargs, 'check_empty_patch', True)
+        add_parameter(self, kwargs, 'pad_borders', True)
 
         if 'patch_dimensions' in kwargs:
             self.patch_dimensions = kwargs.get('patch_dimensions')
@@ -114,21 +115,6 @@ class ModelPatchesInference(ModelInference):
             self.output_patch_dimensions = kwargs.get('output_patch_dimensions')
         else:
             self.output_patch_dimensions = self.patch_dimensions
-
-        if 'output_patch_shape' in kwargs:
-            self.output_patch_shape = kwargs.get('output_patch_shape')
-        else:
-            self.output_patch_shape = None
-
-        if 'pad_borders' in kwargs:
-            self.pad_borders = kwargs.get('pad_borders')
-        else:
-            self.pad_borders = True
-
-        if 'check_empty_patch' in kwargs:
-            self.check_empty_patch = kwargs.get('check_empty_patch')
-        else:
-            self.check_empty_patch = True
 
     def generate(self):
 
@@ -157,7 +143,10 @@ class ModelPatchesInference(ModelInference):
                 repatched_shape[dim] += self.input_patch_shape[dim]
 
             padded_input_data = np.zeros(new_input_shape)
-            input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+            if self.channels_first:
+                input_slice = [slice(None)] * 2 + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+            else:
+                input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions] + [slice(None)]
             padded_input_data[input_slice] = input_data
             input_data = padded_input_data
 
@@ -175,7 +164,7 @@ class ModelPatchesInference(ModelInference):
         for rep_idx in xrange(self.patch_overlaps):
 
             if self.verbose:
-                print 'Patch prediction repetition', rep_idx
+                print 'Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...'
                 sys.stdout.flush()
 
             corners_grid_shape = [slice(None)]

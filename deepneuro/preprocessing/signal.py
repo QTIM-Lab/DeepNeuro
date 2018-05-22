@@ -46,19 +46,30 @@ class ZeroMeanNormalization(Preprocessor):
         add_parameter(self, kwargs, 'mask_name', 'skullstrip_mask')
         add_parameter(self, kwargs, 'mask_zeros', True)
 
+        # Normalization Parameters
+        add_parameter(self, kwargs, 'normalize_by_channel', True)
+
         self.array_input = True
 
     def preprocess(self, data_group):
 
-        normalize_numpy = data_group.preprocessed_case
-
         if self.mask is not None:
             mask_numpy = read_image_files(self.mask)[..., 0]
         elif self.mask_preprocessor is not None:
-            data_group_label = data_group.label
             mask_numpy = read_image_files(self.mask_preprocessor.data_dictionary[data_group.label][self.mask_name])[..., 0]
         else:
             mask_numpy = None
+
+        if self.normalize_by_channel:
+            for channel in xrange(data_group.preprocessed_case.shape[-1]):
+                data_group.preprocessed_case[..., channel] = self.normalize(data_group.preprocessed_case[...,channel], mask_numpy)
+        else:
+            data_group.preprocessed_case = self.normalize(data_group.preprocessed_case, mask_numpy)
+
+        # TODO: Reduce redundancy in naming
+        self.output_data = data_group.preprocessed_case
+
+    def normalize(self, normalize_numpy, mask_numpy=None):
 
         if mask_numpy is not None:
             vol_mean = np.mean(normalize_numpy[mask_numpy > 0])
@@ -68,13 +79,11 @@ class ZeroMeanNormalization(Preprocessor):
         elif self.mask_zeros:
             idx_nonzeros = np.nonzero(normalize_numpy)
             vol_mean = np.mean(normalize_numpy[idx_nonzeros])
-            vol_std = np.mean(normalize_numpy[idx_nonzeros])
+            vol_std = np.std(normalize_numpy[idx_nonzeros])
             normalize_numpy[idx_nonzeros] = (normalize_numpy[idx_nonzeros] - vol_mean) / vol_std
         else:
             vol_mean = np.mean(normalize_numpy)
             vol_std = np.std(normalize_numpy)
             normalize_numpy = (normalize_numpy - vol_mean) / vol_std
 
-        # TODO: Reduce redundancy in naming
-        self.output_data = normalize_numpy
-        data_group.preprocessed_case = normalize_numpy
+        return normalize_numpy

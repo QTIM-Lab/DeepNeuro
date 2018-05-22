@@ -10,37 +10,25 @@ from deepneuro.load.load import load
 from deepneuro.preprocessing.preprocessor import Preprocessor, DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Resample, Coregister
-from deepneuro.preprocessing.skullstrip import SkullStrip
+from deepneuro.preprocessing.skullstrip import SkullStrip, SkullStrip_Model
 from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
+from deepneuro.utilities.util import add_parameter, replace_suffix, quotes, cli_sanitize
+from deepneuro.pipelines.shared import load_data, load_model_with_output
 
-def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
+
+def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True):
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
     #--------------------------------------------------------------------#
 
-    input_data = {'input_modalities': [FLAIR, T2, T1, T1POST]}
-
-    if ground_truth is not None:
-        input_data['ground_truth'] = [ground_truth]
-
-    if input_directory is None:
-
-        if any(data is None for data in input_data):
-            raise ValueError("Cannot segment GBM. Please specify all four modalities.")
-
-        data_collection = DataCollection(verbose=verbose)
-        data_collection.add_case(input_data, case_name=output_folder)
-
-    else:
-        data_collection = DataCollection(input_directory, modality_dict=input_data, verbose=verbose)
-        data_collection.fill_data_groups()
+    data_collection = load_data(inputs=[T1POST, FLAIR, T1PRE], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
 
     #--------------------------------------------------------------------#
     # Step 2, Preprocess Data
     #--------------------------------------------------------------------#
 
-    if not preprocessed or True:
+    if not preprocessed:
 
         # Random hack to save DICOMs to niftis for further processing.
         preprocessing_steps = [DICOMConverter(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
@@ -48,17 +36,30 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
         if not bias_corrected:
             preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
-        if not resampled:
-            preprocessing_steps += [Resample(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
-
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=1)]
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
 
         if not skullstripped:
-            preprocessing_steps += [SkullStrip(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
-            if not normalized:
-                preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+            # Skullstripping model included
+            skullstripping_model = load_old_model('/mnt/jk489/sharedfolder/skullstripping_3/DeepNeuro-master/ss/ss_FLAIRT1post.h5')
+            wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
+                                'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
+                                'batch_size': 50,
+                                'patch_overlaps': 3,
+                                'channels_first': False,
+                                'patch_dimensions': [-4, -3, -2],
+                                'output_patch_shape': (56, 56, 6, 1),
+                                'save_to_file': False}
+            skullstripping_prediction = ModelPatchesInference(**wholetumor_prediction_parameters)
+            skullstripping_model.append_output([skullstripping_prediction])
+            skullstripping_prediction.append_postprocessor([BinarizeLabel(), FillHoles(), LargestComponents()])
+
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_normed')]
+
+            preprocessing_steps += [SkullStrip_Model(data_groups=['input_modalities'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[0, 1])]
+
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -68,47 +69,41 @@ def predict_GBM(output_folder, T2=None, T1=None, T1POST=None, FLAIR=None, ground
 
     wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, output_wholetumor_filename),
-                        'batch_size': 75,
-                        'patch_overlaps': 1,
-                        'channels_first': True,
-                        'patch_dimensions': [-3,-2,-1],
-                        'output_patch_shape': (1,26,26,26),
-                        # 'input_channels': [0, 3],
-                        }
+                        'batch_size': 50,
+                        'patch_overlaps': 8,
+                        'channels_first': False,
+                        'patch_dimensions': [-4, -3, -2],
+                        'output_patch_shape': (56, 56, 6, 1),
+                        'input_channels': [0, 1]}
+                        # 'input_channels': [0, 3],}
 
     enhancing_prediction_parameters = {'inputs': ['input_modalities'], 
                         'output_filename': os.path.join(output_folder, output_enhancing_filename),
-                        'batch_size': 75,
-                        'patch_overlaps': 1,
-                        'channels_first': True,
-                        'output_patch_shape': (1,26,26,26),
-                        'patch_dimensions': [-3,-2,-1]}
+                        'batch_size': 50,
+                        'patch_overlaps': 8,
+                        'channels_first': False,
+                        'output_patch_shape': (56, 56, 6, 1),
+                        'patch_dimensions': [-4, -3, -2]}
 
-    wholetumor_model = load_old_model(load('Segment_GBM_wholetumor'))
-    enhancing_model = load_old_model(load('Segment_GBM_enhancing'))
-
-    wholetumor_prediction = ModelPatchesInference(**wholetumor_prediction_parameters)
-    wholetumor_model.append_output([wholetumor_prediction])
-
-    enhancing_prediction = ModelPatchesInference(**enhancing_prediction_parameters)
-    enhancing_model.append_output([enhancing_prediction])
-
-    label_binarization = BinarizeLabel(postprocessor_string='_label')
-
-    wholetumor_prediction.append_postprocessor([label_binarization])
-    enhancing_prediction.append_postprocessor([label_binarization])
+    wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+    enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
 
     for case in data_collection.cases:
 
         print '\nStarting New Case...\n'
         
+        print 'Whole Tumor Prediction'
+        print '======================'
         wholetumor_file = wholetumor_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
         data_collection.add_channel(case, wholetumor_file)
 
+        print 'Enhancing Tumor Prediction'
+        print '======================'
         enhancing_file = enhancing_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
         data_collection.clear_outputs()
+
 
 if __name__ == '__main__':
 

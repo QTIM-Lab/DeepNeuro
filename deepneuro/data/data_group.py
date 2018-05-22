@@ -69,7 +69,9 @@ class DataGroup(object):
     def get_data(self, index, return_affine=False):
 
         if self.source == 'directory':
-            self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
+            self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
+            if affine is not None:
+                self.preprocessed_affine = affine
             if return_affine:
                 return self.preprocessed_case, self.preprocessed_affine
             else:

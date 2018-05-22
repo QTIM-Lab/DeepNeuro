@@ -1,6 +1,4 @@
 import tables
-import numpy as np
-
 
 def hdf5_transpose(hdf5, output_hdf5, axes):
 
