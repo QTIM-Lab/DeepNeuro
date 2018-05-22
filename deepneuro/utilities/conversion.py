@@ -12,11 +12,11 @@ from collections import defaultdict
 
 from deepneuro.utilities.util import grab_files_recursive
 
+
 def _modify_dims(input_data, channels=False, batch=False, dim=None):
 
-    
-
     return
+
 
 def read_image_files(image_files, return_affine=False, channels=True, batch=False):
 
@@ -50,6 +50,7 @@ def read_image_files(image_files, return_affine=False, channels=True, batch=Fals
         return array, affine
     else:
         return array
+
 
 def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
@@ -450,10 +451,6 @@ def save_input_2_dso(input_data, reference_dicom_filepath, dso_metadata, referen
 
     base_command += [input_data_string]
 
-    # for path in execute(' '.join(base_command)):
-        # print(path)
     subprocess.call(' '.join(base_command), shell=True)
 
     return output_filepath
-
-# itkimage2segimage --inputImageList OUTPUT_SEGMENTATIONS/wholetumor_segmentation_label.nii.gz OUTPUT_SEGMENTATIONS/enhancing_segmentation_label.nii.gz --inputDICOMDirectory FLAIR --outputDICOM FLAIR_segmentations.dso

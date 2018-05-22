@@ -1,5 +1,6 @@
 import tables
 
+
 def hdf5_transpose(hdf5, output_hdf5, axes):
 
     open_hdf5 = tables.open_file(hdf5, "r")
@@ -9,9 +10,8 @@ def hdf5_transpose(hdf5, output_hdf5, axes):
 
             print data_group.shape
 
-    output_hdf5 = None
-
     return
+
 
 if __name__ == '__main__':
     hdf5_transpose()

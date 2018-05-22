@@ -5,7 +5,7 @@ import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
-from deepneuro.utilities.util import add_parameter, replace_suffix, quotes
+from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
 

@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
+from deepneuro.utilities.conversion import read_image_files
 from deepneuro.utilities.util import add_parameter
 
 FNULL = open(os.devnull, 'w')
@@ -62,7 +62,7 @@ class ZeroMeanNormalization(Preprocessor):
 
         if self.normalize_by_channel:
             for channel in xrange(data_group.preprocessed_case.shape[-1]):
-                data_group.preprocessed_case[..., channel] = self.normalize(data_group.preprocessed_case[...,channel], mask_numpy)
+                data_group.preprocessed_case[..., channel] = self.normalize(data_group.preprocessed_case[..., channel], mask_numpy)
         else:
             data_group.preprocessed_case = self.normalize(data_group.preprocessed_case, mask_numpy)
 

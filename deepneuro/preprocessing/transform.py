@@ -1,11 +1,8 @@
-
 import subprocess
 import os
-import sys
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.util import add_parameter, replace_suffix, quotes, replace_extension
-from deepneuro.utilities.conversion import read_image_files
+from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
 

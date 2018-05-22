@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from skimage.morphology import label
 from skimage.measure import regionprops
 
-from deepneuro.utilities.conversion import save_numpy_2_nifti, convert_input_2_numpy
-from deepneuro.utilities.util import add_parameter, replace_suffix
+from deepneuro.utilities.conversion import convert_input_2_numpy
 
 
 def calc_voxel_count(input_data, mask_value=0):
@@ -111,7 +110,7 @@ def calc_RANO(input_label, affine=None, resolution_x=1, resolution_y=1, resoluti
             minor_x_2 = center_x - np.cos(minor_angle) * half_minor
             minor_y_2 = center_y + np.sin(minor_angle) * half_minor
 
-            im = plt.imshow(display_data, interpolation='none', origin='lower', cmap='gray')
+            plt.imshow(display_data, interpolation='none', origin='lower', cmap='gray')
             plt.plot(center_x, center_y, 'ro') 
             plt.plot(major_x_1, major_y_1, 'ro') 
             plt.plot(major_x_2, major_y_2, 'ro')

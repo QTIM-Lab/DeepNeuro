@@ -1,6 +1,4 @@
 import os
-import sys
-import filecmp
 import numpy as np
 
 from collections import defaultdict
