@@ -76,7 +76,7 @@ class Segment_GBM_cli(object):
 
         from deepneuro.pipelines.Segment_GBM.predict import predict_GBM
 
-        predict_GBM(args.output_folder, args.T1, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
+        predict_GBM(args.output_folder, FLAIR=args.FLAIR, T1POST=args.T1POST, T1PRE=args.T1, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
 
     def docker_pipeline(self):
 
