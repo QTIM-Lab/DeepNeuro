@@ -4,6 +4,7 @@ from deepneuro.data.data_collection import DataCollection
 from deepneuro.models.model import load_old_model
 from deepneuro.load.load import load
 
+
 def load_data(inputs, output_folder, input_directory=None, ground_truth=None, input_data=None, verbose=True):
 
     """ In the future, this will need to be modified for multiple types of inputs (i.e. data groups).

@@ -22,46 +22,10 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
     # Step 1, Load Data
     #--------------------------------------------------------------------#
 
-    data_collection = load_data(inputs=[T1POST, FLAIR, T1PRE], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
+    data_collection = load_data(inputs=[FLAIR, T1POST, T1PRE], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
 
     #--------------------------------------------------------------------#
-    # Step 2, Preprocess Data
-    #--------------------------------------------------------------------#
-
-    if not preprocessed:
-
-        # Random hack to save DICOMs to niftis for further processing.
-        preprocessing_steps = [DICOMConverter(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
-
-        if not bias_corrected:
-            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
-
-        if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
-
-        if not skullstripped:
-
-            # Skullstripping model included
-            skullstripping_prediction_parameters = {'inputs': ['input_modalities'], 
-                    'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
-                    'batch_size': 50,
-                    'patch_overlaps': 3,
-                    'channels_first': False,
-                    'patch_dimensions': [-4, -3, -2],
-                    'output_patch_shape': (56, 56, 6, 1),
-                    'save_to_file': False}
-            skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[ModelPatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents()])
-
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_normed')]
-
-            preprocessing_steps += [SkullStrip_Model(data_groups=['input_modalities'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[0, 1])]
-
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
-
-        data_collection.append_preprocessor(preprocessing_steps)
-
-    #--------------------------------------------------------------------#
-    # Step 3, Segmentation
+    # Step 2, Load Models
     #--------------------------------------------------------------------#
 
     wholetumor_prediction_parameters = {'inputs': ['input_modalities'], 
@@ -84,6 +48,48 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
 
     wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
     enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+
+    if not preprocssed and not skullstripped:
+
+        skullstripping_prediction_parameters = {'inputs': ['input_modalities'], 
+                'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
+                'batch_size': 50,
+                'patch_overlaps': 3,
+                'channels_first': False,
+                'patch_dimensions': [-4, -3, -2],
+                'output_patch_shape': (56, 56, 6, 1),
+                'save_to_file': False}
+
+        skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[ModelPatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents()])
+
+    #--------------------------------------------------------------------#
+    # Step 3, Add Data Preprocessors
+    #--------------------------------------------------------------------#
+
+    if not preprocessed:
+
+        # Random hack to save DICOMs to niftis for further processing.
+        preprocessing_steps = [DICOMConverter(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
+
+        if not bias_corrected:
+            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
+
+        if not registered:
+            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
+
+        if not skullstripped:
+
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_normed')]
+
+            preprocessing_steps += [SkullStrip_Model(data_groups=['input_modalities'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[0, 1])]
+
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+
+        data_collection.append_preprocessor(preprocessing_steps)
+
+    #--------------------------------------------------------------------#
+    # Step 4, Run Inference
+    #--------------------------------------------------------------------#
 
     for case in data_collection.cases:
 
