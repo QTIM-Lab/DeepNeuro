@@ -49,7 +49,7 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
     wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
     enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
 
-    if not preprocssed and not skullstripped:
+    if not preprocessed and not skullstripped:
 
         skullstripping_prediction_parameters = {'inputs': ['input_modalities'], 
                 'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
