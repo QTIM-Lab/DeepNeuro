@@ -1,10 +1,7 @@
-
-import sys
+import numpy as np
 
 from deepneuro.outputs.output import Output
 from deepneuro.utilities.util import add_parameter, docker_print
-
-import numpy as np
 
 
 class ModelInference(Output):

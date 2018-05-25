@@ -16,7 +16,7 @@ Pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deep
 You can then create a command using the following template to create a glioblastoma segmentation:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed -wholetumor_output <str> -enhancing_output <str>]
 ```
 
 In order to use Docker, you must mount the directory containing all of your data and your output. All inputted filepaths must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. Note that the Python wrapper for Docker in this module will adjust paths for you.
@@ -60,4 +60,4 @@ First, note that the "/INPUT_DATA" designation on the right-hand side of the "-v
 
 Second, note that you will need to make sure that the left-hand side of the "-v" option is an absolute, rather than relative, path. For example "../Data/" and "~/Data/" will not work (relative path), but "/home/my_user/Data/" will work (absolute path, starting from the root directory).
 
-Third, note that the folders you provide as arguments to the "segment pipeline" command should be relative paths. This is because you are mounting, and thus renaming, a folder on your system to the "/INPUT_DATA" folder inside the Docker system. For example, if you were mounting the directory "/home/my_user/Data/" to "/INPUT_DATA", you should not provide the path "/home/my_user/Data/Patient_1/FLAIR" as a parameter. Rather, you should provide the path "/INPUT_DATA/Patient_1/FLAIR", as those parts of the path are within the scope of your mounted directory.
+Third, note that the folders you provide as arguments to the "segment_gbm pipeline" command should be relative paths. This is because you are mounting, and thus renaming, a folder on your system to the "/INPUT_DATA" folder inside the Docker system. For example, if you were mounting the directory "/home/my_user/Data/" to "/INPUT_DATA", you should not provide the path "/home/my_user/Data/Patient_1/FLAIR" as a parameter. Rather, you should provide the path "/INPUT_DATA/Patient_1/FLAIR", as those parts of the path are within the scope of your mounted directory.
