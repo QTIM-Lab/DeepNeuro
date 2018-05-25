@@ -53,7 +53,7 @@ Parameters should be exactly the same as in the Docker use-case, except now you 
 Let's say you stored some DICOM data on your computer at the path /home/my_user/Data/, and wanted to segment data located at /home/my_user/Data/Patient_1. The nvidia-docker command would look like this:
 
 ```
-nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment pipeline -T1 /INPUT_DATA/Patient_1/T1pre -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
+nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 /INPUT_DATA/Patient_1/T1pre -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
 ```
 
 First, note that the "/INPUT_DATA" designation on the right-hand side of the "-v" option will never change. "INPUT_DATA" is a folder within the Docker container that will not change between runs.
