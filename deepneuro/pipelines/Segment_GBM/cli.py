@@ -10,7 +10,7 @@ class Segment_GBM_cli(object):
     def __init__(self):
 
         parser = argparse.ArgumentParser(
-            description='A number of pre-packaged command used by the Quantiative Tumor Imaging Lab at the Martinos Center',
+            description='A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center',
             usage='''segment_gbm <command> [<args>]
 
                     The following commands are available:

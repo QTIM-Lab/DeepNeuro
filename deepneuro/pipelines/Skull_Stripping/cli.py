@@ -11,7 +11,7 @@ class Skull_Stripping_cli(object):
 
         parser = argparse.ArgumentParser(
             description='A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center',
-            usage='''segment <command> [<args>]
+            usage='''skull_stripping <command> [<args>]
 
                     The following commands are available:
                        pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
@@ -73,7 +73,7 @@ class Skull_Stripping_cli(object):
 
         from deepneuro.pipelines.Skull_Stripping.predict import skull_strip
 
-        skull_strip(args.output_folder, args.T1POST, args.FLAIR, None, args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
+        skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
 
     def docker_pipeline(self):
 

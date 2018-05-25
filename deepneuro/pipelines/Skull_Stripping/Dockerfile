@@ -153,33 +153,22 @@ RUN wget "https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14
   tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
   rm Linux_Ubuntu14.04.tar.bz2
 
-# Install NeuroDebian
-RUN wget -O- http://neuro.debian.net/lists/trusty.us-nh.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
-RUN sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
-RUN apt-get update
-
-# Install FSL with NeuroDebian
-RUN sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes fsl-5.0-complete
-
 # Environmental Variables
 ENV PATH "$PATH:/opt/slicer"
 ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 
-# Setup Scripts
-RUN echo "source /usr/share/fsl/5.0/etc/fslconf/fsl.sh" >> ~/.bashrc
-
 # Install DeepNeuro. Scikit-image has installation problems with EasyInstall and setup.py
-RUN echo 2
 RUN pip install scikit-image==0.12.3
 RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
 WORKDIR /home/DeepNeuro
 RUN python /home/DeepNeuro/setup.py develop
 
-RUN mkdir -p /home/DeepNeuro/deepneuro/load/Skull_Strip
-RUN wget -O /home/DeepNeuro/deepneuro/load/Skull_Strip/Skull_Stripping.h5 "https://www.dropbox.com/s/gn2w4u4vw1orcyj/FLAIRT1post_ss.h5?dl=1"
+# Copy in models -- do this with Python module in future.
+RUN mkdir -p /home/DeepNeuro/deepneuro/load/SkullStripping
+RUN wget -O /home/DeepNeuro/deepneuro/load/SkullStripping/Skullstrip_MRI_Model.h5 "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"
 
 # TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 46
+RUN echo 51
 RUN git pull
 
 # Commands at startup.

@@ -1,7 +1,10 @@
+from __future__ import print_function
+
 import math
 import numpy as np
 import os
 import fnmatch
+import sys
 
 
 def round_up(x, y):
@@ -149,7 +152,7 @@ def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter
             input_suffix = str.split(split_filename[0], suffix_delimiter)[-1]
 
         if input_suffix not in os.path.basename(input_filepath):
-            print 'ERROR!', input_suffix, 'not in input_filepath.'
+            print('ERROR!', input_suffix, 'not in input_filepath.')
             return []
 
         else:
@@ -199,3 +202,17 @@ def cli_sanitize(input_filepath, save=False, delete=False):
         os.copy(input_filepath, new_filepath)
 
     return new_filepath
+
+
+def docker_print(*args):
+
+    """ Docker doesn't flush stdout in some circumstances, so one needs to do so manually.
+    
+    Parameters
+    ----------
+    *args
+        Print parameters
+    """
+
+    print(*args)
+    sys.stdout.flush()

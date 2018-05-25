@@ -1,19 +1,13 @@
 import os
 
-from deepneuro.data.data_collection import DataCollection
-from deepneuro.augmentation.augment import Flip_Rotate_2D, ExtractPatches
-from deepneuro.models.unet import UNet
-from deepneuro.models.timenet import TimeNet
 from deepneuro.outputs.inference import ModelPatchesInference
-from deepneuro.models.model import load_old_model
-from deepneuro.load.load import load
-from deepneuro.preprocessing.preprocessor import Preprocessor, DICOMConverter
+from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
-from deepneuro.preprocessing.transform import Resample, Coregister
-from deepneuro.preprocessing.skullstrip import SkullStrip, SkullStrip_Model
+from deepneuro.preprocessing.transform import Coregister
+from deepneuro.preprocessing.skullstrip import SkullStrip_Model
 from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
-from deepneuro.utilities.util import add_parameter, replace_suffix, quotes, cli_sanitize
 from deepneuro.pipelines.shared import load_data, load_model_with_output
+from deepneuro.utilities.util import docker_print
 
 
 def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True, input_data=None):
@@ -93,17 +87,17 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
 
     for case in data_collection.cases:
 
-        print '\nStarting New Case...\n'
+        docker_print('\nStarting New Case...\n')
         
-        print 'Whole Tumor Prediction'
-        print '======================'
+        docker_print('Whole Tumor Prediction')
+        docker_print('======================')
         wholetumor_file = wholetumor_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
         data_collection.add_channel(case, wholetumor_file)
 
-        print 'Enhancing Tumor Prediction'
-        print '======================'
-        enhancing_file = enhancing_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
+        docker_print('Enhancing Tumor Prediction')
+        docker_print('======================')
+        enhancing_model.generate_outputs(data_collection, case)
 
         data_collection.clear_outputs()
 

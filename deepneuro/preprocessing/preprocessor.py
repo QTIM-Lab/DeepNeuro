@@ -3,7 +3,7 @@ import numpy as np
 
 from collections import defaultdict
 
-from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize
+from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize, docker_print
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti, save_data
 
 
@@ -61,7 +61,7 @@ class Preprocessor(object):
         """
 
         if self.verbose:
-            print 'Working on Preprocessor:', self.name
+            docker_print('Working on Preprocessor:', self.name)
 
         self.initialize(data_collection)  # TODO: make overwrite work with initializations
 

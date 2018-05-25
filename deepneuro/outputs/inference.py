@@ -2,7 +2,7 @@
 import sys
 
 from deepneuro.outputs.output import Output
-from deepneuro.utilities.util import add_parameter
+from deepneuro.utilities.util import add_parameter, docker_print
 
 import numpy as np
 
@@ -164,8 +164,7 @@ class ModelPatchesInference(ModelInference):
         for rep_idx in xrange(self.patch_overlaps):
 
             if self.verbose:
-                print 'Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...'
-                sys.stdout.flush()
+                docker_print('Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...')
 
             corners_grid_shape = [slice(None)]
             for dim in xrange(all_corners.ndim - 1):
