@@ -27,7 +27,7 @@ A brief explanation of this functions parameters follows:
 | ------------- |-------------|
 | -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
 | -T1, -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
-| -wholetumor_output, -enhancing_output | Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing"      |
+| -wholetumor_output, -enhancing_output | Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz"      |
 | -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
 | -debiased | If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step. |
 | -resampled | If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step. |

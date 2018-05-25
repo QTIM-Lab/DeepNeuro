@@ -1,4 +1,4 @@
-# Segment_GBM
+# Skull_Stripping
 
 This module creates segmentations of brain masks given pre-contrast T1 and FLAIR input volumes. These segmentations are created by deep neural networks trained on hundreds of public and private datasets of pre-operative high- and low-grade GBMs. The following pre-processing steps are included in module: N4Bias Correction, Isotropic Resampling (1x1x1), Image Registration, and Zero-Mean normalization. This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
 
@@ -11,12 +11,12 @@ This module creates segmentations of brain masks given pre-contrast T1 and FLAIR
 
 The best way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
 
-Pull the Skull_Stripping Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_skullstripping/. Use the command "docker pull qtimlab/deepneuro_segment_skullstripping".
+Pull the Skull_Stripping Docker container from https://hub.docker.com/r/qtimlab/deepneuro_skullstripping/. Use the command "docker pull qtimlab/deepneuro_skullstripping".
 
 You can then create a command using the following template to create a glioblastoma segmentation:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_skullstripping skull_stripping pipeline -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_skullstripping skull_stripping pipeline -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed]
 ```
 
 In order to use Docker, you must mount the directory containing all of your data and your output. All inputted filepaths must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. Note that the Python wrapper for Docker in this module will adjust paths for you.
@@ -27,7 +27,7 @@ A brief explanation of this functions parameters follows:
 | ------------- |-------------|
 | -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
 | -T1, -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
-| -mask_output | Optional. Name of output for skullstripping mask. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing"      |
+| -mask_output | Optional. Name of output for skullstripping mask. Should not be a filepath, like '/home/user/mask.nii.gz', but just a name, like "mask.nii.gz"      |
 | -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
 | -debiased | If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step. |
 | -resampled | If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step. |
@@ -52,7 +52,7 @@ Parameters should be exactly the same as in the Docker use-case, except now you 
 Let's say you stored some DICOM data on your computer at the path /home/my_user/Data/, and wanted to segment data located at /home/my_user/Data/Patient_1. The nvidia-docker command would look like this:
 
 ```
-nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_skullstripping skull_stripping pipeline -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
+nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_skullstripping skull_stripping pipeline -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
 ```
 
 First, note that the "/INPUT_DATA" designation on the right-hand side of the "-v" option will never change. "INPUT_DATA" is a folder within the Docker container that will not change between runs.
