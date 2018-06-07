@@ -48,7 +48,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
             return (data['ground_truth'] != 1) & (data['input_modalities'] != 0)
         def roi_region(data):
             return data['ground_truth'] == 1
-
+            
         # Add patch augmentation
         patch_augmentation = ExtractPatches(patch_shape=(32,32,32), patch_region_conditions=[[brain_region, 1]], data_groups=['input_modalities', 'ground_truth'])
         training_data_collection.append_augmentation(patch_augmentation, multiplier=200)
