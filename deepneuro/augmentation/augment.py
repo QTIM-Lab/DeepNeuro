@@ -397,7 +397,6 @@ class ExtractPatches(Augmentation):
 
         return
 
-
     def compute_M(self, data):
 
         # Magic, vectorized sparse matrix calculation method to replace np.where
@@ -414,6 +413,7 @@ class ExtractPatches(Augmentation):
 
         M = self.compute_M(data)
         return [np.unravel_index(row.data, data.shape) for row in M]
+
 
 class MaskData(Augmentation):
 
