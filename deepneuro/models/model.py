@@ -7,13 +7,14 @@ from keras.models import load_model
 from keras.callbacks import ModelCheckpoint
 
 from deepneuro.models.cost_functions import cost_function_dict
+from deepneuro.utilities.util import add_parameter
 
 import tensorflow as tf
 
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, input_shape=(32, 32, 32, 1), input_tensor=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -62,14 +63,16 @@ class DeepNeuroModel(object):
             Addtional variables that may be needed in children classes.
         """
 
-        self.input_shape = input_shape
-        self.input_tensor = input_tensor
+        # Inputs
+        add_parameter(self, kwargs, 'input_shape', (32, 32, 32, 1))
+        add_parameter(self, kwargs, 'input_tensor', None)
 
-        if input_tensor is None:
-            self.inputs = Input(input_shape)
+        if self.input_tensor is None:
+            self.inputs = Input(self.input_shape)
         else:
             self.inputs = input_tensor
 
+        # Generic Model Parameters -- Optional
         self.pool_size = pool_size
         self.filter_shape = filter_shape
         self.padding = padding

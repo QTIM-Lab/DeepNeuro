@@ -10,7 +10,7 @@ import subprocess
 from collections import defaultdict
 # from subprocess import call, PIPE
 
-from deepneuro.utilities.util import grab_files_recursive
+from deepneuro.utilities.util import grab_files_recursive, quotes
 
 
 def _modify_dims(input_data, channels=False, batch=False, dim=None):
@@ -56,7 +56,7 @@ def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
 
 
-def dcm_2_numpy(input_folder, verbose=False, harden_orientation=True, return_all=False):
+def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_all=False):
 
     """ Uses pydicom to stack an alphabetical list of DICOM files. TODO: Make it
         take slice_order into account.
@@ -430,7 +430,7 @@ def save_input_2_dso(input_data, reference_dicom_filepath, dso_metadata, referen
     output_filepath = os.path.abspath(output_filepath)
     dso_metadata = os.path.abspath(dso_metadata)
 
-    base_command = [command, '--inputDICOMDirectory', reference_dicom_filepath, '--outputDICOM', output_filepath, '--inputMetadata', dso_metadata, '--inputImageList']
+    base_command = [command, '--inputDICOMDirectory', quotes(reference_dicom_filepath), '--outputDICOM', output_filepath, '--inputMetadata', dso_metadata, '--inputImageList']
 
     if type(input_data) is not list:
         input_data = [input_data]
@@ -451,6 +451,23 @@ def save_input_2_dso(input_data, reference_dicom_filepath, dso_metadata, referen
 
     base_command += [input_data_string]
 
+    print ' '.join(base_command)
     subprocess.call(' '.join(base_command), shell=True)
 
     return output_filepath
+
+
+def nifti_resave(input_filepath, output_filepath):
+
+    """ Copies a file somewhere else. Effectively only used for compressing nifti files.
+
+        Parameters
+        ----------
+        input_filepath: str
+            Input filepath.
+        output_filepath: str
+            Output filepath to be copied to.
+
+    """
+
+    nib.save(nib.load(input_filepath), output_filepath)

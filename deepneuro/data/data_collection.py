@@ -6,6 +6,7 @@ import numpy as np
 import tables
 import copy
 
+from tqdm import tqdm
 from collections import defaultdict
 
 from deepneuro.augmentation.augment import Copy
@@ -370,7 +371,7 @@ class DataCollection(object):
                     raise
                 except:
                     print 'Hit error on', case_name, 'skipping.'
-                    continue
+                    yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
@@ -520,13 +521,14 @@ class DataCollection(object):
 
         storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
-        for i in xrange(self.multiplier * total_cases):
+        for i in tqdm(range(total_cases), total=total_cases, unit="datasets"):
+            for j in tqdm(range(self.multiplier), total=self.multiplier, unit="augmentations"):
 
-            output = next(storage_data_generator)
+                output = next(storage_data_generator)
 
-            if output:
-                for data_group_label in data_group_labels:
-                    self.data_groups[data_group_label].write_to_storage()
+                if output:
+                    for data_group_label in data_group_labels:
+                        self.data_groups[data_group_label].write_to_storage()
 
         return
 

@@ -4,6 +4,8 @@
 
 import numpy as np
 
+from scipy.sparse import csr_matrix
+
 from deepneuro.utilities.util import add_parameter
 
 
@@ -323,8 +325,9 @@ class ExtractPatches(Augmentation):
         self.patch_regions = []
         region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in self.data_groups.keys()}
         for region_condition in self.patch_region_conditions:
-            print 'Extracting region for..', region_condition
-            self.patch_regions += [np.where(region_condition[0](region_input_data))]
+            # print 'Extracting region for..', region_condition
+            # self.patch_regions += [np.where(region_condition[0](region_input_data))]
+            self.patch_regions += self.get_indices_sparse(region_condition[0](region_input_data))
 
         return
 
@@ -394,6 +397,23 @@ class ExtractPatches(Augmentation):
 
         return
 
+
+    def compute_M(self, data):
+
+        # Magic, vectorized sparse matrix calculation method to replace np.where
+        # https://stackoverflow.com/questions/33281957/faster-alternative-to-numpy-where
+
+        cols = np.arange(data.size)
+        return csr_matrix((cols, (data.ravel(), cols)),
+                          shape=(data.max() + 1, data.size))
+
+    def get_indices_sparse(self, data):
+
+        # Magic, vectorized sparse matrix calculation method to replace np.where
+        # https://stackoverflow.com/questions/33281957/faster-alternative-to-numpy-where
+
+        M = self.compute_M(data)
+        return [np.unravel_index(row.data, data.shape) for row in M]
 
 class MaskData(Augmentation):
 

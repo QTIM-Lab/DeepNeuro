@@ -9,7 +9,8 @@ from keras.layers.merge import concatenate
 
 from deepneuro.models.model import DeepNeuroModel
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
-from deepneuro.models.dn_ops import UpConvolution
+from deepneuro.models.dn_ops import UpConvolution, DnConv
+from deepneuro.utilities.util import add_parameter
 
 
 class UNet(DeepNeuroModel):
@@ -27,15 +28,9 @@ class UNet(DeepNeuroModel):
 
         """
 
-        if 'depth' in kwargs:
-            self.depth = kwargs.get('depth')
-        else:
-            self.depth = 4
-
-        if 'max_filter' in kwargs:
-            self.max_filter = kwargs.get('max_filter')
-        else:
-            self.max_filter = 512
+        add_parameter(self, kwargs, 'dim', 3)
+        add_parameter(self, kwargs, 'depth', 4)
+        add_parameter(self, kwargs, 'max_filter', 512)
 
     def build_model(self):
         
@@ -49,8 +44,6 @@ class UNet(DeepNeuroModel):
                 If input_tensor is provided, this will return a tensor. Otherwise,
                 this will return a Keras model.
         """
-
-        print self.inputs.get_shape()
 
         left_outputs = []
 
