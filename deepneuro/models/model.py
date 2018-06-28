@@ -4,7 +4,7 @@
 
 from keras.engine import Input
 from keras.models import load_model
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
@@ -127,7 +127,7 @@ class DeepNeuroModel(object):
 
         return self.model
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','early_stopping','log'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -176,7 +176,7 @@ class DeepNeuroModel(object):
         return callbacks
 
 
-def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={}):
+def get_callbacks(model_file, callbacks=['save_model','early_stopping','log'], monitor='val_loss', kwargs={}):
 
     """ Temporary function; callbacks will be dealt with in more detail in the future.
         Very disorganized currently. Do with dictionary. 
@@ -189,10 +189,12 @@ def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={
 
     return_callbacks = []
     for callback in callbacks:
-
         if callback == 'save_model':
             return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
-
+        if callback == 'early_stopping':
+            return_callbacks += [EarlyStopping(monitor=monitor, patience=10)]
+        if callback == 'log':
+            return_callbacks += [CSVLogger(model_file.replace('.h5','.log'))]
     return return_callbacks
 
 
