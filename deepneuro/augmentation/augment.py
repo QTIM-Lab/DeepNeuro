@@ -393,7 +393,13 @@ class ExtractPatches(Augmentation):
                     pad[0] = self.patch_shape[idx] / 2 - corner[idx]
                 pad_dims[patch_dim] = tuple(pad)
 
+            # print 'label', label
+            # print 'input_shape', self.data_groups[label].augmentation_cases[augmentation_num].shape
+            # print 'patch_slice', patch_slice
+            # print 'pad_dims', pad_dims
+            # print self.patches[label].shape
             self.patches[label] = np.lib.pad(self.patches[label], tuple(pad_dims), 'edge')
+            # print self.patches[label].shape, 'post-pad'
 
         return
 
@@ -403,8 +409,7 @@ class ExtractPatches(Augmentation):
         # https://stackoverflow.com/questions/33281957/faster-alternative-to-numpy-where
 
         cols = np.arange(data.size)
-        return csr_matrix((cols, (data.ravel(), cols)),
-                          shape=(data.max() + 1, data.size))
+        return csr_matrix((cols, (data.ravel(), cols)), shape=(data.max() + 1, data.size))
 
     def get_indices_sparse(self, data):
 

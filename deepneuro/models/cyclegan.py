@@ -7,13 +7,13 @@ from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormali
 from keras.optimizers import Nadam
 from keras.layers.merge import concatenate
 
-from deepneuro.models.model import KerasModel
+from deepneuro.models.model import TensorFlowModel
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
 from deepneuro.models.dn_ops import UpConvolution, DnConv
 from deepneuro.utilities.util import add_parameter
 
 
-class UNet(KerasModel):
+class CycleGan(TensorFlowModel):
     
     def load(self, kwargs):
 
@@ -28,11 +28,15 @@ class UNet(KerasModel):
 
         """
 
-        super(UNet, self).load(kwargs)
+        super(CycleGan, self).load(kwargs)
 
         add_parameter(self, kwargs, 'dim', 3)
         add_parameter(self, kwargs, 'depth', 4)
         add_parameter(self, kwargs, 'max_filter', 512)
+
+    def train(self):
+
+        return
 
     def build_model(self):
         

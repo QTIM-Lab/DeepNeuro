@@ -175,6 +175,83 @@ class DeepNeuroModel(object):
 
         return callbacks
 
+    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None):
+
+        if training_steps_per_epoch is None:
+            self.training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
+
+        self.training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
+
+        if validation_data_collection is not None:
+
+            if validation_steps_per_epoch is None:
+                self.validation_steps_per_epoch = validation_data_collection.total_cases // validation_batch_size + 1
+
+            self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
+
+
+class KerasModel(DeepNeuroModel):
+
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+
+        """
+        input_groups : list of strings, optional
+            Specifies which named data groups (e.g. "ground_truth") enter which input
+            data slot in your model.
+        """
+
+        # Todo: investigate call-backs more thoroughly.
+        # Also, maybe something more general for the difference between training and validation.
+        # Todo: list-checking for callbacks
+
+        self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+
+        if validation_data_collection is None:
+
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+
+        else:
+
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+
+
+tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
+
+
+class TensorFlowModel(DeepNeuroModel):
+
+    def load(self, kwargs):
+
+        """ Parameters
+            ----------
+            depth : int, optional
+                Specified the layers deep the proposed U-Net should go.
+                Layer depth is symmetric on both upsampling and downsampling
+                arms.
+            max_filter: int, optional
+                Specifies the number of filters at the bottom level of the U-Net.
+
+        """
+
+        add_parameter(self, kwargs, 'sess', None)
+
+        # Basic Model Parameters
+        add_parameter(self, kwargs, 'optimizer', 'Adam')
+        add_parameter(self, kwargs, 'learning_rate', 'Adam')
+
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+
+        self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+
+        from pprint import pprint
+        one_item = next(self.training_data_generator)
+        pprint(len(one_item))
+        pprint(one_item[1].shape)
+
+    def get_optimizer(self):
+
+        return
+
 
 def get_callbacks(model_file, callbacks=['save_model'], monitor='loss', kwargs={}):
 
@@ -220,7 +297,7 @@ def load_old_model(model_file, backend='keras'):
     if backend == 'keras':
         custom_objects = cost_function_dict()
 
-        return DeepNeuroModel(model=load_model(model_file, custom_objects=custom_objects))
+        return KerasModel(model=load_model(model_file, custom_objects=custom_objects))
 
     if backend == 'tf':
         sess = tf.Session()    
