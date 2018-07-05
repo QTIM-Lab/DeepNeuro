@@ -189,6 +189,9 @@ class DeepNeuroModel(object):
 
             self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
 
+    def predict(self, input_data):
+
+        self.model.predict(input_data)
 
 class KerasModel(DeepNeuroModel):
 
@@ -252,6 +255,24 @@ class TensorFlowModel(DeepNeuroModel):
 
         return
 
+    def init_sess(self):
+
+        if self.sess is None:
+            self.init = tf.global_variables_initializer()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+
+            self.sess = tf.Session(config=config)
+
+            self.sess.run(self.init)
+
+        elif self.sess._closed:
+            self.sess.run(self.init)
+
+    def save_model(self):
+
+        return
+
 
 def get_callbacks(model_file, callbacks=['save_model','early_stopping','log'], monitor='val_loss', kwargs={}):
 
@@ -299,7 +320,12 @@ def load_old_model(model_file, backend='keras'):
     if backend == 'keras':
         custom_objects = cost_function_dict()
 
-        return KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+        loaded_model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+
+        self.input_shape = loaded_model.layers[0].input_shape
+        self.output_shape = loaded_model.layers[-1].output_shape
+
+        return loaded_model
 
     if backend == 'tf':
         sess = tf.Session()    

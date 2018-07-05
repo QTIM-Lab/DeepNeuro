@@ -54,7 +54,7 @@ class ModelInference(Output):
         if self.input_channels is not None:
             input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
-        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:]  # Weird
+        self.output_shape = [1] + list(self.model.model_output_shape)[1:]  # Weird
         for i in xrange(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
@@ -117,9 +117,11 @@ class ModelPatchesInference(ModelInference):
 
         # Determine patch shape. Currently only extends to spatial patching.
         # This leading dims business has got to have a better solution..
-        self.input_patch_shape = self.model.model.layers[0].input_shape
+        self.input_patch_shape = self.model.model_input_shape
         if self.output_patch_shape is None:
-            self.output_patch_shape = self.model.model.layers[-1].output_shape
+            self.output_patch_shape = self.model.model_output_shape
+
+        print self.input_patch_shape, self.output_patch_shape
 
         return super(ModelPatchesInference, self).generate()
 
@@ -178,7 +180,8 @@ class ModelPatchesInference(ModelInference):
                 corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
                 
-                prediction = self.model.model.predict(input_patches)
+                print(input_patches.shape)
+                prediction = self.model.predict(input_patches)
                 
                 self.insert_patch(repatched_image, prediction, corner_batch)
 

@@ -108,4 +108,7 @@ class UNet(KerasModel):
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
                           metrics=['categorical_accuracy'])
 
+        self.input_shape = left_outputs[0].input_shape
+        self.output_shape = output_layer.output_shape
+
         return self.model
