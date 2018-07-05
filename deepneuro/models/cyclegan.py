@@ -44,6 +44,9 @@ class CycleGan(TensorFlowModel):
         add_parameter(self, kwargs, 'discriminator_max_filter', 64)
 
         # Training Parameters
+        add_parameter(self, kwargs, 'train_with_GAN', True)
+        add_parameter(self, kwargs, 'train_separately', False)
+
         add_parameter(self, kwargs, 'consistency_weight', 100)  # AKA lambda
         add_parameter(self, kwargs, 'gradient_penalty_weight', 10)
 
@@ -52,9 +55,12 @@ class CycleGan(TensorFlowModel):
 
     def train(self, training_data_collection, validation_data_collection=None, **kwargs):
 
+        # Outputs
+        add_parameter(self, kwargs, 'output_model_filepath')
+
+        # Training Parameters
         add_parameter(self, kwargs, 'num_epochs', 100)
         add_parameter(self, kwargs, 'training_steps_per_epoch', 10)
-
         add_parameter(self, kwargs, 'training_batch_size', 16)
 
         # training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
@@ -73,7 +79,6 @@ class CycleGan(TensorFlowModel):
         self.init_sess()
 
         step = 0
-        batch_num = 0
 
         self.num_epochs = 20
         self.training_steps_per_epoch = 20
@@ -85,32 +90,28 @@ class CycleGan(TensorFlowModel):
                 print epoch, step
                 input_modality_1, input_modality_2 = next(self.training_data_generator)
 
-                # synth_1_2 = sess.run(self.generator_1_2, feed_dict={self.generator_input_images_1: input_modality_1})
-                # synth_2_1 = sess.run(self.generator_2_1, feed_dict={self.generator_input_images_2: input_modality_2})
-
-                # print(synth_1_2.shape)
-
                 # Optimize!
-                _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optmizer, self.discriminator_optimizer, self.D_loss_wgan_1_2, self.D_loss_wgan_2_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_2_loss, self.generator_2_1_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-                print('Discrim 1 Loss', discrim_1_loss)
-                print('Discrim 2 Loss', discrim_2_loss)
-                print('Total D Loss', d_loss)
-                print('Gen 1 Loss', gen_1_loss)
-                print('Gen 2 Loss', gen_2_loss)
-                print('Consitency Loss 12', cons_1_loss)
-                print('Consitency Loss 21', cons_2_loss)  
-                print('Total G Loss', g_loss)
+                if self.train_with_GAN:
 
-                # _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_1_2_loss, self.generator_2_1_loss, self.total_generator_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+                    _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-                # print('Consitency Loss 12', cons_1_loss)
-                # print('Consitency Loss 21', cons_2_loss)  
-                # print('Total G Loss', g_loss)
+                    self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons1_loss, cons2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
+
+                else:
+
+                    _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_2_consistency_loss, self.generator_1_consistency_loss, self.total_consistency_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+
+                    self.log([cons_1_loss, cons_2_loss, g_loss], headers=['Consistency Loss 12', 'Consistency Loss 21', 'Total G Loss'], verbose=self.hyperverbose)
+
+            self.save_model(self.output_model_filepath)
 
         return
 
     def build_tensorflow_model(self, batch_size):
+
+        """ Break it out into functions?
+        """
 
         # Set input/output shapes for reference during inference.
         self.model_input_shape = tuple([batch_size] + list(self.input_shape))
@@ -121,47 +122,70 @@ class CycleGan(TensorFlowModel):
         self.generator_input_images_2 = tf.placeholder(tf.float32, [None] + list(self.input_shape))
 
         # Create generators
-        self.generator_1_2 = self.generator(self.generator_input_images_1, name='generator_1')
-        self.generator_2_1 = self.generator(self.generator_1_2, name='generator_2')
+        self.generator_1_2_real = self.generator(self.generator_input_images_1, name='generator_1_2')
+        self.generator_2_1_fake = self.generator(self.generator_1_2_real, name='generator_2_1')
+
+        self.generator_2_1_real = self.generator(self.generator_input_images_2, name='generator_2_1')
+        self.generator_1_2_fake = self.generator(self.generator_2_1_real, name='generator_1_2')
 
         # Create Consistency Losses
-        self.generator_1_2_loss =  tf.reduce_mean((self.generator_1_2 - self.generator_input_images_2) ** 2)
-        self.generator_2_1_loss =  tf.reduce_mean((self.generator_2_1 - self.generator_input_images_1) ** 2)
+        self.generator_1_consistency_loss = tf.reduce_mean((self.generator_2_1_fake - self.generator_input_images_1) ** 2)
+        self.generator_2_consistency_loss = tf.reduce_mean((self.generator_1_2_fake - self.generator_input_images_2) ** 2)
 
-        # Create Discriminators
-        self.discriminator_1_2_fake, self.discriminator_1_2_fake_logits = self.discriminator(self.generator_1_2, name='discriminator_1_2')
-        self.discriminator_1_2_real, self.discriminator_1_2_real_logits = self.discriminator(self.generator_input_images_2, reuse=True, name='discriminator_1_2')
-        self.total_discriminator_1_2_loss = self.discriminator_1_2_real + self.discriminator_1_2_fake
+        if self.train_with_GAN:
 
-        self.discriminator_2_1_fake, self.discriminator_2_1_fake_logits = self.discriminator(self.generator_2_1, name='discriminator_2_1')
-        self.discriminator_2_1_real, self.discriminator_2_1_real_logits = self.discriminator(self.generator_input_images_1, reuse=True, name='discriminator_2_1')
-        self.total_discriminator_2_1_loss = self.discriminator_2_1_real + self.discriminator_2_1_fake
+            # Create Discriminators
+            self.discriminator_2_fake, self.discriminator_2_fake_logits = self.discriminator(self.generator_1_2_real, name='discriminator_2')
+            self.discriminator_2_real, self.discriminator_2_real_logits = self.discriminator(self.generator_input_images_2, reuse=True, name='discriminator_2')
 
-        # Create Basic GAN Loss
-        self.D_loss_1_2 = tf.reduce_mean(self.discriminator_1_2_fake_logits) - tf.reduce_mean(self.discriminator_1_2_real_logits)
-        self.G_loss_1_2 = -tf.reduce_mean(self.discriminator_1_2_fake_logits)
-        self.D_loss_2_1 = tf.reduce_mean(self.discriminator_2_1_fake_logits) - tf.reduce_mean(self.discriminator_2_1_real_logits)
-        self.G_loss_2_1 = -tf.reduce_mean(self.discriminator_2_1_fake_logits)
+            self.discriminator_1_fake, self.discriminator_1_fake_logits = self.discriminator(self.generator_2_1_real, name='discriminator_1')
+            self.discriminator_1_real, self.discriminator_1_real_logits = self.discriminator(self.generator_input_images_1, reuse=True, name='discriminator_1')
 
-        # Wasserstein GANs
-        self.D_loss_wgan_1_2 = self.wasserstein_loss(self.D_loss_1_2, self.generator_input_images_2, self.generator_1_2, batch_size, name='discriminator_1_2')
-        self.D_loss_wgan_2_1 = self.wasserstein_loss(self.D_loss_2_1, self.generator_input_images_1, self.generator_2_1, batch_size, name='discriminator_2_1')
+            # Create Basic GAN Loss
+            self.D_loss_2 = tf.reduce_mean(self.discriminator_2_fake_logits) - tf.reduce_mean(self.discriminator_2_real_logits)
+            self.G_loss_1_2 = -1 * tf.reduce_mean(self.discriminator_2_fake_logits)
+            self.D_loss_1 = tf.reduce_mean(self.discriminator_1_fake_logits) - tf.reduce_mean(self.discriminator_1_real_logits)
+            self.G_loss_2_1 = -1 * tf.reduce_mean(self.discriminator_1_fake_logits)
 
-        self.total_D_loss = self.D_loss_wgan_1_2 + self.D_loss_wgan_2_1
-        self.total_generator_loss = self.generator_1_2_loss + self.generator_2_1_loss
-        self.total_G_loss = self.total_generator_loss * self.consistency_weight + self.G_loss_1_2 + self.G_loss_2_1
+            # Wasserstein-GP Loss
+            self.D_loss_wgan_1 = self.wasserstein_loss(self.D_loss_1, self.generator_input_images_1, self.generator_2_1, batch_size, name='discriminator_1', gradient_penalty=self.gradient_penalty_weight)
+            self.D_loss_wgan_2 = self.wasserstein_loss(self.D_loss_2, self.generator_input_images_2, self.generator_1_2, batch_size, name='discriminator_2', gradient_penalty=self.gradient_penalty_weight)
 
-        self.g_vars = [var for var in tf.trainable_variables() if 'gen' in var.name]
-        self.d_vars = [var for var in tf.trainable_variables() if 'dis' in var.name]
+            # Calculate Loss Sums
+            self.total_D_loss = self.D_loss_wgan_2 + self.D_loss_wgan_1
 
-        self.generator_optmizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss, var_list=self.g_vars)
-        self.discriminator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_D_loss, var_list=self.d_vars)
-        self.consistency_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_generator_loss, var_list=self.g_vars)
+            self.total_G_loss_1_2 = self.generator_1_consistency_loss * self.consistency_weight + self.G_loss_1_2
+            self.total_G_loss_2_1 = self.generator_2_consistency_loss * self.consistency_weight + self.G_loss_2_1
+            self.total_G_loss = self.total_G_loss_1_2 + self.total_G_loss_2_1
 
-        # self.disriminator_1_2_fake = self.discriminator(self.input_images_1)
-        # self.disriminator_1_2_real = self.discriminator(self.input_images_1)
+            # Isolate Generator and Discriminator Variables
+            self.g_vars = [var for var in tf.trainable_variables() if 'gen' in var.name]
+            self.d_vars = [var for var in tf.trainable_variables() if 'dis' in var.name]
 
-    def wasserstein_loss(self, discriminator_loss, real_data, fake_data, batch_size, name=''):
+            self.g_1_2_vars = [var for var in tf.trainable_variables() if 'generator_1_2' in var.name]
+            self.g_2_1_vars = [var for var in tf.trainable_variables() if 'generator_2_1' in var.name]
+
+            self.d_1_vars = [var for var in tf.trainable_variables() if 'discriminator_1' in var.name]
+            self.d_2_vars = [var for var in tf.trainable_variables() if 'discriminator_2' in var.name]
+
+            # Create optimizers
+            if self.train_separately:
+                self.generator_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_1_2, var_list=self.g_1_2_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_2_1, var_list=self.g_2_1_vars)]
+                self.discriminator_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_1, var_list=self.d_1_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_2, var_list=self.d_2_vars)]
+            else:
+                self.generator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss, var_list=self.g_vars)
+                self.discriminator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_D_loss, var_list=self.d_vars)
+
+        else:
+            # Optional -- train without GANs
+            self.total_consistency_loss = self.generator_1_consistency_loss + self.generator_2_consistency_loss
+
+            if self.train_separately:
+                self.consistency_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_2_consistency_loss, var_list=self.g_1_2_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_1_consistency_loss, var_list=self.g_vars)]
+            else:
+                self.consistency_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_consistency_loss, var_list=self.g_vars)
+
+    def wasserstein_loss(self, discriminator_loss, real_data, fake_data, batch_size, gradient_penalty_weight=10, name=''):
 
         # Implementation fo Wasserstein loss with gradient penalty.
 
@@ -178,8 +202,8 @@ class CycleGan(TensorFlowModel):
         gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
 
         # Update Loss functions..
-        discriminator_loss += self.gradient_penalty_weight * gradient_penalty
-        # discriminator_loss += 0.001 * tf.reduce_mean(tf.square(self.discriminator_1_2_real_logits - 0.0))
+        discriminator_loss += gradient_penalty_weight * gradient_penalty
+        # discriminator_loss += 0.001 * tf.reduce_mean(tf.square(self.discriminator_2_real_logits - 0.0))
 
         return discriminator_loss
 
@@ -193,16 +217,16 @@ class CycleGan(TensorFlowModel):
             convs = []
 
             # fromRGB
-            convs += [lrelu(conv3d(input_image, output_dim=self.discriminator_max_filter / self.discriminator_depth, k_w=1, k_h=1, k_d=1, d_w=1, d_h=1, d_d=1, name='dis_y_rgb_conv_{}'.format(input_image.shape[1])))]
+            convs += [lrelu(DnConv(input_image, output_dim=self.discriminator_max_filter / self.discriminator_depth, kernel_size=(1, 1, 1), name='dis_y_rgb_conv_{}'.format(input_image.shape[1])))]
 
             for i in range(self.discriminator_depth - 1):
 
-                convs += [lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - i - 1), d_h=1, d_w=1, d_d=1, name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))]
+                convs += [lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - i - 1), stride_size=(1, 1, 1), name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))]
 
-                convs += [lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - 1 - i), d_h=1, d_w=1, d_d=1, name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))]
+                convs += [lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - 1 - i), stride_size=(1, 1, 1), name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))]
                 convs[-1] = avgpool3d(convs[-1], 2)
 
-            # convs += [minibatch_state_concat(convs[-1])]
+            # convs += [minibatch_state_concat(convs[-1])] 
             convs[-1] = lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter, k_w=3, k_h=3, k_d=3, d_h=1, d_w=1, d_d=1, name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))
             
             conv = lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter, k_w=4, k_h=4, k_d=4, d_h=1, d_w=1, d_d=1, padding='VALID', name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))

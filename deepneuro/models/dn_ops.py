@@ -74,7 +74,7 @@ def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim
     return
 
 
-def DnConv(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2,  padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
+def DnConv(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2, padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
 
     """ TODO: Provide different options for intializers, and resolve inconsistencies bewteen 2D and 3D.
     """

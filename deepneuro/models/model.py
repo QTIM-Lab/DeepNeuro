@@ -2,14 +2,15 @@
     pre-built model chunks that may be useful across all models.
 """
 
+import csv
+import tensorflow as tf
+
 from keras.engine import Input
 from keras.models import load_model
 from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
-
-import tensorflow as tf
 
 
 class DeepNeuroModel(object):
@@ -70,7 +71,18 @@ class DeepNeuroModel(object):
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
         else:
-            self.inputs = input_tensor
+            self.inputs = self.input_tensor
+
+        # Logging
+        add_parameter(self, kwargs, 'output_log_file', None)
+
+        # Misc
+        add_parameter(self, kwargs, 'verbose', True)
+        add_parameter(self, kwargs, 'hyperverbose', True)
+
+        # Derived Parameters
+        self.write_file = None
+        self.csv_writer = None
 
         # Generic Model Parameters -- Optional
         self.pool_size = pool_size
@@ -127,37 +139,11 @@ class DeepNeuroModel(object):
 
         return self.model
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','early_stopping','log'], **kwargs):
+    def train(self, **kwargs):
 
-        """
-        input_groups : list of strings, optional
-            Specifies which named data groups (e.g. "ground_truth") enter which input
-            data slot in your model.
-        """
+        self.close_model()
 
-        # Todo: investigate call-backs more thoroughly.
-        # Also, maybe something more general for the difference between training and validation.
-        # Todo: list-checking for callbacks
-
-        if training_steps_per_epoch is None:
-            training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
-
-        training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
-
-        if validation_data_collection is None:
-
-            self.model.fit_generator(generator=training_data_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
-
-        else:
-
-            if validation_steps_per_epoch is None:
-                validation_steps_per_epoch = validation_data_collection.total_cases // validation_batch_size + 1
-
-            validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
-
-            self.model.fit_generator(generator=training_data_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=validation_data_generator, validation_steps=validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
-
-        # self.model.save(output_model_filepath)
+        return
 
     def append_output(self, outputs):
 
@@ -193,9 +179,36 @@ class DeepNeuroModel(object):
 
         self.model.predict(input_data)
 
+    def log(self, inputs=None, headers=None, verbose=False):
+
+        if self.write_file is None:
+            self.write_file = open(self.output_log_file, 'wb')
+            self.csv_writer = csv.writer(self.write_file)
+            if headers is not None:
+                self.csv_writer.writerow(headers)
+
+        if inputs is not None:
+            self.csv_writer(inputs)
+
+        if verbose:
+            for input_idx, single_input in enumerate(inputs):
+                if headers is None:
+                    print('Logging Output', input_idx, single_input)
+                else:
+                    print(headers[input_idx], single_input)
+
+        return
+
+    def close_model(self):
+
+        if self.write_file is not None:
+            if self.write_file.open:
+                self.write_file.close()
+
+
 class KerasModel(DeepNeuroModel):
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','early_stopping','log'], **kwargs):
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model', 'early_stopping', 'log'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -211,11 +224,41 @@ class KerasModel(DeepNeuroModel):
 
         if validation_data_collection is None:
 
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=self.get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
 
         else:
 
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+
+        self.close_model()
+
+        return
+
+    def get_callbacks(self, model_file, callbacks=['save_model', 'early_stopping', 'log'], monitor='val_loss', kwargs={}):
+
+        """ Temporary function; callbacks will be dealt with in more detail in the future.
+            Very disorganized currently. Do with dictionary. 
+        """
+
+        if 'save_best_only' in kwargs:
+            save_best_only = kwargs.get('save_best_only')
+        else:
+            save_best_only = True
+
+        return_callbacks = []
+        for callback in callbacks:
+            if callback == 'save_model':
+                return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
+            if callback == 'early_stopping':
+                return_callbacks += [EarlyStopping(monitor=monitor, patience=10)]
+            if callback == 'log':
+                if self.output_log_file is None:
+                    self.output_log_file = model_file.replace('.h5', '.csv')
+                    if self.verbose:
+                        print('No logging file provided. Logging to...', self.output_log_file)
+                return_callbacks += [CSVLogger(self.output_log_file)]
+
+        return return_callbacks
 
 
 tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
@@ -269,31 +312,15 @@ class TensorFlowModel(DeepNeuroModel):
         elif self.sess._closed:
             self.sess.run(self.init)
 
-    def save_model(self):
+    def save_model(self, output_model_filepath):
+
+        self.init_sess()
+
+        builder = tf.saved_model.builder.SavedModelBuilder(output_model_filepath)
+        builder.add_meta_graph_and_variables(self.sess, ['tensorflow_model'])
+        builder.save()
 
         return
-
-
-def get_callbacks(model_file, callbacks=['save_model','early_stopping','log'], monitor='val_loss', kwargs={}):
-
-    """ Temporary function; callbacks will be dealt with in more detail in the future.
-        Very disorganized currently. Do with dictionary. 
-    """
-
-    if 'save_best_only' in kwargs:
-        save_best_only = kwargs.get('save_best_only')
-    else:
-        save_best_only = True
-
-    return_callbacks = []
-    for callback in callbacks:
-        if callback == 'save_model':
-            return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
-        if callback == 'early_stopping':
-            return_callbacks += [EarlyStopping(monitor=monitor, patience=10)]
-        if callback == 'log':
-            return_callbacks += [CSVLogger(model_file.replace('.h5','.log'))]
-    return return_callbacks
 
 
 def load_old_model(model_file, backend='keras'):
