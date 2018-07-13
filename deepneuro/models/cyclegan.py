@@ -11,9 +11,9 @@ from keras.layers.merge import concatenate
 
 from deepneuro.models.model import TensorFlowModel
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
-from deepneuro.models.dn_ops import UpConvolution, DnConv
+from deepneuro.models.dn_ops import UpConvolution, DnConv, DnAveragePooling
 from deepneuro.utilities.util import add_parameter
-from ops_three import lrelu, conv3d, fully_connect, downscale, upscale, pixel_norm, avgpool3d, WScaleLayer, minibatch_state_concat
+from ops_three import lrelu, fully_connect, downscale, upscale, pixel_norm, avgpool3d, WScaleLayer, minibatch_state_concat
 
 
 class CycleGan(TensorFlowModel):
@@ -37,17 +37,17 @@ class CycleGan(TensorFlowModel):
 
         # Generator Parameters
         add_parameter(self, kwargs, 'generator_depth', 4)
-        add_parameter(self, kwargs, 'generator_max_filter', 64)
+        add_parameter(self, kwargs, 'generator_max_filter', 128)
 
         # Discriminator Parameters
         add_parameter(self, kwargs, 'discriminator_depth', 4)
-        add_parameter(self, kwargs, 'discriminator_max_filter', 64)
+        add_parameter(self, kwargs, 'discriminator_max_filter', 128)
 
         # Training Parameters
         add_parameter(self, kwargs, 'train_with_GAN', True)
         add_parameter(self, kwargs, 'train_separately', False)
 
-        add_parameter(self, kwargs, 'consistency_weight', 100)  # AKA lambda
+        add_parameter(self, kwargs, 'consistency_weight', 10)  # AKA lambda
         add_parameter(self, kwargs, 'gradient_penalty_weight', 10)
 
         self.sess = None
@@ -80,8 +80,8 @@ class CycleGan(TensorFlowModel):
 
         step = 0
 
-        self.num_epochs = 20
-        self.training_steps_per_epoch = 20
+        self.num_epochs = 40
+        self.training_steps_per_epoch = 100
 
         for epoch in range(self.num_epochs):
 
@@ -96,7 +96,7 @@ class CycleGan(TensorFlowModel):
 
                     _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-                    self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons1_loss, cons2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
+                    self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
 
                 else:
 
@@ -148,8 +148,8 @@ class CycleGan(TensorFlowModel):
             self.G_loss_2_1 = -1 * tf.reduce_mean(self.discriminator_1_fake_logits)
 
             # Wasserstein-GP Loss
-            self.D_loss_wgan_1 = self.wasserstein_loss(self.D_loss_1, self.generator_input_images_1, self.generator_2_1, batch_size, name='discriminator_1', gradient_penalty=self.gradient_penalty_weight)
-            self.D_loss_wgan_2 = self.wasserstein_loss(self.D_loss_2, self.generator_input_images_2, self.generator_1_2, batch_size, name='discriminator_2', gradient_penalty=self.gradient_penalty_weight)
+            self.D_loss_wgan_1 = self.wasserstein_loss(self.D_loss_1, self.generator_input_images_1, self.generator_1_2_real, batch_size, name='discriminator_1', gradient_penalty_weight=self.gradient_penalty_weight)
+            self.D_loss_wgan_2 = self.wasserstein_loss(self.D_loss_2, self.generator_input_images_2, self.generator_2_1_real, batch_size, name='discriminator_2', gradient_penalty_weight=self.gradient_penalty_weight)
 
             # Calculate Loss Sums
             self.total_D_loss = self.D_loss_wgan_2 + self.D_loss_wgan_1
@@ -224,12 +224,12 @@ class CycleGan(TensorFlowModel):
                 convs += [lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - i - 1), stride_size=(1, 1, 1), name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))]
 
                 convs += [lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter / (self.discriminator_depth - 1 - i), stride_size=(1, 1, 1), name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))]
-                convs[-1] = avgpool3d(convs[-1], 2)
+                convs[-1] = DnAveragePooling(convs[-1], ratio=(2, 2, 2))
 
             # convs += [minibatch_state_concat(convs[-1])] 
-            convs[-1] = lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter, k_w=3, k_h=3, k_d=3, d_h=1, d_w=1, d_d=1, name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))
+            convs[-1] = lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter, kernel_size=(3, 3, 3), stride_size=(1, 1, 1), name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))
             
-            conv = lrelu(conv3d(convs[-1], output_dim=self.discriminator_max_filter, k_w=4, k_h=4, k_d=4, d_h=1, d_w=1, d_d=1, padding='VALID', name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))
+            conv = lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter, kernel_size=(2, 2, 2), stride_size=(1, 1, 1), padding='VALID', name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))
             
             #for D
             output = tf.layers.Flatten()(convs[-1])
@@ -367,4 +367,4 @@ class CycleGan(TensorFlowModel):
 
         self.init_sess()
 
-        return self.sess.run(self.generator_1_2, feed_dict={self.generator_input_images_1: input_data})
+        return self.sess.run(self.generator_1_2_real, feed_dict={self.generator_input_images_1: input_data})

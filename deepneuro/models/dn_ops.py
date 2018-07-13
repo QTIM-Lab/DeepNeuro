@@ -2,6 +2,14 @@
 import tensorflow as tf
 from keras.layers import UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation, Dropout, BatchNormalization
 
+
+class DnOp(object):
+
+    def __init__(self):
+
+        return
+
+
 class batch_norm(object):
 
     # Taken from DCGAN-tensorflow on Github. In future, rewrite for multi-backend batchnorm.
@@ -62,7 +70,10 @@ def reshape(backend='tf'):
 
     return 
 
+
 def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2,  padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
+
+    op = None
 
     if backend == 'keras':
 
@@ -71,10 +82,44 @@ def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim
         if dim == 3:
             pass
 
-    return
+    if backend == 'tensorflow':
+
+        if dim == 2:
+            pass
+        if dim == 3:
+            pass
+
+    if op is None:
+        print 'Option Not Implemented'
+
+    return op
 
 
-def DnConv(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2, padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
+def DnAveragePooling(input_, ratio=(2, 2, 2), dim=3, backend='tensorflow'):
+
+    op = None
+
+    if backend == 'keras':
+
+        if dim == 2:
+            pass
+        if dim == 3:
+            pass
+
+    if backend == 'tensorflow':
+
+        if dim == 2:
+            op = tf.nn.avg_pool2d(input_, ksize=[1] + list(ratio) + [1], strides=[1] + list(ratio) + [1], padding='SAME')
+        if dim == 3:
+            op = tf.nn.avg_pool3d(input_, ksize=[1] + list(ratio) + [1], strides=[1] + list(ratio) + [1], padding='SAME')
+
+    if op is None:
+        print 'Operation Not Implemented'
+
+    return op
+
+
+def DnConv(input_, output_dim, kernel_size=(5, 5, 5), stride_size=(2, 2, 2), dim=3, padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tensorflow'):
 
     """ TODO: Provide different options for intializers, and resolve inconsistencies bewteen 2D and 3D.
     """
@@ -82,17 +127,17 @@ def DnConv(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2, pa
     if name is None:
         name = 'conv' + str(dim) + 'd'
 
-    if backend == 'tf':
+    if backend == 'tensorflow':
         if dim == 2:
-            conv = conv2d(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backed=backend)
+            conv = conv2d(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backend=backend)
         elif dim == 3:
-            conv = conv3d(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backed=backend)
+            conv = conv3d(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backend=backend)
 
     elif backend == 'keras':
         if dim == 2:
-            conv = Conv2D(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backed=backend)
+            conv = Conv2D(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backend=backend)
         elif dim == 3:
-            conv = Conv3D(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backed=backend)
+            conv = Conv3D(input_, output_dim, kernel_size=kernel_size, stride_size=stride_size, padding=padding, initializer_std=initializer_std, name=name, backend=backend)
 
     return conv
 
@@ -110,17 +155,38 @@ def conv2d(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), initializ
         return conv
 
 
-def conv3d(input_, output_dim, kernel_size=(8, 8, 2), stride_size=(1, 1, 1), initializer_std=0.02, name="conv3d", backend='tf', padding='SAME'):
+def conv3d(input_, output_dim, kernel_size=(3, 3, 3), stride_size=(2, 2, 2), initializer_std=0.02, name="conv3d", backend='tf', padding='SAME', with_w=False):
 
     with tf.variable_scope(name):
 
-        w = tf.get_variable('w', [kernel_size[0], kernel_size[1], kernel_size[2], input_.get_shape()[-1], output_dim], initializer=tf.contrib.layers.xavier_initializer())
-        
-        conv = tf.layers.conv3d(input_, output_dim, kernel_size=kernel_size, strides=[stride_size[0], stride_size[1], stride_size[2]], padding=padding)
-        biases = tf.get_variable('biases', [output_dim], initializer=tf.zeros_initializer())
-        conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+        w = tf.get_variable('w', list(kernel_size) + [input_.get_shape()[-1], output_dim], initializer=tf.contrib.layers.xavier_initializer())
 
-        return conv
+        if padding == 'Other':
+            # Not sure what's up with this r n --andrew
+            # Something about going from latent space to first conv.
+            padding = 'VALID'
+            input_ = tf.pad(input_, [[0,0], [3, 3], [3, 3], [3, 3], [0, 0]], "CONSTANT")
+
+        elif padding == 'VALID':
+            padding = 'VALID'
+
+        conv = tf.nn.conv3d(input_, w, strides=[1] + list(stride_size) + [1], padding=padding)
+        biases = tf.get_variable('biases', [output_dim], initializer=tf.constant_initializer(0.0))
+        conv = tf.nn.bias_add(conv, biases)
+
+        if with_w:
+            return conv, w, biases
+        else:
+            return conv
+
+        # w = tf.get_variable('w', [kernel_size[0], kernel_size[1], kernel_size[2], input_.get_shape()[-1], output_dim], initializer=tf.contrib.layers.xavier_initializer())
+        
+        # print input_, output_dim
+        # conv = tf.layers.conv3d(input_, w, kernel_size=list(kernel_size), strides=[stride_size[0], stride_size[1], stride_size[2]], padding=padding)
+        # biases = tf.get_variable('biases', [output_dim], initializer=tf.zeros_initializer())
+        # conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+
+        # return conv
 
 
 def deconv2d(input_, output_shape, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name="deconv2d", with_w=False):

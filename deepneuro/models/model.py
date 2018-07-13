@@ -2,12 +2,14 @@
     pre-built model chunks that may be useful across all models.
 """
 
+import os
 import csv
 import tensorflow as tf
 
 from keras.engine import Input
 from keras.models import load_model
 from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
+from shutil import rmtree
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
@@ -182,13 +184,15 @@ class DeepNeuroModel(object):
     def log(self, inputs=None, headers=None, verbose=False):
 
         if self.write_file is None:
-            self.write_file = open(self.output_log_file, 'wb')
+            print('openin', file)
+            self.write_file = open(self.output_log_file, 'w')
             self.csv_writer = csv.writer(self.write_file)
             if headers is not None:
                 self.csv_writer.writerow(headers)
 
         if inputs is not None:
-            self.csv_writer(inputs)
+            print('writin', inputs)
+            self.csv_writer.writerow(inputs)
 
         if verbose:
             for input_idx, single_input in enumerate(inputs):
@@ -312,13 +316,22 @@ class TensorFlowModel(DeepNeuroModel):
         elif self.sess._closed:
             self.sess.run(self.init)
 
-    def save_model(self, output_model_filepath):
+    def save_model(self, output_model_filepath, overwrite=True):
 
         self.init_sess()
 
-        builder = tf.saved_model.builder.SavedModelBuilder(output_model_filepath)
-        builder.add_meta_graph_and_variables(self.sess, ['tensorflow_model'])
-        builder.save()
+        if output_model_filepath.endswith(('.h5', '.hdf5')):
+            output_model_filepath = '.'.join(str.split(output_model_filepath, '.')[0:-1])
+
+        if os.path.exists(output_model_filepath) and overwrite:
+            rmtree(output_model_filepath)
+
+        saver = tf.train.Saver()
+        save_path = saver.save(self.sess, os.path.join(output_model_filepath, "model.ckpt"))
+
+        # builder = tf.saved_model.builder.SavedModelBuilder(output_model_filepath)
+        # builder.add_meta_graph_and_variables(self.sess, ['tensorflow_model'])
+        # builder.save()
 
         return
 
@@ -329,6 +342,7 @@ def load_old_model(model_file, backend='keras'):
         that uses DeepNeuro's custom cost functions.
     
         TODO: Investigate application in Tensorflow.
+        TODO: Automatically understand backend.
 
         Parameters
         ----------
@@ -349,16 +363,37 @@ def load_old_model(model_file, backend='keras'):
 
         loaded_model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
 
-        self.input_shape = loaded_model.layers[0].input_shape
-        self.output_shape = loaded_model.layers[-1].output_shape
+        input_shape = loaded_model.layers[0].input_shape
+        output_shape = loaded_model.layers[-1].output_shape
 
         return loaded_model
 
     if backend == 'tf':
+
         sess = tf.Session()    
         # First let's load meta graph and restore weights
+        # print 'loadin!'
+
+        # from tensorflow.python.platform import gfile
+
+        # print os.path.exists(os.path.join(model_file, 'saved_model.pb'))
+        # os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = 'python'
+        # with gfile.FastGFile(os.path.join(model_file, 'saved_model.pb'), 'rb') as f:
+
+        #     graph_def = tf.GraphDef()
+        #     graph_def.ParseFromString(f.read())
+        #     sess.graph.as_default()
+        #     tf.import_graph_def(graph_def, name='')
+        #     writer = tf.summary.FileWriter("./tf_summary", graph=sess.graph)
+        #     # Print all operation names
+        #     for op in sess.graph.get_operations():
+        #       print(op)
+            # next: do the following in bash:
+            # tensorboard --logdir ./tf_summary/
+
         saver = tf.train.import_meta_graph(model_file)
         saver.restore(sess, tf.train.latest_checkpoint('./'))
+
         return sess
 
 
