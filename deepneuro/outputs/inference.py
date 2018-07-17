@@ -180,7 +180,6 @@ class ModelPatchesInference(ModelInference):
                 corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
                 
-                print(input_patches.shape)
                 prediction = self.model.predict(input_patches)
                 
                 self.insert_patch(repatched_image, prediction, corner_batch)

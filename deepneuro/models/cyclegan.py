@@ -74,38 +74,35 @@ class CycleGan(TensorFlowModel):
         #                 'save_best_only': True}
 
         self.build_tensorflow_model(self.training_batch_size)
-
         self.create_data_generators(training_data_collection, validation_data_collection, training_batch_size=self.training_batch_size, training_steps_per_epoch=self.training_steps_per_epoch)
-
         self.init_sess()
 
         step = 0
 
-        self.num_epochs = 40
-        self.training_steps_per_epoch = 100
+        fd
 
-        # for epoch in range(self.num_epochs):
+        for epoch in range(self.num_epochs):
 
-        #     for step in range(self.training_steps_per_epoch):
+            for step in range(self.training_steps_per_epoch):
                 
-        #         print epoch, step
-        #         input_modality_1, input_modality_2 = next(self.training_data_generator)
+                print epoch, step
+                input_modality_1, input_modality_2 = next(self.training_data_generator)
 
-        #         # Optimize!
+                # Optimize!
 
-        #         if self.train_with_GAN:
+                if self.train_with_GAN:
 
-        #             _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+                    _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-        #             self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
+                    self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
 
-        #         else:
+                else:
 
-        #             _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_2_consistency_loss, self.generator_1_consistency_loss, self.total_consistency_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+                    _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_2_consistency_loss, self.generator_1_consistency_loss, self.total_consistency_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-        #             self.log([cons_1_loss, cons_2_loss, g_loss], headers=['Consistency Loss 12', 'Consistency Loss 21', 'Total G Loss'], verbose=self.hyperverbose)
+                    self.log([cons_1_loss, cons_2_loss, g_loss], headers=['Consistency Loss 12', 'Consistency Loss 21', 'Total G Loss'], verbose=self.hyperverbose)
 
-        self.save_model(self.output_model_filepath)
+            self.save_model(self.output_model_filepath)
 
         return
 

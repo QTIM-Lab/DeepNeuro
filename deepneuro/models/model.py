@@ -191,7 +191,6 @@ class DeepNeuroModel(object):
                 self.csv_writer.writerow(headers)
 
         if inputs is not None:
-            print('writin', inputs)
             self.csv_writer.writerow(inputs)
 
         if verbose:
