@@ -284,6 +284,7 @@ class TensorFlowModel(DeepNeuroModel):
         """
 
         add_parameter(self, kwargs, 'sess', None)
+        add_parameter(self, kwargs, 'saver', None)
 
         # Basic Model Parameters
         add_parameter(self, kwargs, 'optimizer', 'Adam')
@@ -326,14 +327,16 @@ class TensorFlowModel(DeepNeuroModel):
         if os.path.exists(output_model_filepath) and overwrite:
             rmtree(output_model_filepath)
 
-        saver = tf.train.Saver()
-        save_path = saver.save(self.sess, os.path.join(output_model_filepath, "model.ckpt"))
+        if self.saver is None:
+            self.saver = tf.train.Saver()
+
+        save_path = self.saver.save(self.sess, os.path.join(output_model_filepath, "model.ckpt"))
 
         # builder = tf.saved_model.builder.SavedModelBuilder(output_model_filepath)
         # builder.add_meta_graph_and_variables(self.sess, ['tensorflow_model'])
         # builder.save()
 
-        return
+        return save_path
 
 
 def load_old_model(model_file, backend='keras'):

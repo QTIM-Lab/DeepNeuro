@@ -3,6 +3,7 @@
 """
 
 import tensorflow as tf
+import os
 
 from keras.engine import Model
 from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization, Flatten, Dense
@@ -83,28 +84,28 @@ class CycleGan(TensorFlowModel):
         self.num_epochs = 40
         self.training_steps_per_epoch = 100
 
-        for epoch in range(self.num_epochs):
+        # for epoch in range(self.num_epochs):
 
-            for step in range(self.training_steps_per_epoch):
+        #     for step in range(self.training_steps_per_epoch):
                 
-                print epoch, step
-                input_modality_1, input_modality_2 = next(self.training_data_generator)
+        #         print epoch, step
+        #         input_modality_1, input_modality_2 = next(self.training_data_generator)
 
-                # Optimize!
+        #         # Optimize!
 
-                if self.train_with_GAN:
+        #         if self.train_with_GAN:
 
-                    _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+        #             _, _, discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.generator_optimizer, self.discriminator_optimizer, self.D_loss_wgan_2, self.D_loss_wgan_1, self.total_D_loss, self.G_loss_1_2, self.G_loss_2_1, self.generator_1_consistency_loss, self.generator_2_consistency_loss, self.total_G_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-                    self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
+        #             self.log([discrim_1_loss, discrim_2_loss, d_loss, gen_1_loss, gen_2_loss, cons_1_loss, cons_2_loss, g_loss], headers=['Dis 1 Loss', 'Dis 2 Loss', 'Total D Loss', 'Gen 1 Loss', 'Gen 2 Loss', 'Consistency 12 Loss', 'Consistency 21 Loss', 'Total G Loss'], verbose=self.hyperverbose)
 
-                else:
+        #         else:
 
-                    _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_2_consistency_loss, self.generator_1_consistency_loss, self.total_consistency_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
+        #             _, cons_1_loss, cons_2_loss, g_loss = self.sess.run([self.consistency_optimizer, self.generator_2_consistency_loss, self.generator_1_consistency_loss, self.total_consistency_loss], feed_dict={self.generator_input_images_1: input_modality_1, self.generator_input_images_2: input_modality_2})
 
-                    self.log([cons_1_loss, cons_2_loss, g_loss], headers=['Consistency Loss 12', 'Consistency Loss 21', 'Total G Loss'], verbose=self.hyperverbose)
+        #             self.log([cons_1_loss, cons_2_loss, g_loss], headers=['Consistency Loss 12', 'Consistency Loss 21', 'Total G Loss'], verbose=self.hyperverbose)
 
-            self.save_model(self.output_model_filepath)
+        self.save_model(self.output_model_filepath)
 
         return
 
@@ -176,6 +177,9 @@ class CycleGan(TensorFlowModel):
                 self.generator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss, var_list=self.g_vars)
                 self.discriminator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_D_loss, var_list=self.d_vars)
 
+            # Create save/load operation
+            self.saver = tf.train.Saver(self.g_vars + self.d_vars)
+
         else:
             # Optional -- train without GANs
             self.total_consistency_loss = self.generator_1_consistency_loss + self.generator_2_consistency_loss
@@ -229,7 +233,7 @@ class CycleGan(TensorFlowModel):
             # convs += [minibatch_state_concat(convs[-1])] 
             convs[-1] = lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter, kernel_size=(3, 3, 3), stride_size=(1, 1, 1), name='dis_n_conv_1_{}'.format(convs[-1].shape[1])))
             
-            conv = lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter, kernel_size=(2, 2, 2), stride_size=(1, 1, 1), padding='VALID', name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))
+            # conv = lrelu(DnConv(convs[-1], output_dim=self.discriminator_max_filter, kernel_size=(2, 2, 2), stride_size=(1, 1, 1), padding='VALID', name='dis_n_conv_2_{}'.format(convs[-1].shape[1])))
             
             #for D
             output = tf.layers.Flatten()(convs[-1])
@@ -291,77 +295,11 @@ class CycleGan(TensorFlowModel):
 
             return output_layer
 
-    def build_model(self):
-        
-        """ A basic implementation of the U-Net proposed in https://arxiv.org/abs/1505.04597
-        
-            TODO: specify optimizer
+    def load_model(self, input_model_path, batch_size=1):
 
-            Returns
-            -------
-            Keras model or tensor
-                If input_tensor is provided, this will return a tensor. Otherwise,
-                this will return a Keras model.
-        """
-
-        # # TODO: Brainstorm better way to specify outputs
-        # if self.input_tensor is not None:
-        #     return output_layer
-
-        # if self.output_type == 'regression':
-        #     self.model = Model(inputs=self.inputs, outputs=output_layer)
-        #     self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
-
-        # if self.output_type == 'binary_label':
-        #     act = Activation('sigmoid')(output_layer)
-        #     self.model = Model(inputs=self.inputs, outputs=act)
-        #     self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
-
-        # if self.output_type == 'categorical_label':
-        #     act = Activation('softmax')(output_layer)
-        #     self.model = Model(inputs=self.inputs, outputs=act)
-        #     self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
-        #                   metrics=['categorical_accuracy'])
-
-        return
-
-    # def discriminator(self, inputs, name='discriminator', scope=None, reuse=False):
-
-    #     convs = []
-    #     with tf.variable_scope('discriminator_1/', reuse=tf.AUTO_REUSE) as scope:
-
-    #         if reuse:
-    #             scope.reuse_variables()
-
-    #         print(dir(scope))
-
-    #         for level in xrange(self.discriminator_depth):
-
-    #             filter_num = int(self.discriminator_max_filter / (2 ** (self.discriminator_depth - level)) / self.downsize_filters_factor)
-
-    #             if level == 0:
-    #                 convs += [Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding, name='dis_conv_1_level' + str(level))(inputs)]
-    #                 convs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding, name='dis_conv_2_level' + str(level))(convs[level])
-    #             else:
-    #                 convs += [MaxPooling3D(pool_size=self.pool_size)(convs[level - 1])]
-    #                 convs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding, name='dis_conv_1_level' + str(level))(convs[level])
-    #                 convs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding, name='dis_conv_2_level' + str(level))(convs[level])
-
-    #             if self.dropout is not None and self.dropout != 0:
-    #                 convs[level] = Dropout(self.dropout, name='dis_dropout_level' + str(level))(convs[level])
-
-    #             # for t in tf.trainable_variables():
-    #                 # print t
-    #             print(dir(convs[level]))
-
-    #             if self.batch_norm:
-    #                 convs[level] = BatchNormalization(name='dis_batchnorm_level' + str(level))(convs[level])
-
-    #         flatten_layer = Flatten(name='dis_flatten_level' + str(level))(convs[-1])
-    #         dense_layer = Dense(64, name='dis_dense_level' + str(level))(flatten_layer)
-    #         determination = tf.nn.sigmoid(dense_layer, name='dis_sigmoid_level' + str(level))
-
-    #         return determination
+        self.build_tensorflow_model(batch_size)
+        self.init_sess()
+        self.saver.restore(self.sess, os.path.join(input_model_path, 'model.ckpt'))
 
     def predict(self, input_data):
 
