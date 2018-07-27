@@ -12,6 +12,7 @@ from collections import defaultdict
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
+from deepneuro.utilities.util import grab_folders
 
 
 class DataCollection(object):
@@ -60,10 +61,10 @@ class DataCollection(object):
         self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
-    def fill_data_groups(self):
+    def fill_data_groups(self, recursive=False):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.
-            Repeated usage may have unexpected results.
+            A bit of a monster of a function. Simplification could be added.
         """
 
         if self.data_directory is not None:
@@ -84,15 +85,16 @@ class DataCollection(object):
             if isinstance(self.data_directory, basestring):
                 if not os.path.exist(self.data_directory):
                     print 'The data directory you have input does not exist!'
-                    exit(1)   
-                directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
+                    exit(1)
+                directory_list = grab_folders(self.data_directory, recrusive=recursive)
             else:
                 directory_list = []
                 for d in self.data_directory:
                     if not os.path.exists(d):
                         print 'WARNING: One of the data directories you have input,', d, 'does not exist!'
-                    directory_list += glob.glob(os.path.join(d, "*/"))
-                directory_list = sorted(directory_list)
+                    directory_list += grab_folders(d, recrusive=recursive)
+
+            directory_list = sorted(directory_list)
 
             for subject_dir in directory_list:
 
@@ -120,7 +122,9 @@ class DataCollection(object):
                     self.data_groups[data_group.name].data = data_group
                     
                     # Affines and Casenames. Also not great praxis.
-                    self.data_groups[data_group.name].data_affines = getattr(open_hdf5.root, data_group.name + '_affines')
+                    if hasattr(open_hdf5.root, data_group.name + '_affines'):
+                        self.data_groups[data_group.name].data_affines = getattr(open_hdf5.root, data_group.name + '_affines')
+
                     self.data_groups[data_group.name].data_casenames = getattr(open_hdf5.root, data_group.name + '_casenames')
 
                     # Unsure if .source is needed. Convenient for now.

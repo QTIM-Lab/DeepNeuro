@@ -5,6 +5,7 @@ import numpy as np
 import os
 import fnmatch
 import sys
+import glob
 
 
 def round_up(x, y):
@@ -28,6 +29,24 @@ def rot90(array, n=1, axis=2):
     array = np.rot90(array, n)
     array = np.swapaxes(array, 2, axis)
     return array
+
+
+def grab_folders(input_directory, regex='*', recursive=False, unique=True):
+
+    """ Slightly redundant with the previous function.
+    """
+
+    if recursive:
+        output_list = []
+        for root, subFolders, files in os.walk(input_directory):
+            for subFolder in subFolders:
+                if fnmatch.fnmatch(subFolder, regex):
+                    if glob.glob(os.path.join(root, subFolder, '*/')) == [] or not unique:
+                        output_list += [os.path.join(root, subFolder)]
+        return output_list
+
+    else:
+        return glob.glob(os.path.join(input_directory, "*/"))
 
 
 def grab_files_recursive(input_directory, regex='*', return_dir=False, return_file=True):

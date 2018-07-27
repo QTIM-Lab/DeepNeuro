@@ -206,7 +206,6 @@ class CycleGan(TensorFlowModel):
 
             convs = []
 
-            # fromRGB
             convs += [lrelu(DnConv(input_image, output_dim=self.discriminator_max_filter / self.discriminator_depth, kernel_size=(1, 1, 1), name='dis_y_rgb_conv_{}'.format(input_image.shape[1])))]
 
             for i in range(self.discriminator_depth - 1):

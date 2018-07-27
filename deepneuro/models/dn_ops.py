@@ -71,7 +71,7 @@ def reshape(backend='tf'):
     return 
 
 
-def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2,  padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
+def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim=2, padding='SAME', initializer_std=0.02, activation=None, name=None, backend='tf'):
 
     op = None
 
@@ -142,12 +142,21 @@ def DnConv(input_, output_dim, kernel_size=(5, 5, 5), stride_size=(2, 2, 2), dim
     return conv
 
 
-def conv2d(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), initializer_std=0.02, padding='SAME', name="conv2d", backend='tf'):
+def conv2d(input_, output_dim, kernel_size=(3, 3), stride_size=(2, 2), initializer_std=0.02, padding='SAME', name="conv2d", backend='tf'):
 
     with tf.variable_scope(name):
 
         w = tf.get_variable('w', [kernel_size[0], kernel_size[1], input_.get_shape()[-1], output_dim], initializer=tf.truncated_normal_initializer(stddev=initializer_std))
         
+        if padding == 'Other':
+            # Not sure what's up with this r n --andrew
+            # Something about going from latent space to first conv.
+            padding = 'VALID'
+            input_ = tf.pad(input_, [[0, 0], [3, 3], [3, 3], [0, 0]], "CONSTANT")
+
+        elif padding == 'VALID':
+            padding = 'VALID'
+
         conv = tf.nn.conv2d(input_, w, strides=[1, stride_size[0], stride_size[1], 1], padding=padding)
         biases = tf.get_variable('biases', [output_dim], initializer=tf.constant_initializer(0.0))
         conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
@@ -165,7 +174,7 @@ def conv3d(input_, output_dim, kernel_size=(3, 3, 3), stride_size=(2, 2, 2), ini
             # Not sure what's up with this r n --andrew
             # Something about going from latent space to first conv.
             padding = 'VALID'
-            input_ = tf.pad(input_, [[0,0], [3, 3], [3, 3], [3, 3], [0, 0]], "CONSTANT")
+            input_ = tf.pad(input_, [[0, 0], [3, 3], [3, 3], [3, 3], [0, 0]], "CONSTANT")
 
         elif padding == 'VALID':
             padding = 'VALID'
@@ -237,6 +246,59 @@ def deconv3d(input_, output_shape, kernel_size=(5, 5, 5), stride_size=(2, 2, 2),
             return deconv, w, biases
         else:
             return deconv
+
+
+def pixel_norm(input, eps=1e-8):
+    return input / tf.sqrt(tf.reduce_mean(input**2, axis=3, keep_dims=True) + eps)
+
+
+def adjusted_std(x, **kwargs): 
+    tf.sqrt(tf.reduce_mean((x - tf.reduce_mean(x, **kwargs)) ** 2, **kwargs) + 1e-8)
+
+
+def minibatch_state_concat(input, averaging='all'):
+
+    # Rewrite this later, and understand it --andrew
+    
+    vals = adjusted_std(input, axis=0, keep_dims=True)
+
+    if averaging == 'all':
+        vals = tf.reduce_mean(vals, keep_dims=True)
+    else:
+        print "nothing"
+
+    multiples = tuple([int(input.shape[0]), 4, 4, 1])
+    vals = tf.tile(vals, multiples=multiples)  # Be aware, need updated TF for this to work.
+    
+    return tf.concat([input, vals], axis=3)
+
+
+# Some of the following functions may be redundant
+
+
+def int_shape(tensor):
+    shape = tensor.get_shape().as_list()
+    return [num if num is not None else -1 for num in shape]
+
+
+def get_conv_shape(tensor):
+    shape = int_shape(tensor)
+    return shape
+
+
+def resize_nearest_neighbor(x, new_size):
+    x = tf.image.resize_nearest_neighbor(x, new_size)
+    return x
+
+
+def upscale(x, scale):
+    _, h, w, _ = get_conv_shape(x)
+    return resize_nearest_neighbor(x, (h * scale, w * scale))
+
+
+def downscale(x, scale):
+    _, h, w, _ = get_conv_shape(x)
+    return resize_nearest_neighbor(x, (h / scale, w / scale))
 
 
 def UpConvolution(deconvolution=False, pool_size=(2, 2, 2), implementation='keras'):
