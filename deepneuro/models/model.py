@@ -87,6 +87,8 @@ class DeepNeuroModel(object):
         self.csv_writer = None
 
         # Generic Model Parameters -- Optional
+        add_parameter(self, kwargs, 'optimizer', 'Adam')
+        add_parameter(self, kwargs, 'learning_rate', 'Adam')
         self.pool_size = pool_size
         self.filter_shape = filter_shape
         self.padding = padding
@@ -264,9 +266,6 @@ class KerasModel(DeepNeuroModel):
         return return_callbacks
 
 
-tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
-
-
 class TensorFlowModel(DeepNeuroModel):
 
     def load(self, kwargs):
@@ -285,18 +284,11 @@ class TensorFlowModel(DeepNeuroModel):
         add_parameter(self, kwargs, 'sess', None)
         add_parameter(self, kwargs, 'saver', None)
 
-        # Basic Model Parameters
-        add_parameter(self, kwargs, 'optimizer', 'Adam')
-        add_parameter(self, kwargs, 'learning_rate', 'Adam')
+        self.tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
 
     def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
 
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
-
-        from pprint import pprint
-        one_item = next(self.training_data_generator)
-        pprint(len(one_item))
-        pprint(one_item[1].shape)
 
     def get_optimizer(self):
 

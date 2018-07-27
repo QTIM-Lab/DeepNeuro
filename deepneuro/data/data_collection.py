@@ -346,7 +346,7 @@ class DataCollection(object):
             preprocessor.execute(self)
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, mode='keras'):
 
         data_groups = self.get_data_groups(data_group_labels)
 
@@ -354,7 +354,10 @@ class DataCollection(object):
             case_list = self.cases
 
         # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
+        if mode == 'keras':
+            data_batch = [[] for data_group in data_groups]
+        else:
+            data_batch = {data_group.name: [] for data_group in data_groups}
 
         while True:
 
@@ -379,16 +382,30 @@ class DataCollection(object):
                     next(recursive_augmentation_generator)
 
                     if yield_data:
-                        # TODO: Do this without if-statement and for loop?
-                        for data_idx, data_group in enumerate(data_groups):
-                            if len(self.augmentations) == 0:
-                                data_batch[data_idx].append(data_group.base_case[0])
-                            else:
-                                data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-                        if len(data_batch[0]) == batch_size:
-                            # More strange indexing behavior. Shape inconsistency to be resolved.
-                            yield tuple([np.stack(data_list) for data_list in data_batch])
-                            data_batch = [[] for data_group in data_groups]
+                        # TODO: This section is terribly complex and repetitive. Revise!
+
+                        if mode == 'keras':
+                            for data_idx, data_group in enumerate(data_groups):
+                                if len(self.augmentations) == 0:
+                                    data_batch[data_idx].append(data_group.base_case[0])
+                                else:
+                                    data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
+                            if len(data_batch[0]) == batch_size:
+                                # More strange indexing behavior. Shape inconsistency to be resolved.
+                                yield tuple([np.stack(data_list) for data_list in data_batch])
+                                data_batch = [[] for data_group in data_groups]
+
+                        else:
+                            for data_idx, data_group in enumerate(data_groups):
+                                if len(self.augmentations) == 0:
+                                    data_batch[data_group.label].append(data_group.base_case[0])
+                                else:
+                                    data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
+                            if len(data_batch[data_groups[0].label]) == batch_size:
+                                # More strange indexing behavior. Shape inconsistency to be resolved.
+                                yield tuple([np.stack(data_list) for data_list in data_batch])
+                                data_batch = {data_group.name: [] for data_group in data_groups}    
+
                     else:
                         yield True
 

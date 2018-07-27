@@ -64,22 +64,11 @@ class CycleGan(TensorFlowModel):
         add_parameter(self, kwargs, 'training_steps_per_epoch', 10)
         add_parameter(self, kwargs, 'training_batch_size', 16)
 
-        # training_parameters = {'input_groups': ['input_modalities', 'ground_truth'],
-        #                 'output_model_filepath': model_file,
-        #                 'training_batch_size': 20,
-        #                 'validation_batch_size': 20,
-        #                 'num_epochs': 100,
-        #                 'training_steps_per_epoch': 10,
-        #                 'validation_steps_per_epoch': 27,
-        #                 'save_best_only': True}
-
         self.build_tensorflow_model(self.training_batch_size)
         self.create_data_generators(training_data_collection, validation_data_collection, training_batch_size=self.training_batch_size, training_steps_per_epoch=self.training_steps_per_epoch)
         self.init_sess()
 
         step = 0
-
-        fd
 
         for epoch in range(self.num_epochs):
 
@@ -166,13 +155,13 @@ class CycleGan(TensorFlowModel):
             self.d_1_vars = [var for var in tf.trainable_variables() if 'discriminator_1' in var.name]
             self.d_2_vars = [var for var in tf.trainable_variables() if 'discriminator_2' in var.name]
 
-            # Create optimizers
+            # Create optimizers -- TODO, this is impossible to read, spaceout.
             if self.train_separately:
-                self.generator_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_1_2, var_list=self.g_1_2_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_2_1, var_list=self.g_2_1_vars)]
-                self.discriminator_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_1, var_list=self.d_1_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_2, var_list=self.d_2_vars)]
+                self.generator_optimizer = [self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_1_2, var_list=self.g_1_2_vars), self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss_2_1, var_list=self.g_2_1_vars)]
+                self.discriminator_optimizer = [self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_1, var_list=self.d_1_vars), self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.D_loss_wgan_2, var_list=self.d_2_vars)]
             else:
-                self.generator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss, var_list=self.g_vars)
-                self.discriminator_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_D_loss, var_list=self.d_vars)
+                self.generator_optimizer = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_G_loss, var_list=self.g_vars)
+                self.discriminator_optimizer = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_D_loss, var_list=self.d_vars)
 
             # Create save/load operation
             self.saver = tf.train.Saver(self.g_vars + self.d_vars)
@@ -182,9 +171,9 @@ class CycleGan(TensorFlowModel):
             self.total_consistency_loss = self.generator_1_consistency_loss + self.generator_2_consistency_loss
 
             if self.train_separately:
-                self.consistency_optimizer = [tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_2_consistency_loss, var_list=self.g_1_2_vars), tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_1_consistency_loss, var_list=self.g_vars)]
+                self.consistency_optimizer = [self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_2_consistency_loss, var_list=self.g_1_2_vars), self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.generator_1_consistency_loss, var_list=self.g_vars)]
             else:
-                self.consistency_optimizer = tf.train.AdamOptimizer(learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_consistency_loss, var_list=self.g_vars)
+                self.consistency_optimizer = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.total_consistency_loss, var_list=self.g_vars)
 
     def wasserstein_loss(self, discriminator_loss, real_data, fake_data, batch_size, gradient_penalty_weight=10, name=''):
 
