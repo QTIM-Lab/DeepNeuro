@@ -48,19 +48,21 @@ def sigmoid(backend='tf'):
         return tf.nn.sigmoid
 
 
-def dense(tensor, output_size, stddev=0.02, bias_start=0.0, with_w=False, backend='tf'):
+def dense(tensor, output_size, stddev=0.02, bias_start=0.0, with_w=False, backend='tf', scope=False):
 
     if backend == 'tf':
 
-        shape = tensor.get_shape().as_list()
+        with tf.variable_scope(scope or "Linear"):
 
-        matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32, tf.contrib.layers.xavier_initializer())
-        bias = tf.get_variable("bias", [output_size], initializer=tf.zeros_initializer())
+            shape = tensor.get_shape().as_list()
 
-        if with_w:
-            return tf.matmul(tensor, matrix) + bias, matrix, bias
-        else:
-            return tf.matmul(tensor, matrix) + bias
+            matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32, tf.contrib.layers.xavier_initializer())
+            bias = tf.get_variable("bias", [output_size], initializer=tf.zeros_initializer())
+
+            if with_w:
+                return tf.matmul(tensor, matrix) + bias, matrix, bias
+            else:
+                return tf.matmul(tensor, matrix) + bias
 
 
 def reshape(backend='tf'):
@@ -95,7 +97,7 @@ def DnMaxPooling(input_, output_dim, kernel_size=(5, 5), stride_size=(2, 2), dim
     return op
 
 
-def DnAveragePooling(input_, ratio=(2, 2, 2), dim=3, backend='tensorflow'):
+def DnAveragePooling(input_, ratio=(2, 2), dim=2, backend='tensorflow'):
 
     op = None
 
@@ -109,7 +111,7 @@ def DnAveragePooling(input_, ratio=(2, 2, 2), dim=3, backend='tensorflow'):
     if backend == 'tensorflow':
 
         if dim == 2:
-            op = tf.nn.avg_pool2d(input_, ksize=[1] + list(ratio) + [1], strides=[1] + list(ratio) + [1], padding='SAME')
+            op = tf.nn.avg_pool(input_, ksize=[1] + list(ratio) + [1], strides=[1] + list(ratio) + [1], padding='SAME')
         if dim == 3:
             op = tf.nn.avg_pool3d(input_, ksize=[1] + list(ratio) + [1], strides=[1] + list(ratio) + [1], padding='SAME')
 
@@ -253,24 +255,24 @@ def pixel_norm(input, eps=1e-8):
 
 
 def adjusted_std(x, **kwargs): 
-    tf.sqrt(tf.reduce_mean((x - tf.reduce_mean(x, **kwargs)) ** 2, **kwargs) + 1e-8)
+    return tf.sqrt(tf.reduce_mean((x - tf.reduce_mean(x, **kwargs)) ** 2, **kwargs) + 1e-8)
 
 
-def minibatch_state_concat(input, averaging='all'):
+def minibatch_state_concat(_input, averaging='all'):
 
     # Rewrite this later, and understand it --andrew
     
-    vals = adjusted_std(input, axis=0, keep_dims=True)
-
+    vals = adjusted_std(_input, axis=0, keep_dims=True)
+    
     if averaging == 'all':
         vals = tf.reduce_mean(vals, keep_dims=True)
     else:
         print "nothing"
 
-    multiples = tuple([int(input.shape[0]), 4, 4, 1])
+    multiples = tuple([int(_input.shape[0]), 4, 4, 1])
     vals = tf.tile(vals, multiples=multiples)  # Be aware, need updated TF for this to work.
     
-    return tf.concat([input, vals], axis=3)
+    return tf.concat([_input, vals], axis=3)
 
 
 # Some of the following functions may be redundant
