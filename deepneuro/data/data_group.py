@@ -46,11 +46,11 @@ class DataGroup(object):
 
         if self.output_shape is None:
             if self.data == {}:
-                print 'No Data!'
+                print('No Data!')
                 return (0,)
             elif self.base_shape is None:
                 if self.source == 'directory':
-                    self.base_shape = read_image_files(self.data.values()[0]).shape
+                    self.base_shape = read_image_files(list(self.data.values())[0]).shape
                 elif self.source == 'storage':
                     self.base_shape = self.data[0].shape
                 self.output_shape = self.base_shape

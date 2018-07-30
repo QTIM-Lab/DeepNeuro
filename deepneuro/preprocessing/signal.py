@@ -61,7 +61,7 @@ class ZeroMeanNormalization(Preprocessor):
             mask_numpy = None
 
         if self.normalize_by_channel:
-            for channel in xrange(data_group.preprocessed_case.shape[-1]):
+            for channel in range(data_group.preprocessed_case.shape[-1]):
                 data_group.preprocessed_case[..., channel] = self.normalize(data_group.preprocessed_case[..., channel], mask_numpy)
         else:
             data_group.preprocessed_case = self.normalize(data_group.preprocessed_case, mask_numpy)

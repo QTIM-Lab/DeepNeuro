@@ -65,7 +65,7 @@ class GAN(DeepNeuroModel):
             filter_nums = []
             kernel_shapes = [(2,2,1), (4,4,2), (8,8,2), (8,8,2)]
 
-            for level in xrange(self.depth):
+            for level in range(self.depth):
 
                 if level == 0:
                     output_shapes += [list(self.input_shape[:-1])]
@@ -79,7 +79,7 @@ class GAN(DeepNeuroModel):
             dense_layer = dense(vector, filter_nums[0] * np.prod(output_shapes[0]), with_w=True)
             convs += [leaky_relu((batch_norm()((reshape()(dense_layer[0], [-1] + output_shapes[0] + [filter_nums[0]])))))]
 
-            for level in xrange(1, self.depth):
+            for level in range(1, self.depth):
 
                 if level == self.depth - 1:
                     convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level-1]], with_w=False, name='g_deconv3d_' + str(level))]
@@ -101,7 +101,7 @@ class GAN(DeepNeuroModel):
                     # convs[-1] = batch_norm()(convs[-1])
 
             for i in convs:
-                print 'GENERATOR', i
+                print('GENERATOR', i)
 
             return convs[-1]
 
@@ -117,18 +117,18 @@ class GAN(DeepNeuroModel):
             filter_nums = []
             kernel_shapes = [(8,8,2), (4,4,2), (2,2,2), (2,2,1)]
 
-            for level in xrange(self.depth):
+            for level in range(self.depth):
 
                 if level == 0:
                     filter_nums += [self.max_filter]
                 else:
                     filter_nums = [round_up(self.max_filter, 2 ** level)] + filter_nums
 
-            print image
+            print(image)
 
-            for level in xrange(self.depth):
+            for level in range(self.depth):
 
-                print 'DISCRIMINATOR', convs
+                print('DISCRIMINATOR', convs)
 
                 if level == 0:
                     convs += [conv3d(image, filter_nums[level], name='d_conv3d_' + str(level), kernel_size=kernel_shapes[level], padding='VALID', stride_size=(2,2,2))]
@@ -225,9 +225,9 @@ class GAN(DeepNeuroModel):
                 with open('loss_log.csv', 'ab') as writefile:
                     csvfile = csv.writer(writefile, delimiter=',')
                     csvfile.writerow(['g_loss', 'd_loss_real', 'd_loss_fake', 'd_loss'])
-                    for epoch in xrange(num_epochs):
+                    for epoch in range(num_epochs):
 
-                        for batch_idx in xrange(training_steps_per_epoch):
+                        for batch_idx in range(training_steps_per_epoch):
 
                             batch_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size)).astype(np.float32)
                             batch_images = next(training_data_generator)[0]
@@ -260,13 +260,13 @@ class GAN(DeepNeuroModel):
                             #     save_images(samples, image_manifold_size(samples.shape[0]), './{}/train_{:02d}_{:04d}.png'.format(config.sample_dir, epoch, idx))
                             #     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss)) 
                           
-                        print("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, batch_idx, time.time() - start_time, errD_fake+errD_real, errG))
+                        print(("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, batch_idx, time.time() - start_time, errD_fake+errD_real, errG)))
                         self.save(epoch)
                         # csvfile.writerow([errG, errD_real, errD_fake, errD_fake+errD_real])
 
                         batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
                         test_output = self.sess.run([self.G], feed_dict={ self.vectors: batch_vector })
-                        for i in xrange(test_output[0].shape[0]):
+                        for i in range(test_output[0].shape[0]):
                             data = test_output[0][i,...,0]
                             save_numpy_2_nifti(data, np.eye(4), 'other_gan_test_' + str(i) + '.nii.gz')
                             if epoch == 0:

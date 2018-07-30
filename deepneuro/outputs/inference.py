@@ -55,7 +55,7 @@ class ModelInference(Output):
             input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
         self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:]  # Weird
-        for i in xrange(len(self.patch_dimensions)):
+        for i in range(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
         output_data = self.predict(input_data)
@@ -158,13 +158,13 @@ class ModelPatchesInference(ModelInference):
         possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
         all_corners = all_corners[possible_corners_slice]
 
-        for rep_idx in xrange(self.patch_overlaps):
+        for rep_idx in range(self.patch_overlaps):
 
             if self.verbose:
                 docker_print('Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...')
 
             corners_grid_shape = [slice(None)]
-            for dim in xrange(all_corners.ndim - 1):
+            for dim in range(all_corners.ndim - 1):
                 corners_grid_shape += [slice(repetition_offsets[dim][rep_idx], corner_data_dims[dim], corner_patch_dims[dim])]
 
             corners_list = all_corners[corners_grid_shape]
@@ -173,7 +173,7 @@ class ModelPatchesInference(ModelInference):
             if self.check_empty_patch:
                 corners_list = self.remove_empty_patches(input_data, corners_list)
 
-            for corner_list_idx in xrange(0, corners_list.shape[0], self.batch_size):
+            for corner_list_idx in range(0, corners_list.shape[0], self.batch_size):
 
                 corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)

@@ -46,7 +46,7 @@ class SkullStrip(Preprocessor):
 
         super(SkullStrip, self).initialize(data_collection)
 
-        for label, data_group in data_collection.data_groups.iteritems():
+        for label, data_group in data_collection.data_groups.items():
             
             reference_filename = data_group.data[data_collection.current_case][self.reference_channel]
 
@@ -115,7 +115,7 @@ class SkullStrip_Model(Preprocessor):
 
         super(SkullStrip_Model, self).initialize(data_collection)
 
-        for label, data_group in data_collection.data_groups.iteritems():
+        for label, data_group in data_collection.data_groups.items():
 
             reference_filename = data_group.data[data_collection.current_case][self.reference_channel[0]]
             self.mask_filename = self.generate_output_filename(reference_filename, self.mask_string)

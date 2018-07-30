@@ -22,7 +22,7 @@ class Segment_GBM_cli(object):
         args = parser.parse_args(sys.argv[1:2])
 
         if not hasattr(self, args.command):
-            print 'Sorry, that\'s not one of the commands.'
+            print('Sorry, that\'s not one of the commands.')
             parser.print_help()
             exit(1)
 

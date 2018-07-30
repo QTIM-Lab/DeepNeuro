@@ -232,7 +232,7 @@ def calc_max_2D_diameter_ellipse(input_data, pixdim=None, affine=None, mask_valu
 
         major_diameter = None
 
-        for z_slice in xrange(component.shape[2]):
+        for z_slice in range(component.shape[2]):
 
             label_slice = component[..., z_slice]
 
@@ -291,7 +291,7 @@ def calc_max_3D_diameter(input_data, pixdim=None, affine=None, mask_value=0, axi
         label_properties = regionprops(component)
         current_major = label_properties[0].major_axis_length
         current_orientation = label_properties[0].orientation
-        print current_orientation
+        print(current_orientation)
 
         if major_diameter is None:
             major_diameter = current_major
@@ -346,7 +346,7 @@ def calc_surface_area(input_data, pixdim=None, affine=None, mask_value=0, mode='
         surface_area = np.sum(edge_image)
 
     else:
-        print 'Warning, mode parameter', mode, 'not available. Returning None.'
+        print('Warning, mode parameter', mode, 'not available. Returning None.')
         surface_area = None
 
     return surface_area

@@ -1,6 +1,6 @@
 
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 current_dir = os.path.realpath(os.path.dirname(__file__))
 
@@ -35,7 +35,7 @@ def load(dataset):
 
     if not os.path.exists(dataset_path):
         try:
-            urllib.urlretrieve(dataset_dict[dataset][1], dataset_path)
+            urllib.request.urlretrieve(dataset_dict[dataset][1], dataset_path)
         except Exception:
             if os.path.exists(dataset_path):
                 os.remove(dataset_path)
