@@ -1,6 +1,8 @@
 
 import os
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 
 current_dir = os.path.realpath(os.path.dirname(__file__))
 
