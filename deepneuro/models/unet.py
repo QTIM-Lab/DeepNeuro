@@ -49,7 +49,7 @@ class UNet(KerasModel):
 
         left_outputs = []
 
-        for level in xrange(self.depth):
+        for level in range(self.depth):
 
             filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
 
@@ -69,7 +69,7 @@ class UNet(KerasModel):
 
         right_outputs = [left_outputs[self.depth - 1]]
 
-        for level in xrange(self.depth):
+        for level in range(self.depth):
 
             filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
 

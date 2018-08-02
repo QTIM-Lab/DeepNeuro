@@ -39,9 +39,9 @@ class LargestComponents(Postprocessor):
         """ I rewrote Ken's script, but I think I made it worse... TODO: Rewrite again? For clarity.
         """
 
-        for batch in xrange(input_data.shape[0]):
-            for channel in xrange(input_data.shape[-1]):
-                    print batch, channel
+        for batch in range(input_data.shape[0]):
+            for channel in range(input_data.shape[-1]):
+                    print(batch, channel)
                     input_data[batch, ..., channel] = largest_components(input_data[batch, ..., channel], component_number=1, connectivity=self.connectivity)
 
         return input_data
@@ -53,7 +53,7 @@ def largest_components(input_data, component_number=1, connectivity=2):
     total_components = np.max(connected_components)
 
     component_sizes = []
-    for i in xrange(1, total_components):
+    for i in range(1, total_components):
         component_sizes += [np.sum(connected_components == i)]
 
     component_rankings = np.argsort(np.array(component_sizes))
@@ -84,9 +84,9 @@ class FillHoles(Postprocessor):
             Or better yet, arbitrary dimension hole_filler.
         """
 
-        for batch in xrange(input_data.shape[0]):
-            for channel in xrange(input_data.shape[-1]):
-                for slice_idx in xrange(input_data.shape[self.slice_dimension]):
+        for batch in range(input_data.shape[0]):
+            for channel in range(input_data.shape[-1]):
+                for slice_idx in range(input_data.shape[self.slice_dimension]):
                         input_data[batch, ..., slice_idx, channel] = binary_fill_holes(input_data[batch, ..., slice_idx, channel]).astype(np.float)
 
         return input_data

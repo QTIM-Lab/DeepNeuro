@@ -50,7 +50,7 @@ def calc_RANO(input_label, affine=None, resolution_x=1, resolution_y=1, resoluti
         if volume_threshold < 10:
             volume_threshold = 10
 
-        for z_slice in xrange(lesion.shape[2]):
+        for z_slice in range(lesion.shape[2]):
 
             lesion_slice = lesion[..., z_slice]
 

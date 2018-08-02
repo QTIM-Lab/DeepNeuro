@@ -48,7 +48,7 @@ def load_model_with_output(model_path=None, model_name=None, outputs=None, postp
         model = load_old_model(load(model_name))
 
     else:
-        print 'Error. No model provided.'
+        print('Error. No model provided.')
         return
     
     for output in outputs:

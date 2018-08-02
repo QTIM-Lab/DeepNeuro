@@ -149,7 +149,7 @@ class Output(object):
 
             else:
 
-                for channel in xrange(output_shape[-1]):
+                for channel in range(output_shape[-1]):
                     return_filenames += [save_numpy_2_nifti(input_data[..., channel], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_channel_' + str(channel)))]
                 self.return_filenames += [return_filenames]
 

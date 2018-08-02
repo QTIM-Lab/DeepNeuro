@@ -41,7 +41,7 @@ class Augmentation(object):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
 
@@ -104,7 +104,7 @@ class Flip_Rotate_2D(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 # Dealing with the time dimension.
                 if len(data_group.get_shape()) < 5:
                     self.flip_axis = 1
@@ -115,7 +115,7 @@ class Flip_Rotate_2D(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
                 data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
@@ -159,7 +159,7 @@ class Shift_Squeeze_Intensities(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
                 data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num] + np.random.uniform(self.shift_amount[0], self.shift_amount[1])
@@ -190,7 +190,7 @@ class Flip_Rotate_3D(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[0])
 
             self.initialization = True
@@ -242,10 +242,10 @@ class Flip_Rotate_3D(Augmentation):
         # Hacky -- the rotation generator is weird here.
         if augmentation_num != self.augmentation_num:
             self.augmentation_num = augmentation_num
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
             self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[self.augmentation_num])
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             data_group.augmentation_cases[augmentation_num + 1] = next(self.rotation_generator[label])
 
@@ -296,12 +296,12 @@ class ExtractPatches(Augmentation):
                     self.region_list[start_idx:end_idx] = [condition_idx] * (end_idx - start_idx)
                     start_idx = end_idx
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 self.input_shape[label] = data_group.get_shape()
-                if label not in self.patch_dimensions.keys():
+                if label not in list(self.patch_dimensions.keys()):
                     # If no provided patch dimensions, just presume the format is [batch, patch_dimensions, channel]
                     # self.patch_dimensions[label] = [-4 + x for x in xrange(len(self.input_shape[label]) - 1)]
-                    self.patch_dimensions[label] = [x + 1 for x in xrange(len(self.input_shape[label]) - 1)]
+                    self.patch_dimensions[label] = [x + 1 for x in range(len(self.input_shape[label]) - 1)]
 
                 # This is a little goofy.
                 self.output_shape[label] = np.array(self.input_shape[label])
@@ -323,7 +323,7 @@ class ExtractPatches(Augmentation):
     def reset(self, augmentation_num=0):
 
         self.patch_regions = []
-        region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in self.data_groups.keys()}
+        region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in list(self.data_groups.keys())}
         for region_condition in self.patch_region_conditions:
             # print 'Extracting region for..', region_condition
             # self.patch_regions += [np.where(region_condition[0](region_input_data))]
@@ -337,7 +337,7 @@ class ExtractPatches(Augmentation):
         if self.patches is None:
             self.generate_patch_corner(augmentation_num)
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             # A bit lengthy. Also unnecessarily rebuffers patches
             data_group.augmentation_cases[augmentation_num + 1] = self.patches[label]
@@ -360,7 +360,7 @@ class ExtractPatches(Augmentation):
             # Tempfix -- Eek
             region = self.patch_regions[self.region_list[1]]
         if len(region[0]) == 0:
-            print 'emergency brain region..'
+            print('emergency brain region..')
             region = np.where(self.data_groups['input_modalities'].augmentation_cases[augmentation_num] != 0)
             self.patch_regions[self.region_list[0]] = region
         
@@ -369,7 +369,7 @@ class ExtractPatches(Augmentation):
         self.patches = {}
 
         # Pad edge patches.
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             # TODO: Some redundancy here
             corner = np.array([d[corner_idx] for d in region])[self.patch_dimensions[label]]
@@ -440,7 +440,7 @@ class MaskData(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 self.mask_channels[label] = np.array(self.mask_channels[label])
                 # self.input_shape[label] = data_group.get_shape()
                 # if label not in self.mask_channels.keys():
@@ -456,12 +456,12 @@ class MaskData(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             if self.random_sample:
                 channels = np.random.choice(self.mask_channels[label], self.num_masked, replace=False)
             else:
-                idx = [x % len(self.mask_channels[label]) for x in xrange(self.iteration, self.iteration + self.num_masked)]
+                idx = [x % len(self.mask_channels[label]) for x in range(self.iteration, self.iteration + self.num_masked)]
                 channels = self.mask_channels[label][idx]
 
             # Currently only works if applied to channels; revisit
@@ -496,7 +496,7 @@ class ChooseData(Augmentation):
 
             self.choices = np.array(self.choices)
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 input_shape = data_group.get_shape()
                 self.output_shape[label] = np.array(input_shape)
                 self.output_shape[label][self.axis[label]] = self.num_chosen
@@ -512,7 +512,7 @@ class ChooseData(Augmentation):
 
         choice = None  # This is messed up
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             # Wrote this function while half-asleep; revisit
             input_data = data_group.augmentation_cases[augmentation_num]
@@ -526,13 +526,13 @@ class ChooseData(Augmentation):
                 if self.random_sample:
                     choice = np.random.choice(choices, self.num_chosen, replace=False)
                 else:
-                    idx = [x % len(choices) for x in xrange(self.iteration, self.iteration + self.num_chosen)]
+                    idx = [x % len(choices) for x in range(self.iteration, self.iteration + self.num_chosen)]
                     choice = choices[idx]
 
             # Temporary
             if input_data.shape[-1] == 6:
                 choice = choice.tolist()
-                choice = range(4) + choice
+                choice = list(range(4)) + choice
 
             choice_slice = [slice(None)] * (len(input_data.shape))
             choice_slice[self.axis[label]] = choice
@@ -562,7 +562,7 @@ class Downsample(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.iteritems():
+            for label, data_group in self.data_groups.items():
                 self.input_shape[label] = data_group.get_shape()
 
             self.initialization = True
@@ -573,12 +573,12 @@ class Downsample(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.iteritems():
+        for label, data_group in self.data_groups.items():
 
             if self.random_sample:
                 axes = np.random.choice(self.axes[label], self.num_downsampled, replace=False)
             else:
-                idx = [x % len(self.axes[label]) for x in xrange(self.iteration, self.iteration + self.num_downsampled)]
+                idx = [x % len(self.axes[label]) for x in range(self.iteration, self.iteration + self.num_downsampled)]
                 axes = np.array(self.axes[label])[idx]
 
             resampled_data = np.copy(data_group.augmentation_cases[augmentation_num])
@@ -589,9 +589,9 @@ class Downsample(Augmentation):
             for axis in axes:
                 static_slice[axis] = slice(0, None, self.factor)
 
-            replaced_slices = [[slice(None)] * (len(resampled_data.shape) - 1) + [slice(self.channel, self.channel + 1)] for i in xrange(self.factor - 1)]
+            replaced_slices = [[slice(None)] * (len(resampled_data.shape) - 1) + [slice(self.channel, self.channel + 1)] for i in range(self.factor - 1)]
             for axis in axes:
-                for i in xrange(self.factor - 1):
+                for i in range(self.factor - 1):
                     replaced_slices[i][axis] = slice(i + 1, None, self.factor)
 
             # Gross. Would be nice to find an elegant/effecient way to do this.

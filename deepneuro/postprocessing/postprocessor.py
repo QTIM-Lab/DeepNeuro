@@ -25,7 +25,7 @@ class Postprocessor(object):
         for return_object in output.return_objects:
 
             if self.verbose:
-                print 'Postprocessing with...', self.name
+                print('Postprocessing with...', self.name)
 
             postprocessed_objects += [self.postprocess(return_object)]
 

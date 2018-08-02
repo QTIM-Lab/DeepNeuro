@@ -65,7 +65,7 @@ class Preprocessor(object):
 
         self.initialize(data_collection)  # TODO: make overwrite work with initializations
 
-        for label, data_group in data_collection.data_groups.iteritems():
+        for label, data_group in data_collection.data_groups.items():
 
             self.generate_output_filenames(data_collection, data_group)
 
@@ -185,7 +185,7 @@ class Preprocessor(object):
         if data_collection.preprocessed_cases[data_collection.current_case].get(self.name) is None:
             data_collection.preprocessed_cases[data_collection.current_case][self.name] = defaultdict(list)
 
-        for label, data_group in data_collection.data_groups.iteritems():
+        for label, data_group in data_collection.data_groups.items():
             if data_collection.preprocessed_cases[data_collection.current_case][self.name].get(label) is None:
                 data_collection.preprocessed_cases[data_collection.current_case][self.name][label] = defaultdict(list)
 

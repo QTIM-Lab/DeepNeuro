@@ -8,7 +8,7 @@ def hdf5_transpose(hdf5, output_hdf5, axes):
     for data_group in open_hdf5.root._f_iter_nodes():
         if '_affines' not in data_group.name and '_casenames' not in data_group.name:
 
-            print data_group.shape
+            print(data_group.shape)
 
     return
 

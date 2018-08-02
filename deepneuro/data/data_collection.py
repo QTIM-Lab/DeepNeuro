@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import os
 import glob
@@ -47,12 +47,12 @@ class DataCollection(object):
 
         # Create DataGroups for this DataCollection.
         for modality_group in case_dict:
-            if modality_group not in self.data_groups.keys():
+            if modality_group not in list(self.data_groups.keys()):
                 self.data_groups[modality_group] = DataGroup(modality_group)
                 self.data_groups[modality_group].source = 'directory'
 
         # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_group_files in case_dict.iteritems():
+        for data_group, modality_group_files in case_dict.items():
 
             self.data_groups[data_group].add_case(case_name, list(modality_group_files))
         
@@ -69,28 +69,28 @@ class DataCollection(object):
         if self.data_directory is not None:
 
             if self.verbose:
-                print 'Gathering image data from...', self.data_directory, '\n'
+                print('Gathering image data from...', self.data_directory, '\n')
 
             # TODO: Add section for spreadsheets.
             # TODO: Add section for values.
 
             # Create DataGroups for this DataCollection.
             for modality_group in self.modality_dict:
-                if modality_group not in self.data_groups.keys():
+                if modality_group not in list(self.data_groups.keys()):
                     self.data_groups[modality_group] = DataGroup(modality_group)
                     self.data_groups[modality_group].source = 'directory'
 
             # Iterate through directories.. Always looking for a better way to check optional list typing.
-            if isinstance(self.data_directory, basestring):
+            if isinstance(self.data_directory, str):
                 if not os.path.exist(self.data_directory):
-                    print 'The data directory you have input does not exist!'
+                    print('The data directory you have input does not exist!')
                     exit(1)   
                 directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
             else:
                 directory_list = []
                 for d in self.data_directory:
                     if not os.path.exists(d):
-                        print 'WARNING: One of the data directories you have input,', d, 'does not exist!'
+                        print('WARNING: One of the data directories you have input,', d, 'does not exist!')
                     directory_list += glob.glob(os.path.join(d, "*/"))
                 directory_list = sorted(directory_list)
 
@@ -101,15 +101,15 @@ class DataCollection(object):
             self.total_cases = len(self.cases)
 
             if self.total_cases == 0:
-                print 'Found zero cases. Are you sure you have the right path for your input directory?'
+                print('Found zero cases. Are you sure you have the right path for your input directory?')
                 exit(1)
             else:
-                print 'Found', self.total_cases, 'number of cases..'
+                print('Found', self.total_cases, 'number of cases..')
 
         elif self.data_storage is not None:
 
             if self.verbose:
-                print 'Gathering image metadata from...', self.data_storage
+                print('Gathering image metadata from...', self.data_storage)
 
             open_hdf5 = tables.open_file(self.data_storage, "r")
 
@@ -127,17 +127,17 @@ class DataCollection(object):
                     self.data_groups[data_group.name].source = 'storage'
 
                     # There's some double-counting here. TODO: revise, chop down one or the other.
-                    self.data_groups[data_group.name].cases = xrange(data_group.shape[0])
+                    self.data_groups[data_group.name].cases = range(data_group.shape[0])
                     self.data_groups[data_group.name].case_num = data_group.shape[0]
                     self.total_cases = data_group.shape[0]
-                    self.cases = range(data_group.shape[0])
+                    self.cases = list(range(data_group.shape[0]))
 
             if self.total_cases == 0:
-                print 'No cases could be extracted from the provided HDF5 file.'
+                print('No cases could be extracted from the provided HDF5 file.')
                 exit(1)
 
         else:
-            print 'No directory or data storage file specified. No data groups can be filled.'
+            print('No directory or data storage file specified. No data groups can be filled.')
 
     def parse_subject_directory(self, subject_dir):
 
@@ -149,13 +149,13 @@ class DataCollection(object):
             return
 
         # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_labels in self.modality_dict.iteritems():
+        for data_group, modality_labels in self.modality_dict.items():
 
             modality_group_files = []
             for modality in modality_labels:
 
                 # Iterate through patterns.. Always looking for a better way to check optional list typing.
-                if isinstance(modality, basestring):
+                if isinstance(modality, str):
                     target_file = glob.glob(os.path.join(subject_dir, modality))
                 else:
                     target_file = []
@@ -165,11 +165,11 @@ class DataCollection(object):
                 if len(target_file) == 1:
                     modality_group_files.append(target_file[0])
                 else:
-                    print 'Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir))
+                    print('Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir)))
                     if len(target_file) == 0:
-                        print 'No file found.\n'
+                        print('No file found.\n')
                     else:
-                        print 'Multiple files found.\n'
+                        print('Multiple files found.\n')
                     return
 
             if len(modality_group_files) == len(modality_labels):
@@ -195,23 +195,23 @@ class DataCollection(object):
 
         augmented_data_groups = []
         for augmentation in augmentations:
-            for data_group_label in augmentation.data_groups.keys():
+            for data_group_label in list(augmentation.data_groups.keys()):
                 augmented_data_groups += [data_group_label]
 
         # Unspecified data groups will be copied along.
-        unaugmented_data_groups = [data_group for data_group in self.data_groups.keys() if data_group not in augmented_data_groups]
+        unaugmented_data_groups = [data_group for data_group in list(self.data_groups.keys()) if data_group not in augmented_data_groups]
         if unaugmented_data_groups != []:
             augmentations += [Copy(data_groups=unaugmented_data_groups)]
 
         for augmentation in augmentations:
-            for data_group_label in augmentation.data_groups.keys():
+            for data_group_label in list(augmentation.data_groups.keys()):
                 augmentation.set_multiplier(multiplier)
                 augmentation.append_data_group(self.data_groups[data_group_label])
 
         # This is so bad.
         for augmentation in augmentations:
             augmentation.initialize_augmentation()
-            for data_group_label in augmentation.data_groups.keys():
+            for data_group_label in list(augmentation.data_groups.keys()):
                 if augmentation.output_shape is not None:
                     self.data_groups[data_group_label].output_shape = augmentation.output_shape[data_group_label]
                 self.data_groups[data_group_label].augmentation_cases.append(None) 
@@ -247,11 +247,11 @@ class DataCollection(object):
         
         # TODO: Add functionality for inserting channel at specific index, multiple channels
 
-        if isinstance(input_data, basestring):
+        if isinstance(input_data, str):
             input_data = read_image_files([input_data])
 
         if data_group_labels is None:
-            data_groups = self.data_groups.values()
+            data_groups = list(self.data_groups.values())
         else:
             data_groups = [self.data_groups[label] for label in data_group_labels]
 
@@ -274,7 +274,7 @@ class DataCollection(object):
         # TODO: Add functionality for removing multiple channels
 
         if data_group_labels is None:
-            data_groups = self.data_groups.values()
+            data_groups = list(self.data_groups.values())
         else:
             data_groups = [self.data_groups[label] for label in data_group_labels]
 
@@ -295,7 +295,7 @@ class DataCollection(object):
         data_groups = self.get_data_groups(data_group_labels)
 
         if self.verbose:
-            print 'Working on image.. ', case
+            print('Working on image.. ', case)
 
         if case != self.current_case:
             self.load_case_data(case)
@@ -363,19 +363,19 @@ class DataCollection(object):
             for case_idx, case_name in enumerate(case_list):
 
                 if verbose:
-                    print 'Working on image.. ', case_idx, 'at', case_name
+                    print('Working on image.. ', case_idx, 'at', case_name)
 
                 try:
                     self.load_case_data(case_name)
                 except KeyboardInterrupt:
                     raise
                 except:
-                    print 'Hit error on', case_name, 'skipping.'
+                    print('Hit error on', case_name, 'skipping.')
                     yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-                for i in xrange(self.multiplier):
+                for i in range(self.multiplier):
                     next(recursive_augmentation_generator)
 
                     if yield_data:
@@ -412,7 +412,7 @@ class DataCollection(object):
             for subaugmentation in current_augmentation['augmentation']:
                 subaugmentation.reset(augmentation_num=augmentation_num)
 
-            for iteration in xrange(current_augmentation['iterations']):
+            for iteration in range(current_augmentation['iterations']):
 
                 for subaugmentation in current_augmentation['augmentation']:
 
@@ -423,10 +423,10 @@ class DataCollection(object):
 
                 # Why did I do this
                 sub_augmentation_iterations = self.multiplier
-                for i in xrange(augmentation_num + 1):
+                for i in range(augmentation_num + 1):
                     sub_augmentation_iterations /= self.augmentations[i]['iterations']
 
-                for i in xrange(int(sub_augmentation_iterations)):
+                for i in range(int(sub_augmentation_iterations)):
                     yield next(lower_recursive_generator)
 
             # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
@@ -448,7 +448,7 @@ class DataCollection(object):
 
             # This is terrible code. TODO: rewrite.
             missing_case = False
-            for data_label, data_group in self.data_groups.iteritems():
+            for data_label, data_group in self.data_groups.items():
                 if data_label not in data_group_labels:
                     continue
                 if case_name not in data_group.cases:
@@ -466,7 +466,7 @@ class DataCollection(object):
 
         # Sanitize Inputs
         if data_group_labels is None:
-            data_group_labels = self.data_groups.keys()
+            data_group_labels = list(self.data_groups.keys())
         if output_filepath is None:
             raise ValueError('No output_filepath provided; data cannot be written.')
 
@@ -485,12 +485,12 @@ class DataCollection(object):
     def create_hdf5_file(self, output_filepath, data_group_labels=None):
 
         if data_group_labels is None:
-            data_group_labels = self.data_groups.keys()
+            data_group_labels = list(self.data_groups.keys())
 
         hdf5_file = tables.open_file(output_filepath, mode='w')
         filters = tables.Filters(complevel=5, complib='blosc')
 
-        for data_label, data_group in self.data_groups.iteritems():
+        for data_label, data_group in self.data_groups.items():
 
             num_cases = self.total_cases * self.multiplier
 
@@ -521,8 +521,8 @@ class DataCollection(object):
 
         storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
-        for i in tqdm(range(total_cases), total=total_cases, unit="datasets"):
-            for j in tqdm(range(self.multiplier), total=self.multiplier, unit="augmentations"):
+        for i in tqdm(list(range(total_cases)), total=total_cases, unit="datasets"):
+            for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations"):
 
                 output = next(storage_data_generator)
 
@@ -535,7 +535,7 @@ class DataCollection(object):
     def get_data_groups(self, data_group_labels=None):
 
         if data_group_labels is None:
-            data_groups = self.data_groups.values()
+            data_groups = list(self.data_groups.values())
         else:
             data_groups = [self.data_groups[label] for label in data_group_labels]
 

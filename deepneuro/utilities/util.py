@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import math
 import numpy as np
@@ -212,6 +212,8 @@ def cli_sanitize(input_filepath, save=False, delete=False):
 def docker_print(*args):
 
     """ Docker doesn't flush stdout in some circumstances, so one needs to do so manually.
+
+    Have not checked behavior after 2to3.
     
     Parameters
     ----------
@@ -219,5 +221,5 @@ def docker_print(*args):
         Print parameters
     """
 
-    print(*args)
+    print(args)
     sys.stdout.flush()

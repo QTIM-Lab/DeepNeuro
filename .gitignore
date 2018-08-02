@@ -11,6 +11,7 @@ checkpoint
 *.csv
 *.DS_Store
 *.gz
+*.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
