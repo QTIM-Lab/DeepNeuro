@@ -12,6 +12,7 @@ from collections import defaultdict
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
+from deepneuro.data.data_load import 
 
 
 class DataCollection(object):
@@ -60,19 +61,34 @@ class DataCollection(object):
         self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
-    def fill_data_groups(self):
+    def fill_data_groups(self, source='files', recursive=False):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.
             Repeated usage may have unexpected results.
         """
 
-        if self.data_directory is not None:
+        if source == 'files':
+
+            # Create DataGroups for this DataCollection.
+            for modality_group in self.modality_dict:
+                if modality_group not in list(self.data_groups.keys()):
+                    self.data_groups[modality_group] = DataGroup(modality_group)
+                    self.data_groups[modality_group].source = 'file'
+
+            extract_files(self, self.modality_dict, case_list=self.case_list)
+
+            self.total_cases = len(self.cases)
+
+            if self.total_cases == 0:
+                print('Found zero cases. Are you sure you have the right path for your input directories?')
+                exit(1)
+            else:
+                print('Found', self.total_cases, 'number of cases..')            
+
+        elif self.data_directory is not None and source == 'directories':
 
             if self.verbose:
                 print('Gathering image data from...', self.data_directory, '\n')
-
-            # TODO: Add section for spreadsheets.
-            # TODO: Add section for values.
 
             # Create DataGroups for this DataCollection.
             for modality_group in self.modality_dict:
@@ -96,7 +112,7 @@ class DataCollection(object):
 
             for subject_dir in directory_list:
 
-                self.parse_subject_directory(subject_dir)
+                self.parse_subject_directory(subject_dir, case_list=self.case_list)
 
             self.total_cases = len(self.cases)
 
@@ -138,48 +154,6 @@ class DataCollection(object):
 
         else:
             print('No directory or data storage file specified. No data groups can be filled.')
-
-    def parse_subject_directory(self, subject_dir):
-
-        """ Broken out from fill_data_groups.
-        """
-
-        # If a predefined case list is provided, only choose these cases.
-        if self.case_list is not None and os.path.basename(subject_dir) not in self.case_list:
-            return
-
-        # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_labels in self.modality_dict.items():
-
-            modality_group_files = []
-            for modality in modality_labels:
-
-                # Iterate through patterns.. Always looking for a better way to check optional list typing.
-                if isinstance(modality, str):
-                    target_file = glob.glob(os.path.join(subject_dir, modality))
-                else:
-                    target_file = []
-                    for m in modality:
-                        target_file += glob.glob(os.path.join(subject_dir, m))
-
-                if len(target_file) == 1:
-                    modality_group_files.append(target_file[0])
-                else:
-                    print('Error loading', modality, 'from', os.path.basename(os.path.dirname(subject_dir)))
-                    if len(target_file) == 0:
-                        print('No file found.\n')
-                    else:
-                        print('Multiple files found.\n')
-                    return
-
-            if len(modality_group_files) == len(modality_labels):
-                self.data_groups[data_group].add_case(os.path.abspath(subject_dir), list(modality_group_files))
-
-        case_name = os.path.abspath(subject_dir)
-        self.cases.append(case_name)
-        self.preprocessed_cases[case_name] = defaultdict(list)
-
-        return
 
     def append_augmentation(self, augmentations, multiplier=None):
 
