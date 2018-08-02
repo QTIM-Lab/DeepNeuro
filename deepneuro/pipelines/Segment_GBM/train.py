@@ -119,7 +119,7 @@ def train_Segment_GBM(data_directory, val_data_directory):
 
 if __name__ == '__main__':
 
-    data_directory = ['/mnt/jk489/sharedfolder/BRATS2017/Train', '/mnt/jk489/sharedfolder/BRATS2017/Train']
+    data_directory = ['~/BRATS2017/Train', '~/BRATS2017/Train']
     val_data_directory = ''
 
     train_Segment_GBM(data_directory, val_data_directory)
