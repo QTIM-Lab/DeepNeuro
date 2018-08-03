@@ -12,7 +12,7 @@ from collections import defaultdict
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
-from deepneuro.data.data_load import 
+from deepneuro.data.data_load import parse_modality_directories, parse_subject_directory
 
 
 class DataCollection(object):
@@ -61,7 +61,7 @@ class DataCollection(object):
         self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
-    def fill_data_groups(self, source='files', recursive=False):
+    def fill_data_groups(self, source='direcotries', recursive=False, identifying_chars=None):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.
             Repeated usage may have unexpected results.
@@ -75,7 +75,7 @@ class DataCollection(object):
                     self.data_groups[modality_group] = DataGroup(modality_group)
                     self.data_groups[modality_group].source = 'file'
 
-            extract_files(self, self.modality_dict, case_list=self.case_list)
+            parse_modality_directories(self, self.modality_dict, case_list=self.case_list, recursive=recursive, identifying_chars=identifying_chars)
 
             self.total_cases = len(self.cases)
 
@@ -112,7 +112,7 @@ class DataCollection(object):
 
             for subject_dir in directory_list:
 
-                self.parse_subject_directory(subject_dir, case_list=self.case_list)
+                parse_subject_directory(subject_dir, case_list=self.case_list)
 
             self.total_cases = len(self.cases)
 
@@ -279,6 +279,23 @@ class DataCollection(object):
                     
         return tuple([data_group.base_case for data_group in data_groups])
 
+    def preprocess(self):
+
+        # print self.preprocessed_cases, self.current_case
+        self.preprocessed_cases[self.current_case] = defaultdict(list)
+
+        data_groups = self.get_data_groups()
+
+        for data_group in data_groups:
+            if self.preprocessors != []:
+                data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
+            else:
+                data_group.preprocessed_case = data_group.data[self.current_case]
+
+        for preprocessor in self.preprocessors:
+            preprocessor.reset()
+            preprocessor.execute(self)
+
     def load_case_data(self, case):
 
         data_groups = self.get_data_groups()
@@ -302,23 +319,6 @@ class DataCollection(object):
             if len(self.augmentations) != 0:
                 data_group.augmentation_cases[0] = data_group.base_case
 
-    def preprocess(self):
-
-        # print self.preprocessed_cases, self.current_case
-        self.preprocessed_cases[self.current_case] = defaultdict(list)
-
-        data_groups = self.get_data_groups()
-
-        for data_group in data_groups:
-            if self.preprocessors != []:
-                data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
-            else:
-                data_group.preprocessed_case = data_group.data[self.current_case]
-
-        for preprocessor in self.preprocessors:
-            preprocessor.reset()
-            preprocessor.execute(self)
-
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):
 
@@ -339,13 +339,14 @@ class DataCollection(object):
                 if verbose:
                     print('Working on image.. ', case_idx, 'at', case_name)
 
-                try:
+                if True:
+                # try:
                     self.load_case_data(case_name)
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    print('Hit error on', case_name, 'skipping.')
-                    yield False
+                # except KeyboardInterrupt:
+                #     raise
+                # except:
+                #     print('Hit error on', case_name, 'skipping.')
+                #     yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
@@ -480,6 +481,7 @@ class DataCollection(object):
 
             # Naming convention is bad here, TODO, think about this.
             data_group.casename_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'casenames']), tables.StringAtom(256), shape=(0, 1), filters=filters, expectedrows=num_cases)
+
             data_group.affine_storage = hdf5_file.create_earray(hdf5_file.root, '_'.join([data_label, 'affines']), tables.Float32Atom(), shape=(0, 4, 4), filters=filters, expectedrows=num_cases)
 
         return hdf5_file

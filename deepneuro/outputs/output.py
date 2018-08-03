@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-from deepneuro.utilities.conversion import save_numpy_2_nifti
-from deepneuro.utilities.util import add_parameter, replace_suffix
+from deepneuro.utilities.conversion import save_numpy_2_nifti, save_data
+from deepneuro.utilities.util import add_parameter, replace_suffix, nifti_splitext
 
 
 class Output(object):
@@ -127,10 +127,15 @@ class Output(object):
             else:
                 output_directory = self.output_directory
 
-            if postprocessor is None:
-                output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string + self.postprocessor_string))
+            if os.path.exists(casename) and not os.path.isdir(casename):
+                output_filename = os.path.basename(nifti_splitext(casename)[0]) + self.output_filename
             else:
-                output_filepath = os.path.join(output_directory, replace_suffix(self.output_filename, '', augmentation_string + postprocessor.postprocessor_string))
+                output_filename = self.output_filename
+
+            if postprocessor is None:
+                output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + self.postprocessor_string))
+            else:
+                output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + postprocessor.postprocessor_string))
 
             # If prediction already exists, skip it. Useful if process is interrupted.
             if os.path.exists(output_filepath) and not self.replace_existing:
@@ -144,11 +149,9 @@ class Output(object):
 
             # If there is only one channel, only save one file.
             if output_shape[-1] == 1 or self.stack_outputs:
-
-                self.return_filenames += [save_numpy_2_nifti(input_data, input_affine, output_filepath=output_filepath)]
+                self.return_filenames += [save_data(input_data, output_filepath, affine=input_affine)]
 
             else:
-
                 for channel in range(output_shape[-1]):
                     return_filenames += [save_numpy_2_nifti(input_data[..., channel], input_affine, output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_channel_' + str(channel)))]
                 self.return_filenames += [return_filenames]

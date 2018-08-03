@@ -28,12 +28,13 @@ class ModelInference(Output):
         # Model Parameters
         add_parameter(self, kwargs, 'input_channels', None)
 
-        if 'channels_dim' in kwargs:
-            self.channels_dim = kwargs.get('channels_dim')
-        elif self.channels_first:
-            self.channels_dim = 1
-        else:
-            self.channels_dim = -1
+        add_parameter(self, kwargs, 'channels_dim', None)
+
+        if self.channels_dim is None:
+            if self.channels_first:
+                self.channels_dim = 1
+            else:
+                self.channels_dim = -1
 
     def process_case(self, input_data):
 
@@ -98,20 +99,9 @@ class ModelPatchesInference(ModelInference):
         add_parameter(self, kwargs, 'check_empty_patch', True)
         add_parameter(self, kwargs, 'pad_borders', True)
 
-        if 'patch_dimensions' in kwargs:
-            self.patch_dimensions = kwargs.get('patch_dimensions')
-        else:
-            # TODO: Set better defaults.
-            if self.channels_first:
-                self.patch_dimensions = [-3, -2, -1]
-            else:
-                self.patch_dimensions = [-4, -3, -2]
+        add_parameter(self, kwargs, 'patch_dimensions', None)
 
-        # A little tricky to not refer to previous paramter as input_patch_dimensions
-        if 'output_patch_dimensions' in kwargs:
-            self.output_patch_dimensions = kwargs.get('output_patch_dimensions')
-        else:
-            self.output_patch_dimensions = self.patch_dimensions
+        add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
 
     def generate(self):
 
@@ -120,6 +110,17 @@ class ModelPatchesInference(ModelInference):
         self.input_patch_shape = self.model.model.layers[0].input_shape
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model.layers[-1].output_shape
+
+        self.input_dim = len(self.input_patch_shape) - 2
+
+        if self.patch_dimensions is None:
+            if self.channels_first:
+                self.patch_dimensions = [-1 * self.input_dim + x for x in range(self.input_dim)]
+            else:
+                self.patch_dimensions = [-1 * self.input_dim + x - 1 for x in range(self.input_dim)]
+
+            if self.output_patch_dimensions is None:
+                self.output_patch_dimensions = self.patch_dimensions
 
         return super(ModelPatchesInference, self).generate()
 
@@ -144,7 +145,7 @@ class ModelPatchesInference(ModelInference):
                 input_slice = [slice(None)] * 2 + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
             else:
                 input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions] + [slice(None)]
-            padded_input_data[input_slice] = input_data
+            padded_input_data[tuple(input_slice)] = input_data
             input_data = padded_input_data
 
         repatched_image = np.zeros(repatched_shape)
@@ -156,7 +157,7 @@ class ModelPatchesInference(ModelInference):
 
         # There must be a better way to round up to an integer..
         possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
-        all_corners = all_corners[possible_corners_slice]
+        all_corners = all_corners[tuple(possible_corners_slice)]
 
         for rep_idx in range(self.patch_overlaps):
 
@@ -167,7 +168,7 @@ class ModelPatchesInference(ModelInference):
             for dim in range(all_corners.ndim - 1):
                 corners_grid_shape += [slice(repetition_offsets[dim][rep_idx], corner_data_dims[dim], corner_patch_dims[dim])]
 
-            corners_list = all_corners[corners_grid_shape]
+            corners_list = all_corners[tuple(corners_grid_shape)]
             corners_list = np.reshape(corners_list, (corners_list.shape[0], -1)).T
 
             if self.check_empty_patch:
@@ -193,7 +194,7 @@ class ModelPatchesInference(ModelInference):
             for idx, dim in enumerate(self.output_patch_dimensions):
                 # Might not work for odd-shaped patches; check.
                 output_slice[dim] = slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, 1)
-            output_data = output_data[output_slice]
+            output_data = output_data[tuple(output_slice)]
 
         return output_data
 
@@ -218,7 +219,7 @@ class ModelPatchesInference(ModelInference):
             for idx, dim in enumerate(self.patch_dimensions):
                 output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] / 2, corner[idx] + self.input_patch_shape[dim] / 2, 1)
 
-            corner_selections += [np.any(input_data[output_slice])]
+            corner_selections += [np.any(input_data[tuple(output_slice)])]
 
         return corners_list[corner_selections]
 
@@ -235,7 +236,7 @@ class ModelPatchesInference(ModelInference):
             for idx, dim in enumerate(self.patch_dimensions):
                 output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] / 2, corner[idx] + self.input_patch_shape[dim] / 2, 1)
 
-            output_patches[corner_idx, ...] = input_data[output_slice]
+            output_patches[corner_idx, ...] = input_data[tuple(output_slice)]
 
         return output_patches
 
@@ -256,8 +257,8 @@ class ModelPatchesInference(ModelInference):
                     # Might not work for odd-shaped patches; check.
                     patch_slice[dim] = slice((self.input_patch_shape[dim] - self.output_patch_shape[dim]) / 2, -(self.input_patch_shape[dim] - self.output_patch_shape[dim]) / 2, 1)
 
-                insert_patch = insert_patch[patch_slice]
+                insert_patch = insert_patch[tuple(patch_slice)]
 
-            input_data[insert_slice] = insert_patch
+            input_data[tuple(insert_slice)] = insert_patch
 
         return input_data

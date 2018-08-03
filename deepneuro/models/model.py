@@ -14,7 +14,7 @@ import tensorflow as tf
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, activation='relu', padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -70,18 +70,19 @@ class DeepNeuroModel(object):
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
         else:
-            self.inputs = input_tensor
+            self.inputs = self.input_tensor
 
         # Generic Model Parameters -- Optional
         self.pool_size = pool_size
         self.filter_shape = filter_shape
         self.padding = padding
         self.downsize_filters_factor = downsize_filters_factor
+        add_parameter(self, kwargs, 'kernel_size', (3, 3, 3))
+        add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
+        add_parameter(self, kwargs, 'activation', 'relu')
 
         self.dropout = dropout
         self.batch_norm = batch_norm
-
-        self.activation = activation
 
         self.initial_learning_rate = initial_learning_rate
 
@@ -179,6 +180,8 @@ class DeepNeuroModel(object):
 
         if training_steps_per_epoch is None:
             self.training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
+        else:
+            self.training_steps_per_epoch = training_steps_per_epoch
 
         self.training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
 
@@ -186,6 +189,8 @@ class DeepNeuroModel(object):
 
             if validation_steps_per_epoch is None:
                 self.validation_steps_per_epoch = validation_data_collection.total_cases // validation_batch_size + 1
+            else:
+                self.validation_steps_per_epoch = validation_steps_per_epoch
 
             self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
 

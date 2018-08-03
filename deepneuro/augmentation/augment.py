@@ -82,6 +82,7 @@ class Flip_Rotate_2D(Augmentation):
         add_parameter(self, kwargs, 'flip', True)
         add_parameter(self, kwargs, 'rotate', True)
         add_parameter(self, kwargs, 'flip_axis', 2)
+        add_parameter(self, kwargs, 'rotate_axis', (1, 2))
 
         # TODO: This is incredibly over-elaborate, return to fix.
         self.transforms_list = []
@@ -98,7 +99,7 @@ class Flip_Rotate_2D(Augmentation):
 
         self.available_transforms = np.array(np.meshgrid(self.flip_list, self.rotations_90)).T.reshape(-1, 2)
         self.total_transforms = self.available_transforms.shape[0]
-        self.augmentation_string = '_roate3D_'
+        self.augmentation_string = '_rotate2D_'
 
     def initialize_augmentation(self):
 
@@ -123,7 +124,7 @@ class Flip_Rotate_2D(Augmentation):
                 data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
-                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis])
+                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis], axes=self.rotate_axis)
 
 
 class Shift_Squeeze_Intensities(Augmentation):
@@ -324,10 +325,11 @@ class ExtractPatches(Augmentation):
 
         self.patch_regions = []
         region_input_data = {label: self.data_groups[label].augmentation_cases[augmentation_num] for label in list(self.data_groups.keys())}
-        for region_condition in self.patch_region_conditions:
-            # print 'Extracting region for..', region_condition
-            # self.patch_regions += [np.where(region_condition[0](region_input_data))]
-            self.patch_regions += self.get_indices_sparse(region_condition[0](region_input_data))
+
+        if self.patch_region_conditions is not None:
+            for region_condition in self.patch_region_conditions:
+                # self.patch_regions += [np.where(region_condition[0](region_input_data))]
+                self.patch_regions += self.get_indices_sparse(region_condition[0](region_input_data))
 
         return
 
@@ -352,19 +354,22 @@ class ExtractPatches(Augmentation):
 
         # acceptable_patch = False
 
-        region = self.patch_regions[self.region_list[self.iteration]]
+        if self.patch_region_conditions is None:
+            corner_idx = None
+        else:
+            region = self.patch_regions[self.region_list[self.iteration]]
 
-        # TODO: Make errors like these more ubiquitous.
-        if len(region[0]) == 0:
-            # raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
-            # Tempfix -- Eek
-            region = self.patch_regions[self.region_list[1]]
-        if len(region[0]) == 0:
-            print('emergency brain region..')
-            region = np.where(self.data_groups['input_modalities'].augmentation_cases[augmentation_num] != 0)
-            self.patch_regions[self.region_list[0]] = region
-        
-        corner_idx = np.random.randint(len(region[0]))
+            # TODO: Make errors like these more ubiquitous.
+            if len(region[0]) == 0:
+                # raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
+                # Tempfix -- Eek
+                region = self.patch_regions[self.region_list[1]]
+            if len(region[0]) == 0:
+                print('emergency brain region..')
+                region = np.where(self.data_groups['input_modalities'].augmentation_cases[augmentation_num] != 0)
+                self.patch_regions[self.region_list[0]] = region
+            
+            corner_idx = np.random.randint(len(region[0]))
 
         self.patches = {}
 
@@ -372,7 +377,10 @@ class ExtractPatches(Augmentation):
         for label, data_group in self.data_groups.items():
 
             # TODO: Some redundancy here
-            corner = np.array([d[corner_idx] for d in region])[self.patch_dimensions[label]]
+            if corner_idx is None:
+                corner = np.array([np.random.randint(0, self.input_shape[label][i]) for i in range(len(self.input_shape[label]))])[self.patch_dimensions[label]]
+            else:
+                corner = np.array([d[corner_idx] for d in region])[self.patch_dimensions[label]]
 
             patch_slice = [slice(None)] * (len(self.input_shape[label]) + 1)
             # Will run into problems with odd-shaped patches.
@@ -381,7 +389,7 @@ class ExtractPatches(Augmentation):
 
             input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
 
-            self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][patch_slice]
+            self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][tuple(patch_slice)]
 
             # More complicated padding needed for center-voxel based patches.
             pad_dims = [(0, 0)] * len(self.patches[label].shape)
