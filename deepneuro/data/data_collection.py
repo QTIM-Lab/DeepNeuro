@@ -320,15 +320,14 @@ class DataCollection(object):
                 data_group.augmentation_cases[0] = data_group.base_case
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False):
 
         data_groups = self.get_data_groups(data_group_labels)
 
         if case_list is None:
             case_list = self.cases
 
-        # Kind of a funny way to do batches
-        data_batch = [[] for data_group in data_groups]
+        data_batch = {data_group.label: [] for data_group in data_groups}
 
         while True:
 
@@ -337,7 +336,7 @@ class DataCollection(object):
             for case_idx, case_name in enumerate(case_list):
 
                 if verbose:
-                    print('Working on image.. ', case_idx, 'at', case_name)
+                    print 'Working on image.. ', case_idx, 'at', case_name
 
                 if True:
                 # try:
@@ -345,25 +344,36 @@ class DataCollection(object):
                 # except KeyboardInterrupt:
                 #     raise
                 # except:
-                #     print('Hit error on', case_name, 'skipping.')
+                #     print 'Hit error on', case_name, 'skipping.'
                 #     yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-                for i in range(self.multiplier):
+                for i in xrange(self.multiplier):
                     next(recursive_augmentation_generator)
 
                     if yield_data:
-                        # TODO: Do this without if-statement and for loop?
+                        # TODO: This section is terribly complex and repetitive. Revise!
+
                         for data_idx, data_group in enumerate(data_groups):
                             if len(self.augmentations) == 0:
-                                data_batch[data_idx].append(data_group.base_case[0])
+                                data_batch[data_group.label].append(data_group.base_case[0])
                             else:
-                                data_batch[data_idx].append(data_group.augmentation_cases[-1][0])
-                        if len(data_batch[0]) == batch_size:
-                            # More strange indexing behavior. Shape inconsistency to be resolved.
-                            yield tuple([np.stack(data_list) for data_list in data_batch])
-                            data_batch = [[] for data_group in data_groups]
+                                data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
+
+                        if len(data_batch[data_groups[0].label]) == batch_size:
+                            
+                            for label in data_batch:
+                                data_batch[label] = np.stack(data_batch[label])
+                            
+                            if just_one_batch:
+                                while True:
+                                    yield data_batch
+                            else:
+                                yield data_batch
+
+                            data_batch = {data_group.name: [] for data_group in data_groups}    
+
                     else:
                         yield True
 
@@ -498,7 +508,7 @@ class DataCollection(object):
         storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
         for i in tqdm(list(range(total_cases)), total=total_cases, unit="datasets"):
-            for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations"):
+            for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations", disable=(self.multiplier==1)):
 
                 output = next(storage_data_generator)
 

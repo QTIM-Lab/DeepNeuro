@@ -30,7 +30,6 @@ class UNet(KerasModel):
 
         super(UNet, self).load(kwargs)
 
-        add_parameter(self, kwargs, 'dim', len(self.input_shape) - 1)
         add_parameter(self, kwargs, 'depth', 4)
         add_parameter(self, kwargs, 'max_filter', 512)
 

@@ -8,7 +8,7 @@ import lycon
 import subprocess
 
 from collections import defaultdict
-from scipy import ndimage
+from scipy.misc import imsave, imread
 # from subprocess import call, PIPE
 
 from deepneuro.utilities.util import grab_files_recursive, quotes
@@ -253,7 +253,7 @@ def image_other_2_numpy(input_image, return_all=False):
         in loading images.
     """
 
-    output_array = ndimage.imread(input_image)
+    output_array = imread(input_image)
 
     if return_all:
         return output_array, None, None
@@ -336,7 +336,6 @@ def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepa
 
 def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
 
-    print input_numpy.shape, output_filepath
     lycon.save(output_filepath, input_numpy)
 
     return output_filepath
@@ -344,7 +343,7 @@ def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
 
 def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
 
-    lycon.save(input_numpy, os.path.abspath(output_filepath))
+    imsave(os.path.abspath(output_filepath), input_numpy)
 
     return output_filepath
 

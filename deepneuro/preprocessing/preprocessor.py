@@ -25,6 +25,7 @@ class Preprocessor(object):
         add_parameter(self, kwargs, 'preprocessor_string', '_convert')
 
         # Internal Parameters
+        add_parameter(self, kwargs, 'data_groups', None)
         add_parameter(self, kwargs, 'verbose', True)
 
         # Derived Parameters
@@ -65,34 +66,26 @@ class Preprocessor(object):
 
         self.initialize(data_collection)  # TODO: make overwrite work with initializations
 
-        for label, data_group in data_collection.data_groups.items():
+        for label, data_group in self.data_groups.items():
 
             self.generate_output_filenames(data_collection, data_group)
+
+            if self.array_input:
+                data_group.convert_to_array_data()
+            else:
+                # This will have errors -- TODO
+                self.save_to_file(data_group)
+                data_group.preprocessed_case = self.output_filenames
 
             self.preprocess(data_group)
 
             if self.save_output:
                 self.save_to_file(data_group)
 
-            # Duplicated code here. In general, this is pretty messy.
-            if self.next_prepreprocessor is not None:
-                if self.next_prepreprocessor.array_input:
-                    self.convert_to_array_data(data_group)
-                else:
-                    self.save_to_file(data_group)
-                    data_group.preprocessed_case = self.output_filenames
-
             if self.return_array:
                 self.convert_to_array_data(data_group)
 
             self.store_outputs(data_collection, data_group)
-
-    def convert_to_array_data(self, data_group):
-
-        data_group.preprocessed_case, affine = read_image_files(self.output_data, return_affine=True)
-
-        if affine is not None:
-            data_group.preprocessed_affine = affine
 
     def convert_to_filename_data(self, data_group):
 
@@ -197,6 +190,12 @@ class Preprocessor(object):
         if self.order_index != len(data_collection.preprocessors) - 1:
             self.next_prepreprocessor = data_collection.preprocessors[self.order_index + 1]
 
+        if self.data_groups is None:
+            self.data_groups = data_collection.data_groups
+        else:
+            self.data_groups = {label: data_group for label, data_group in data_collection.data_groups.items() if label in self.data_groups}
+
+
         return
 
     def reset(self):
@@ -204,9 +203,6 @@ class Preprocessor(object):
         self.outputs = defaultdict(list)
 
         return
-
-    def append_data_group(self, data_group):
-        self.data_groups[data_group.label] = data_group
 
 
 class DICOMConverter(Preprocessor):

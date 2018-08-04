@@ -145,6 +145,8 @@ class Output(object):
             output_shape = input_data.shape
             input_data = np.squeeze(input_data)
 
+            print np.unique(input_data)
+
             return_filenames = []
 
             # If there is only one channel, only save one file.

@@ -8,6 +8,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
+from deepneuro.utilities.visualize import check_data
 
 import tensorflow as tf
 
@@ -66,6 +67,7 @@ class DeepNeuroModel(object):
         # Inputs
         add_parameter(self, kwargs, 'input_shape', (32, 32, 32, 1))
         add_parameter(self, kwargs, 'input_tensor', None)
+        add_parameter(self, kwargs, 'dim', len(self.input_shape) - 1)
 
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
@@ -80,6 +82,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'kernel_size', (3, 3, 3))
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
+
 
         self.dropout = dropout
         self.batch_norm = batch_norm
@@ -128,37 +131,9 @@ class DeepNeuroModel(object):
 
         return self.model
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','early_stopping','log'], **kwargs):
+    def train(self):
 
-        """
-        input_groups : list of strings, optional
-            Specifies which named data groups (e.g. "ground_truth") enter which input
-            data slot in your model.
-        """
-
-        # Todo: investigate call-backs more thoroughly.
-        # Also, maybe something more general for the difference between training and validation.
-        # Todo: list-checking for callbacks
-
-        if training_steps_per_epoch is None:
-            training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
-
-        training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
-
-        if validation_data_collection is None:
-
-            self.model.fit_generator(generator=training_data_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
-
-        else:
-
-            if validation_steps_per_epoch is None:
-                validation_steps_per_epoch = validation_data_collection.total_cases // validation_batch_size + 1
-
-            validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
-
-            self.model.fit_generator(generator=training_data_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=validation_data_generator, validation_steps=validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
-
-        # self.model.save(output_model_filepath)
+        return
 
     def append_output(self, outputs):
 
@@ -194,10 +169,26 @@ class DeepNeuroModel(object):
 
             self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
 
+    def predict(self, input_data):
+
+        return
+
+    def fit_one_batch(self, training_data_collection, output, output_directory):
+
+        return
+
 
 class KerasModel(DeepNeuroModel):
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','early_stopping','log'], **kwargs):
+    def load(self, kwargs):
+
+        super(KerasModel, self).load(kwargs)
+
+        # Keras Input Parameters
+        add_parameter(self, kwargs, 'input_data', 'input_modalities')
+        add_parameter(self, kwargs, 'targets', 'ground_truth')
+
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','log'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -212,12 +203,58 @@ class KerasModel(DeepNeuroModel):
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 
         if validation_data_collection is None:
-
             self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
 
         else:
-
             self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+
+        return
+
+    def fit_one_batch(self, training_data_collection, output_model_filepath=None, input_groups=None, output_directory=None, callbacks=['save_model', 'log'], training_batch_size=16, training_steps_per_epoch=None, num_epochs=None, show_results=True, **kwargs):
+
+        one_batch_generator = self.keras_generator(training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, just_one_batch=True, batch_size=training_batch_size))
+
+        if training_steps_per_epoch is None:
+            training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
+
+        try:
+            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+        except KeyboardInterrupt:
+           pass
+        except:
+            raise
+
+        one_batch = next(one_batch_generator)
+        prediction = self.predict(one_batch[0])
+
+        if show_results:
+            check_data(output_data={self.input_data: one_batch[0], self.targets: one_batch[1], 'prediction': prediction}, batch_size=training_batch_size)
+
+        return
+
+    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None):
+
+        super(KerasModel, self).create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+
+        self.training_data_generator = self.keras_generator(self.training_data_generator)
+
+        if self.validation_data_generator is not None:
+            self.validation_data_generator = self.keras_generator(self.validation_data_generator)
+
+        return
+
+    def keras_generator(self, data_generator, input_data='input_modalities', targets='ground_truth'):
+
+        while True:
+            data = next(data_generator)
+            keras_data = (data[self.input_data], data[self.targets])
+            yield keras_data
+
+        return
+
+    def predict(self, input_data):
+
+        return self.model.predict(input_data)
 
 
 tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
@@ -226,17 +263,6 @@ tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
 class TensorFlowModel(DeepNeuroModel):
 
     def load(self, kwargs):
-
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
 
         add_parameter(self, kwargs, 'sess', None)
 

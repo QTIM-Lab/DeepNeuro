@@ -67,10 +67,10 @@ class ModelInference(Output):
 
         self.return_objects.append(output_data)
 
-    def predict(self, input_data, model, batch_size):
+    def predict(self, input_data):
 
         # Vanilla prediction case is obivously not fleshed out.
-        prediction = model.predict(input_data)
+        prediction = self.model.predict(input_data)
 
         return prediction
 
@@ -179,7 +179,7 @@ class ModelPatchesInference(ModelInference):
                 corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
                 
-                prediction = self.model.model.predict(input_patches)
+                prediction = self.model.predict(input_patches)
                 
                 self.insert_patch(repatched_image, prediction, corner_batch)
 

@@ -100,6 +100,13 @@ class DataGroup(object):
 
         return None
 
+    def convert_to_array_data(self):
+
+        self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
+
+        if affine is not None:
+            self.preprocessed_affine = affine
+
     # @profile
     def write_to_storage(self):
 
