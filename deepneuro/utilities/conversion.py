@@ -3,13 +3,12 @@ import os
 import numpy as np
 import nibabel as nib
 import nrrd
-import dicom
+import pydicom
 import lycon
 import subprocess
 
 from collections import defaultdict
 from scipy.misc import imsave, imread
-# from subprocess import call, PIPE
 
 from deepneuro.utilities.util import grab_files_recursive, quotes
 
@@ -60,7 +59,7 @@ def read_image_files(image_files, return_affine=False, channels=True, batch=Fals
 
 
 def get_dicom_pixel_array(dicom, filename):
-    return dicom.pixel_array
+    return pydicom.pixel_array
 
 
 def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_all=False):
@@ -81,7 +80,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
     dicom_files = []
     for file in found_files:
         try:
-            temp_dicom = dicom.read_file(file)
+            temp_dicom = pydicom.read_file(file)
             dicom_files += [[file, temp_dicom.data_element('SeriesInstanceUID').value]]
         except:
             continue
@@ -108,7 +107,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
         # try:
             # Grab DICOMs for a certain Instance
             current_files = unique_dicoms[UID]
-            current_dicoms = [dicom.read_file(dcm) for dcm in unique_dicoms[UID]]
+            current_dicoms = [pydicom.read_file(dcm) for dcm in unique_dicoms[UID]]
             # print current_files
 
             # Sort DICOMs by Instance.

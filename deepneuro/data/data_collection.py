@@ -372,7 +372,7 @@ class DataCollection(object):
                             else:
                                 yield data_batch
 
-                            data_batch = {data_group.name: [] for data_group in data_groups}    
+                            data_batch = {data_group.label: [] for data_group in data_groups}    
 
                     else:
                         yield True

@@ -36,7 +36,7 @@ class ModelInference(Output):
             else:
                 self.channels_dim = -1
 
-    def process_case(self, input_data):
+    def process_case(self, input_data, model=None):
 
         # A little bit strange to access casename this way. Maybe make it an optional
         # return of the generator.
@@ -46,26 +46,28 @@ class ModelInference(Output):
         # If an image is being repatched, its output shape is not certain. We attempt to infer it from
         # the input data. This is wonky. Move this to PatchInference, maybe.
 
+        if model is not None:
+            self.model = model
+
         if self.channels_first:
-            input_data = np.swapaxes(input_data[0], 1, -1)
-        else:
-            # Temporary code. In the future, make sure code works with multiple and specific inputs.
-            input_data = input_data[0]
+            input_data = np.swapaxes(input_data, 1, -1)
 
         if self.input_channels is not None:
             input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
-        self.output_shape = [1] + list(self.model.model.layers[-1].output_shape)[1:]  # Weird
+        self.output_shape = [1] + list(self.model.model_output_shape)[1:]  # Weird
         for i in range(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
-        output_data = self.predict(input_data)
+        output_data = self.predict(input_data, model)
 
         # Will fail for time-data.
         if self.channels_first:
             output_data = np.swapaxes(output_data, 1, -1)
 
         self.return_objects.append(output_data)
+
+        return output_data
 
     def predict(self, input_data):
 
@@ -103,13 +105,30 @@ class ModelPatchesInference(ModelInference):
 
         add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
 
-    def generate(self):
+    def process_case(self, input_data, model=None):
+
+        # A little bit strange to access casename this way. Maybe make it an optional
+        # return of the generator.
+
+        # Note that input_modalities as the first input is hard-coded here. Very fragile.
+
+        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
+        # the input data. This is wonky. Move this to PatchInference, maybe.
+
+        if model is not None:
+            self.model = model
+
+        if self.channels_first:
+            input_data = np.swapaxes(input_data, 1, -1)
+
+        if self.input_channels is not None:
+            input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
         # Determine patch shape. Currently only extends to spatial patching.
         # This leading dims business has got to have a better solution..
-        self.input_patch_shape = self.model.model.layers[0].input_shape
+        self.input_patch_shape = self.model.model_input_shape
         if self.output_patch_shape is None:
-            self.output_patch_shape = self.model.model.layers[-1].output_shape
+            self.output_patch_shape = self.model.model_output_shape
 
         self.input_dim = len(self.input_patch_shape) - 2
 
@@ -122,9 +141,21 @@ class ModelPatchesInference(ModelInference):
             if self.output_patch_dimensions is None:
                 self.output_patch_dimensions = self.patch_dimensions
 
-        return super(ModelPatchesInference, self).generate()
+        self.output_shape = [1] + list(self.model.model_output_shape)[1:]  # Weird
+        for i in range(len(self.patch_dimensions)):
+            self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
-    def predict(self, input_data):
+        output_data = self.predict(input_data, model)
+
+        # Will fail for time-data.
+        if self.channels_first:
+            output_data = np.swapaxes(output_data, 1, -1)
+
+        self.return_objects.append(output_data)
+
+        return output_data
+
+    def predict(self, input_data, model=None):
 
         repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
 

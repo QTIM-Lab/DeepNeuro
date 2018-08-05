@@ -28,7 +28,7 @@ class MinimalKerasCNN(KerasModel):
 
         """
 
-        super(UNet, self).load(kwargs)
+        super(MinimalKerasCNN, self).load(kwargs)
 
         add_parameter(self, kwargs, 'filter_size', 1)
 
@@ -54,5 +54,7 @@ class MinimalKerasCNN(KerasModel):
             self.model = Model(inputs=self.inputs, outputs=act)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
                           metrics=['categorical_accuracy'])
+
+        super(MinimalKerasCNN, self).build()
 
         return self.model

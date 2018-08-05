@@ -73,7 +73,7 @@ class UNet(KerasModel):
             filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
 
             if level > 0:
-                right_outputs += [DnUpsampling(pool_size=self.pool_size, dim=self.dim, backend='keras')(right_outputs[level - 1])]
+                right_outputs += [DnUpsampling(right_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras')]
                 right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=self.dim + 1)
                 right_outputs[level] = DnConv(right_outputs[level], filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_1'.format(level), backend='keras')
                 right_outputs[level] = DnConv(right_outputs[level], int(filter_num / 2), self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_2'.format(level), backend='keras')
@@ -96,15 +96,22 @@ class UNet(KerasModel):
             self.model = Model(inputs=self.inputs, outputs=output_layer)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-        if self.output_type == 'binary_label':
+        if self.output_type == 'dice':
             act = Activation('sigmoid')(output_layer)
             self.model = Model(inputs=self.inputs, outputs=act)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
+        if self.output_type == 'binary_label':
+            act = Activation('sigmoid')(output_layer)
+            self.model = Model(inputs=self.inputs, outputs=act)
+            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
 
         if self.output_type == 'categorical_label':
             act = Activation('softmax')(output_layer)
             self.model = Model(inputs=self.inputs, outputs=act)
             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
                           metrics=['categorical_accuracy'])
+
+        super(UNet, self).build()
 
         return self.model

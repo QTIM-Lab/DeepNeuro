@@ -4,11 +4,11 @@
 
 from keras.engine import Input
 from keras.models import load_model
-from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
 from deepneuro.utilities.visualize import check_data
+from deepneuro.models.callbacks import get_callbacks
 
 import tensorflow as tf
 
@@ -83,7 +83,6 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
 
-
         self.dropout = dropout
         self.batch_norm = batch_norm
 
@@ -140,6 +139,10 @@ class DeepNeuroModel(object):
         for output in outputs:
             self.outputs += [output]
 
+    def clear_outputs(self):
+
+        self.outputs = []
+
     def generate_outputs(self, data_collection, case=None):
 
         callbacks = []
@@ -169,6 +172,10 @@ class DeepNeuroModel(object):
 
             self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
 
+        else:
+
+            self.validation_data_generator = None
+
     def predict(self, input_data):
 
         return
@@ -188,7 +195,7 @@ class KerasModel(DeepNeuroModel):
         add_parameter(self, kwargs, 'input_data', 'input_modalities')
         add_parameter(self, kwargs, 'targets', 'ground_truth')
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model','log'], **kwargs):
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model', 'log'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -203,10 +210,10 @@ class KerasModel(DeepNeuroModel):
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 
         if validation_data_collection is None:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, batch_size=training_batch_size, model=self, **kwargs))
 
         else:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, model=self, batch_size=training_batch_size, **kwargs))
 
         return
 
@@ -218,9 +225,9 @@ class KerasModel(DeepNeuroModel):
             training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
 
         try:
-            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, kwargs=kwargs))
+            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, model=self, batch_size=training_batch_size, **kwargs))
         except KeyboardInterrupt:
-           pass
+            pass
         except:
             raise
 
@@ -256,6 +263,11 @@ class KerasModel(DeepNeuroModel):
 
         return self.model.predict(input_data)
 
+    def build(self):
+
+        self.model_input_shape = self.model.layers[0].input_shape
+        self.model_output_shape = self.model.layers[-1].output_shape
+
 
 tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
 
@@ -282,28 +294,6 @@ class TensorFlowModel(DeepNeuroModel):
     def get_optimizer(self):
 
         return
-
-
-def get_callbacks(model_file, callbacks=['save_model','early_stopping','log'], monitor='val_loss', kwargs={}):
-
-    """ Temporary function; callbacks will be dealt with in more detail in the future.
-        Very disorganized currently. Do with dictionary. 
-    """
-
-    if 'save_best_only' in kwargs:
-        save_best_only = kwargs.get('save_best_only')
-    else:
-        save_best_only = True
-
-    return_callbacks = []
-    for callback in callbacks:
-        if callback == 'save_model':
-            return_callbacks += [ModelCheckpoint(model_file, monitor=monitor, save_best_only=save_best_only)]
-        if callback == 'early_stopping':
-            return_callbacks += [EarlyStopping(monitor=monitor, patience=10)]
-        if callback == 'log':
-            return_callbacks += [CSVLogger(model_file.replace('.h5','.log'))]
-    return return_callbacks
 
 
 def load_old_model(model_file, backend='keras'):

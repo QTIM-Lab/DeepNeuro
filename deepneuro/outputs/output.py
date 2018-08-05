@@ -12,6 +12,7 @@ class Output(object):
         # Data Parameters
         add_parameter(self, kwargs, 'data_collection', None)
         add_parameter(self, kwargs, 'inputs', ['input_modalities'])
+        add_parameter(self, kwargs, 'ground_truth', ['ground_truth'])
 
         # Saving Parameters
         add_parameter(self, kwargs, 'save_to_file', True)
@@ -83,7 +84,7 @@ class Output(object):
             while input_data is not None:
                 self.return_objects = []
                 self.return_filenames = []
-                self.process_case(input_data)
+                self.process_case(input_data[self.inputs[0]])
                 self.postprocess()
                 input_data = next(data_generator)
 

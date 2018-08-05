@@ -108,7 +108,12 @@ class RangeNormalization(Normalization):
             else:
                 input_intensity_range = self.input_intensity_range
 
-            normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 
+            if input_intensity_range[0] == input_intensity_range[1]:
+                normalize_numpy[:] = self.intensity_range[0]
+                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum.')
+
+            else:
+                normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 
             
             if self.input_intensity_range is not None:
                 normalize_numpy[normalize_numpy < self.intensity_range[0]] = self.intensity_range[0]
@@ -116,9 +121,6 @@ class RangeNormalization(Normalization):
        
         else:
             raise NotImplementedError
-
-        for channel in range(normalize_numpy.shape[-1]):
-            print np.min(normalize_numpy[..., channel]), np.max(normalize_numpy[..., channel])
 
         return normalize_numpy
 
