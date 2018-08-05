@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from deeepneuro.models.dn_ops import DnConv, DnPixelNorm, DnUpsampling
-from deeepneuro.model.ops import leaky_relu
+from deepneuro.models.dn_ops import DnConv, DnPixelNorm, DnUpsampling
+from deepneuro.models.ops import leaky_relu
 
 
 def generator(model, latent_var, depth=1, initial_size=4, reuse=False, name=None):
@@ -10,7 +10,8 @@ def generator(model, latent_var, depth=1, initial_size=4, reuse=False, name=None
 
     with tf.variable_scope(name) as scope:
 
-        scope.reuse_variables()
+        if reuse:
+            scope.reuse_variables()
 
         convs += [tf.reshape(latent_var, [model.training_batch_size] + [1] * model.dim + [model.latent_size])]
 
@@ -23,13 +24,13 @@ def generator(model, latent_var, depth=1, initial_size=4, reuse=False, name=None
 
         for i in range(depth):
 
-            convs += [DnUpsampling(convs[-1], 2)]
+            convs += [DnUpsampling(convs[-1], (2,) * model.dim, dim=model.dim)]
             convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), stride_size=(1,) * model.dim, name='generator_conv_1_depth_{}_{}'.format(i, convs[-1].shape[1]), dim=model.dim)), dim=model.dim)
 
             convs += [DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), stride_size=(1,) * model.dim, name='generator_conv_2_depth_{}_{}'.format(i, convs[-1].shape[1]), dim=model.dim)), dim=model.dim)]
 
         #To RGB
-        convs += [DnConv(convs[-1], output_dim=model.channels, kernel_size=(1) * model.dim, stride_size=(1,) * model.dim, name='generator_y_final_conv_{}'.format(convs[-1].shape[1]), dim=model.dim)]
+        convs += [DnConv(convs[-1], output_dim=model.channels, kernel_size=(1,) * model.dim, stride_size=(1,) * model.dim, name='generator_y_final_conv_{}'.format(convs[-1].shape[1]), dim=model.dim)]
 
         return convs[-1]
 

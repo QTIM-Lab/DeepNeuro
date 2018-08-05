@@ -508,7 +508,7 @@ class DataCollection(object):
         storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
         for i in tqdm(list(range(total_cases)), total=total_cases, unit="datasets"):
-            for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations", disable=(self.multiplier==1)):
+            for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations", disable=(self.multiplier == 1)):
 
                 output = next(storage_data_generator)
 

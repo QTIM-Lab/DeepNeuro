@@ -2,6 +2,11 @@
     pre-built model chunks that may be useful across all models.
 """
 
+import os
+import tensorflow as tf
+import csv
+
+from shutil import rmtree
 from keras.engine import Input
 from keras.models import load_model
 
@@ -9,8 +14,6 @@ from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
 from deepneuro.utilities.visualize import check_data
 from deepneuro.models.callbacks import get_callbacks
-
-import tensorflow as tf
 
 
 class DeepNeuroModel(object):
@@ -68,6 +71,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'input_shape', (32, 32, 32, 1))
         add_parameter(self, kwargs, 'input_tensor', None)
         add_parameter(self, kwargs, 'dim', len(self.input_shape) - 1)
+        add_parameter(self, kwargs, 'channels', self.input_shape[-1])
 
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
@@ -79,14 +83,31 @@ class DeepNeuroModel(object):
         self.filter_shape = filter_shape
         self.padding = padding
         self.downsize_filters_factor = downsize_filters_factor
+        add_parameter(self, kwargs, 'max_filter', 512)
         add_parameter(self, kwargs, 'kernel_size', (3, 3, 3))
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
+        add_parameter(self, kwargs, 'optimizer', 'Adam')
 
         self.dropout = dropout
         self.batch_norm = batch_norm
 
         self.initial_learning_rate = initial_learning_rate
+
+        # Logging Parameters - Temporary
+        add_parameter(self, kwargs, 'output_log_file', 'deepneuro_log.csv')
+
+        # DeepNeuro Parameters
+        add_parameter(self, kwargs, 'input_data', 'input_data')
+        add_parameter(self, kwargs, 'targets', 'ground_truth')
+
+        # Misc
+        add_parameter(self, kwargs, 'verbose', True)
+        add_parameter(self, kwargs, 'hyperverbose', False)
+
+        # Derived Parameters
+        self.write_file = None
+        self.csv_writer = None
 
         self.num_outputs = num_outputs
         self.output_type = output_type
@@ -180,6 +201,32 @@ class DeepNeuroModel(object):
 
         return
 
+    def log(self, inputs=None, headers=None, verbose=False):
+
+        if self.write_file is None:
+            self.write_file = open(self.output_log_file, 'w')
+            self.csv_writer = csv.writer(self.write_file)
+            if headers is not None:
+                self.csv_writer.writerow(headers)
+
+        if inputs is not None:
+            self.csv_writer.writerow(inputs)
+
+        if verbose:
+            for input_idx, single_input in enumerate(inputs):
+                if headers is None:
+                    print('Logging Output', input_idx, single_input)
+                else:
+                    print(headers[input_idx], single_input)
+
+        return
+
+    def close_model(self):
+
+        if self.write_file is not None:
+            if self.write_file.open:
+                self.write_file.close()
+
     def fit_one_batch(self, training_data_collection, output, output_directory):
 
         return
@@ -190,10 +237,6 @@ class KerasModel(DeepNeuroModel):
     def load(self, kwargs):
 
         super(KerasModel, self).load(kwargs)
-
-        # Keras Input Parameters
-        add_parameter(self, kwargs, 'input_data', 'input_modalities')
-        add_parameter(self, kwargs, 'targets', 'ground_truth')
 
     def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model', 'log'], **kwargs):
 
@@ -269,31 +312,67 @@ class KerasModel(DeepNeuroModel):
         self.model_output_shape = self.model.layers[-1].output_shape
 
 
-tensorflow_optimizer_dict = {'Adam', tf.train.AdamOptimizer}
-
-
 class TensorFlowModel(DeepNeuroModel):
 
     def load(self, kwargs):
 
-        add_parameter(self, kwargs, 'sess', None)
+        """ Parameters
+            ----------
+            depth : int, optional
+                Specified the layers deep the proposed U-Net should go.
+                Layer depth is symmetric on both upsampling and downsampling
+                arms.
+            max_filter: int, optional
+                Specifies the number of filters at the bottom level of the U-Net.
+        """
 
-        # Basic Model Parameters
-        add_parameter(self, kwargs, 'optimizer', 'Adam')
-        add_parameter(self, kwargs, 'learning_rate', 'Adam')
+        add_parameter(self, kwargs, 'sess', None)
+        add_parameter(self, kwargs, 'saver', None)
+
+        self.tensorflow_optimizer_dict = {'Adam': tf.train.AdamOptimizer}
 
     def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
 
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 
-        from pprint import pprint
-        one_item = next(self.training_data_generator)
-        pprint(len(one_item))
-        pprint(one_item[1].shape)
-
     def get_optimizer(self):
 
         return
+
+    def init_sess(self):
+
+        if self.sess is None:
+            self.init = tf.global_variables_initializer()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+
+            self.sess = tf.Session(config=config)
+
+            self.sess.run(self.init)
+
+        elif self.sess._closed:
+            self.sess.run(self.init)
+
+    def save_model(self, output_model_filepath, overwrite=True):
+
+        self.init_sess()
+
+        if output_model_filepath.endswith(('.h5', '.hdf5')):
+            output_model_filepath = '.'.join(str.split(output_model_filepath, '.')[0:-1])
+
+        if os.path.exists(output_model_filepath) and overwrite:
+            rmtree(output_model_filepath)
+
+        if self.saver is None:
+            self.saver = tf.train.Saver()
+
+        save_path = self.saver.save(self.sess, os.path.join(output_model_filepath, "model.ckpt"))
+
+        # builder = tf.saved_model.builder.SavedModelBuilder(output_model_filepath)
+        # builder.add_meta_graph_and_variables(self.sess, ['tensorflow_model'])
+        # builder.save()
+
+        return save_path
 
 
 def load_old_model(model_file, backend='keras'):
