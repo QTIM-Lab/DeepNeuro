@@ -102,7 +102,7 @@ class ProgressiveGAN(TensorFlowModel):
             if not os.path.exists(work_dir):
                 os.mkdir(work_dir)
 
-        with open('/mnt/nas2/data/Personal/Andrew/Interp_GAN/backup/path_filenames.csv', 'rb') as f:
+        with open('./backup/path_filenames.csv', 'rb') as f:
             reader = csv.reader(f)
             input_files = list(reader)[0]
 
