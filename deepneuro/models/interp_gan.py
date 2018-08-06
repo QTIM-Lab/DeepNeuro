@@ -229,7 +229,7 @@ class ProgressiveGAN(TensorFlowModel):
         # Derived Parameters
         self.output_size = pow(2, self.progressive_depth + 1)
         self.zoom_level = self.progressive_depth
-        self.images = tf.placeholder(tf.float32, [self.training_batch_size, self.output_size, self.output_size, self.channels])
+        self.images = tf.placeholder(tf.float32, [self.training_batch_size, self.output_size, self.output_size, self.channels]
         self.alpha_transition = tf.Variable(initial_value=0.0, trainable=False, name='alpha_transition')
 
         self.fake_images = self.generator(self.latent, progressive_depth=self.progressive_depth, transition=self.transition, alpha_transition=self.alpha_transition, name='generator')
@@ -313,48 +313,6 @@ class ProgressiveGAN(TensorFlowModel):
 
         for k, v in self.log_vars:
             tf.summary.scalar(k, v)
-
-    def discriminator(self, input_image, reuse=False, name=None, progressive_depth=1, transition=False, alpha_transition=0.01):
-
-        with tf.variable_scope(name) as scope:
-
-            if reuse:
-                scope.reuse_variables()
-
-            if transition:
-                transition_conv = DnAveragePooling(input_image, dim=self.dim)
-                transition_conv = leaky_relu(DnConv(transition_conv, output_dim=self.get_filter_num(progressive_depth - 2, self.discriminator_max_filter), kernel_size=(1, 1), stride_size=(1, 1), name='discriminator_y_rgb_conv_{}'.format(transition_conv.shape[1]), dim=self.dim))
-
-            convs = []
-
-            # fromRGB
-            convs += [leaky_relu(DnConv(input_image, output_dim=self.get_filter_num(progressive_depth - 1, self.discriminator_max_filter), kernel_size=(1, 1), stride_size=(1, 1), name='discriminator_y_rgb_conv_{}'.format(input_image.shape[1]), dim=self.dim))]
-
-            for i in range(progressive_depth - 1):
-
-                convs += [leaky_relu(DnConv(convs[-1], output_dim=self.get_filter_num(progressive_depth - 1 - i, self.discriminator_max_filter), stride_size=(1, 1), name='discriminator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=self.dim))]
-
-                convs += [leaky_relu(DnConv(convs[-1], output_dim=self.get_filter_num(progressive_depth - 2 - i, self.discriminator_max_filter), stride_size=(1, 1), name='discriminator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=self.dim))]
-                convs[-1] = DnAveragePooling(convs[-1], dim=self.dim)
-
-                if i == 0 and transition:
-                    convs[-1] = alpha_transition * convs[-1] + (1 - alpha_transition) * transition_conv
-
-            convs += [minibatch_state_concat(convs[-1])]
-            convs[-1] = leaky_relu(DnConv(convs[-1], output_dim=self.get_filter_num(1, self.discriminator_max_filter), kernel_size=(3, 3), stride_size=(1, 1), name='discriminator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=self.dim))
-            
-            if False:
-                convs[-1] = leaky_relu(DnConv(convs[-1], output_dim=self.get_filter_num(1, self.discriminator_max_filter), kernel_size=(4, 4), stride_size=(1, 1), padding='VALID', name='discriminator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=self.dim))
-
-            # for conv in convs:
-                # print conv
-        
-            #for D
-            output = tf.reshape(convs[-1], [self.training_batch_size, -1])
-
-            if self.classify is None:
-                discriminate_output = dense(output, output_size=1, scope='discriminator_n_fully')
-                return None, None, tf.nn.sigmoid(discriminate_output), discriminate_output
 
     def generator(self, latent_var, progressive_depth=1, name=None, transition=False, alpha_transition=0.0, reuse=False):
 

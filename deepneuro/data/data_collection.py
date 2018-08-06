@@ -309,6 +309,7 @@ class DataCollection(object):
                     
         return tuple([data_group.base_case for data_group in data_groups])
 
+    # @profile
     def load_case_data(self, case):
 
         data_groups = self.get_data_groups()
@@ -372,13 +373,14 @@ class DataCollection(object):
                 if verbose:
                     print 'Working on image.. ', case_idx, 'at', case_name
 
-                try:
+                if True:
+                # try:
                     self.load_case_data(case_name)
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    print 'Hit error on', case_name, 'skipping.'
-                    yield False
+                # except KeyboardInterrupt:
+                    # raise
+                # except:
+                    # print 'Hit error on', case_name, 'skipping.'
+                    # yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 

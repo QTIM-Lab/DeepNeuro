@@ -74,7 +74,6 @@ class CycleGan(TensorFlowModel):
 
             for step in range(self.training_steps_per_epoch):
                 
-                print epoch, step
                 input_modality_1, input_modality_2 = next(self.training_data_generator)
 
                 # Optimize!

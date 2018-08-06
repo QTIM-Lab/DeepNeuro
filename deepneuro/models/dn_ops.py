@@ -300,7 +300,7 @@ def upscale(x, scale):
 
 def downscale(x, scale):
     _, h, w, _ = get_conv_shape(x)
-    return resize_nearest_neighbor(x, (h / scale, w / scale))
+    return resize_nearest_neighbor(x, (int(h / scale), int(w / scale)))
 
 
 def UpConvolution(deconvolution=False, pool_size=(2, 2, 2), implementation='keras'):

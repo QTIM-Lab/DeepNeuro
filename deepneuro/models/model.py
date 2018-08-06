@@ -179,6 +179,13 @@ class DeepNeuroModel(object):
 
             self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
 
+    def checkpoint(self):
+
+        input_data = self.training_data_generator.next()
+        self.predict(input_data)
+
+        return
+
     def predict(self, input_data):
 
         self.model.predict(input_data)
@@ -186,7 +193,6 @@ class DeepNeuroModel(object):
     def log(self, inputs=None, headers=None, verbose=False):
 
         if self.write_file is None:
-            print('openin', file)
             self.write_file = open(self.output_log_file, 'w')
             self.csv_writer = csv.writer(self.write_file)
             if headers is not None:
@@ -294,9 +300,9 @@ class TensorFlowModel(DeepNeuroModel):
 
         return
 
-    def init_sess(self):
+    def init_sess(self, new_sess=True):
 
-        if self.sess is None:
+        if self.sess is None or new_sess:
             self.init = tf.global_variables_initializer()
             config = tf.ConfigProto()
             config.gpu_options.allow_growth = True

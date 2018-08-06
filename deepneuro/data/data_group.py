@@ -66,6 +66,7 @@ class DataGroup(object):
         else:
             return len(self.data[0])
 
+    # @profile
     def get_data(self, index, return_affine=False):
 
         if self.source == 'directory':
@@ -92,7 +93,10 @@ class DataGroup(object):
             return self.preprocessed_affine
         # A little unsure of the practical implication of the storage code below.
         elif self.source == 'storage':
-            return self.data[index][:][np.newaxis], self.data_affines[index]
+            if self.data_affines is None:
+                return self.data[index][:][np.newaxis], None
+            else:
+                return self.data[index][:][np.newaxis], self.data_affines[index]
 
         return None
 
