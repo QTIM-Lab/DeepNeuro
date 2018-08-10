@@ -16,7 +16,7 @@ def parse_subject_directory(data_collection, subject_dir, case_list=None):
         return
 
     # Search for modality files, and skip those missing with files modalities.
-    for data_group, modality_labels in data_collection.modality_dict.items():
+    for data_group, modality_labels in data_collection.data_group_dict.items():
 
         modality_group_files = []
         for modality in modality_labels:
@@ -47,7 +47,7 @@ def parse_subject_directory(data_collection, subject_dir, case_list=None):
     data_collection.preprocessed_cases[case_name] = defaultdict(list)
 
 
-def parse_modality_directories(data_collection, modality_dict, case_list=None, recursive=True, verbose=True, identifying_chars=None):
+def parse_modality_directories(data_collection, data_group_dict, case_list=None, recursive=True, verbose=True, file_identifying_chars=None):
 
     """ Recursive functionality not yet available
     """
@@ -55,8 +55,13 @@ def parse_modality_directories(data_collection, modality_dict, case_list=None, r
     # Cases not yet implemented.
 
     # Pulling from multiple directories not yet implemented.
-    lead_group = modality_dict[modality_dict.keys()[0]]
-    lead_directory = os.path.abspath(lead_group[0])
+    lead_group = data_group_dict[data_group_dict.keys()[0]]
+
+    if type(lead_group[0]) is list:
+        lead_directory = os.path.abspath(lead_group[0][0])
+    else:
+        lead_directory = os.path.abspath(lead_group[0])
+
     lead_files = []
 
     for directory in lead_group:
@@ -73,11 +78,11 @@ def parse_modality_directories(data_collection, modality_dict, case_list=None, r
         base_filedir = os.path.dirname(lead_filepath).split(lead_directory, 1)[1]
         base_filepath = nifti_splitext(lead_filepath)[0]
 
-        if identifying_chars is not None:
-            base_filepath = os.path.basename(os.path.join(os.path.dirname(base_filepath), os.path.basename(base_filepath)[:identifying_chars]))
+        if file_identifying_chars is not None:
+            base_filepath = os.path.basename(os.path.join(os.path.dirname(base_filepath), os.path.basename(base_filepath)[:file_identifying_chars]))
         
         # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_labels in data_collection.modality_dict.items():
+        for data_group, modality_labels in data_collection.data_group_dict.items():
 
             modality_group_files = []
 
@@ -105,3 +110,13 @@ def parse_modality_directories(data_collection, modality_dict, case_list=None, r
             case_name = lead_filepath
             data_collection.cases.append(case_name)
             data_collection.preprocessed_cases[case_name] = defaultdict(list)
+
+
+def parse_csv_file():
+
+    return
+
+
+if __name__ == '__main__':
+
+    pass

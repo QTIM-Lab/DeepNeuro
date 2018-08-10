@@ -310,9 +310,6 @@ def nifti_2_numpy(input_filepath, return_all=False):
 def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None, metadata=None, **kwargs):
 
     """ This is a bit convoluted.
-
-        TODO: Documentation, rearrange reference_nifti and output_filepath, and
-        propagate changes to the rest of qtim_tools.
     """
 
     if reference_nifti_filepath is not None:
@@ -382,7 +379,6 @@ def check_format(filepath):
 
     if format_type is None:
         raise ValueError
-        # print 'Error! Input file extension is not supported by qtim_tools. Returning None.'
     else:
         return format_type
 
@@ -435,12 +431,6 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
 
 
 def save_data(input_data, output_filename, reference_data=None, metadata=None, affine=None, output_format=None, **kwargs):
-
-    """ This is a bit convoluted.
-
-        TODO: Documentation, rearrange reference_nifti and output_filepath, and
-        propagate changes to the rest of qtim_tools.
-    """
 
     if output_format is None:
         output_format = check_format(output_filename)

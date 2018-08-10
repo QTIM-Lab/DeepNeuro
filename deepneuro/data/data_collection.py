@@ -13,17 +13,24 @@ from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
 from deepneuro.data.data_load import parse_modality_directories, parse_subject_directory
+from deepneuro.utilities.util import add_parameter
 
 
 class DataCollection(object):
 
-    def __init__(self, data_directory=None, data_storage=None, modality_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False):
+    def __init__(self, data_directory=None, data_storage=None, data_group_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False, **kwargs):
 
         # Input vars
         self.data_directory = data_directory
         self.data_storage = data_storage
-        self.modality_dict = modality_dict
+        self.data_group_dict = data_group_dict
         self.spreadsheet_dict = spreadsheet_dict
+        
+        # File location variables
+        add_parameter(self, kwargs, 'source', 'directories')
+        add_parameter(self, kwargs, 'recursive', False)
+        add_parameter(self, kwargs, 'file_identifying_chars', None)
+
         self.value_dict = value_dict
         self.case_list = case_list
         self.verbose = verbose
@@ -41,6 +48,9 @@ class DataCollection(object):
 
         # Data group variables
         self.data_groups = {}
+
+        if data_group_dict is not None or data_storage is not None:
+            self.fill_data_groups()
 
     def add_case(self, case_dict, case_name=None):
 
@@ -61,21 +71,21 @@ class DataCollection(object):
         self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
-    def fill_data_groups(self, source='direcotries', recursive=False, identifying_chars=None):
+    def fill_data_groups(self):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.
             Repeated usage may have unexpected results.
         """
 
-        if source == 'files':
+        if self.source == 'files':
 
             # Create DataGroups for this DataCollection.
-            for modality_group in self.modality_dict:
+            for modality_group in self.data_group_dict:
                 if modality_group not in list(self.data_groups.keys()):
                     self.data_groups[modality_group] = DataGroup(modality_group)
                     self.data_groups[modality_group].source = 'file'
 
-            parse_modality_directories(self, self.modality_dict, case_list=self.case_list, recursive=recursive, identifying_chars=identifying_chars)
+            parse_modality_directories(self, self.data_group_dict, case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
 
             self.total_cases = len(self.cases)
 
@@ -85,20 +95,20 @@ class DataCollection(object):
             else:
                 print('Found', self.total_cases, 'number of cases..')            
 
-        elif self.data_directory is not None and source == 'directories':
+        elif self.data_directory is not None and self.source == 'directories':
 
             if self.verbose:
                 print('Gathering image data from...', self.data_directory, '\n')
 
             # Create DataGroups for this DataCollection.
-            for modality_group in self.modality_dict:
+            for modality_group in self.data_group_dict:
                 if modality_group not in list(self.data_groups.keys()):
                     self.data_groups[modality_group] = DataGroup(modality_group)
                     self.data_groups[modality_group].source = 'directory'
 
             # Iterate through directories.. Always looking for a better way to check optional list typing.
             if isinstance(self.data_directory, str):
-                if not os.path.exist(self.data_directory):
+                if not os.path.exists(self.data_directory):
                     print('The data directory you have input does not exist!')
                     exit(1)   
                 directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
@@ -112,7 +122,7 @@ class DataCollection(object):
 
             for subject_dir in directory_list:
 
-                parse_subject_directory(subject_dir, case_list=self.case_list)
+                parse_subject_directory(self, subject_dir, case_list=self.case_list)
 
             self.total_cases = len(self.cases)
 

@@ -6,7 +6,7 @@ from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=2, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=6, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False):
 
     if data_collection is not None:
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
@@ -41,6 +41,8 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     if show_output:
 
         fig, axarr = plt.subplots(len(output_images.keys()))
+        if type(axarr) is not list:
+            axarr = [axarr]
 
         for plot_idx, (label, data) in enumerate(output_images.items()):
 

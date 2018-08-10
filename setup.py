@@ -18,7 +18,6 @@ if sys.version_info[:2] < (2, 7):
 
 setup(
   name = 'deepneuro',
-  # packages = ['qtim_tools'], # this must be the same as the name above
   version = '0.1.1',
   description = DOCLINES[0],
   packages = find_packages(),

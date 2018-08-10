@@ -7,6 +7,7 @@ import tensorflow as tf
 import csv
 
 from shutil import rmtree
+from tqdm import tqdm
 from keras.engine import Input
 from keras.models import load_model
 
@@ -88,6 +89,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
         add_parameter(self, kwargs, 'optimizer', 'Adam')
+        add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
 
         self.dropout = dropout
         self.batch_norm = batch_norm
@@ -253,10 +255,10 @@ class KerasModel(DeepNeuroModel):
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 
         if validation_data_collection is None:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, batch_size=training_batch_size, model=self, **kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(callbacks=callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, batch_size=training_batch_size, model=self, backend='keras', **kwargs))
 
         else:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, model=self, batch_size=training_batch_size, **kwargs))
+            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs))
 
         return
 
@@ -268,7 +270,7 @@ class KerasModel(DeepNeuroModel):
             training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
 
         try:
-            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(output_model_filepath, callbacks=callbacks, data_collection=training_data_collection, model=self, batch_size=training_batch_size, **kwargs))
+            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(callbacks=callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs))
         except KeyboardInterrupt:
             pass
         except:
@@ -293,7 +295,7 @@ class KerasModel(DeepNeuroModel):
 
         return
 
-    def keras_generator(self, data_generator, input_data='input_modalities', targets='ground_truth'):
+    def keras_generator(self, data_generator, input_data='input_data', targets='ground_truth'):
 
         while True:
             data = next(data_generator)
@@ -331,27 +333,91 @@ class TensorFlowModel(DeepNeuroModel):
 
         self.tensorflow_optimizer_dict = {'Adam': tf.train.AdamOptimizer}
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+    def init_training(self, training_data_collection, kwargs):
 
-        self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+        # Outputs
+        add_parameter(self, kwargs, 'output_model_filepath')
 
-    def get_optimizer(self):
+        # Training Parameters
+        add_parameter(self, kwargs, 'num_epochs', 100)
+        add_parameter(self, kwargs, 'training_steps_per_epoch', 10)
+        add_parameter(self, kwargs, 'training_batch_size', 16)
+        add_parameter(self, kwargs, 'callbacks')
+
+        self.callbacks = get_callbacks(backend='tensorflow', model=self, batch_size=self.training_batch_size, **kwargs)
+
+        self.init_sess()
+        self.build_tensorflow_model(self.training_batch_size)
+        self.create_data_generators(training_data_collection, training_batch_size=self.training_batch_size, training_steps_per_epoch=self.training_steps_per_epoch)
+
+        return
+
+    def train(self, training_data_collection, validation_data_collection=None, **kwargs):
+
+        self.init_training(training_data_collection, kwargs)
+
+        self.init = tf.global_variables_initializer()
+        self.sess.run(self.init)
+
+        self.callback_process('on_train_begin')
+
+        for epoch in range(self.num_epochs):
+
+            print('Epoch {}/{}'.format(epoch, self.num_epochs))
+            self.callback_process('on_epoch_begin', epoch)
+
+            step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
+
+            for step in step_counter:
+
+                self.callback_process('on_batch_begin', step)
+
+                self.process_step(step_counter)
+
+                self.callback_process('on_batch_end', step)
+
+            self.callback_process('on_epoch_end', epoch)
+
+        self.callback_process('on_train_end')
+
+    def process_step(self):
+
+        for epoch in range(self.num_epochs):
+
+            step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
+
+            for step in step_counter:
+
+                # Replace with GPU function?
+                sample_latent = np.random.normal(size=[self.training_batch_size, self.latent_size])
+                reference_data = next(self.training_data_generator)[self.input_data]
+
+                # Optimize!
+
+                _, g_loss = self.sess.run([self.basic_optimizer, self.basic_loss], feed_dict={self.reference_images: reference_data, self.latent: sample_latent})
+
+                self.log([g_loss], headers=['Basic Loss'], verbose=self.hyperverbose)
+                step_counter.set_description("Generator Loss: {0:.5f}".format(g_loss))
+
+            self.save_model(self.output_model_filepath)
 
         return
 
     def init_sess(self):
 
         if self.sess is None:
-            self.init = tf.global_variables_initializer()
+            self.graph = tf.Graph()
+
             config = tf.ConfigProto()
             config.gpu_options.allow_growth = True
-
-            self.sess = tf.Session(config=config)
-
-            self.sess.run(self.init)
+            self.sess = tf.InteractiveSession(config=config, graph=self.graph)
 
         elif self.sess._closed:
-            self.sess.run(self.init)
+            self.graph = tf.Graph()
+
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.InteractiveSession(config=config, graph=self.graph)
 
     def save_model(self, output_model_filepath, overwrite=True):
 
@@ -373,6 +439,34 @@ class TensorFlowModel(DeepNeuroModel):
         # builder.save()
 
         return save_path
+
+    def model_summary(self):
+
+        for layer in tf.trainable_variables():
+            print layer
+
+    def callback_process(self, command='', idx=None):
+
+        for callback in self.callbacks:
+            if type(callback) is str:
+                continue
+            method = getattr(callback, command)
+            method(idx)
+
+        return
+
+    def grab_tensor(self, layer):
+        return self.graph.get_tensor_by_name(layer + ':0')
+
+    def find_layers(self, contains=['discriminator/']):
+
+        for layer in self.graph.get_operations():
+            if any(op_type in layer.name for op_type in contains):
+                try:
+                    if self.graph.get_tensor_by_name(layer.name + ':0').get_shape() != ():
+                        print(layer.name, self.graph.get_tensor_by_name(layer.name + ':0').get_shape())
+                except:
+                    continue
 
 
 def load_old_model(model_file, backend='keras'):

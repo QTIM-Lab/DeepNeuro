@@ -119,7 +119,7 @@ def adjusted_std(x, **kwargs):
     return tf.sqrt(tf.reduce_mean((x - tf.reduce_mean(x, **kwargs)) ** 2, **kwargs) + 1e-8)
 
 
-def minibatch_state_concat(_input, averaging='all'):
+def minibatch_state_concat(_input, averaging='all', dim=2):
 
     # Rewrite this later, and understand it --andrew
     
@@ -130,7 +130,8 @@ def minibatch_state_concat(_input, averaging='all'):
     else:
         print "nothing"
 
-    multiples = tuple([int(_input.shape[0]), 4, 4, 1])
+    multiples = (tf.shape(_input)[0], 4, 4, 1)
+
     vals = tf.tile(vals, multiples=multiples)  # Be aware, need updated TF for this to work.
     
     return tf.concat([_input, vals], axis=3)
@@ -159,7 +160,7 @@ def upscale2d(x, scale):
     return resize_nearest_neighbor(x, (h * scale, w * scale))
 
 
-def downscale(x, scale):
+def downscale2d(x, scale):
     _, h, w, _ = get_conv_shape(x)
     return resize_nearest_neighbor(x, (int(h / scale), int(w / scale)))
 
@@ -202,15 +203,16 @@ def sigmoid(backend='tf'):
         return tf.nn.sigmoid
 
 
-def dense(tensor, output_size, stddev=0.02, bias_start=0.0, with_w=False, backend='tf', scope=False):
+def dense(tensor, output_size, stddev=0.02, bias_start=0.0, with_w=False, backend='tensorflow', name="dense"):
 
-    if backend == 'tf':
+    if backend == 'tensorflow':
 
-        with tf.variable_scope(scope or "Linear"):
+        with tf.variable_scope(name):
 
             shape = tensor.get_shape().as_list()
 
             matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32, tf.contrib.layers.xavier_initializer())
+
             bias = tf.get_variable("bias", [output_size], initializer=tf.zeros_initializer())
 
             if with_w:

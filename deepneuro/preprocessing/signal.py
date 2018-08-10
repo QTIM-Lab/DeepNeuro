@@ -48,9 +48,9 @@ class Normalization(Preprocessor):
         add_parameter(self, kwargs, 'mask_value', None)
 
         # Normalization Parameters
-        add_parameter(self, kwargs, 'intensity_range', [-1,1])
+        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
         add_parameter(self, kwargs, 'normalize_by_channel', True)
-
+        add_parameter(self, kwargs, 'channels', None)
 
         self.array_input = True
 
@@ -85,7 +85,7 @@ class RangeNormalization(Normalization):
 
         super(RangeNormalization, self).load(kwargs)
 
-        add_parameter(self, kwargs, 'intensity_range', [-1,1])
+        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
         add_parameter(self, kwargs, 'input_intensity_range', None)
 
         add_parameter(self, kwargs, 'outlier_percent', None)  # Not Implemented
@@ -131,7 +131,7 @@ class BinaryNormalization(Normalization):
 
         super(BinaryNormalization, self).load(kwargs)
 
-        add_parameter(self, kwargs, 'intensity_range', [-1,1])
+        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
         
         # Not Implemented
         add_parameter(self, kwargs, 'threshold', 0)

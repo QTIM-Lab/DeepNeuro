@@ -1,7 +1,7 @@
 
 import tensorflow as tf
 
-from keras.layers import UpSampling2D, UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation
+from keras.layers import UpSampling2D, UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation, BatchNormalization, Dropout
 
 from deepneuro.models.ops import pixel_norm_2d, pixel_norm_3d, conv2d, conv3d, deconv2d, deconv3d, upscale2d
 
@@ -11,6 +11,32 @@ class DnOp(object):
     def __init__(self):
 
         return
+
+
+def DnDropout(input_, ratio=.5, backend='tensorflow'):
+
+    if backend == 'keras':
+
+        return Dropout(ratio)(input_)
+
+    if backend == 'tensorflow':
+
+        return tf.nn.dropout(input_, ratio)
+
+    return
+
+
+def DnBatchNormalization(input_, backend='tensorflow'):
+
+    if backend == 'keras' or True:
+
+        return BatchNormalization()(input_)
+
+    if backend == 'tensorflow':
+
+        return tf.contrib.layers.batch_norm(input_)
+
+    return
 
 
 def DnMaxPooling(input_, pool_size=(2, 2), dim=2, padding='SAME', backend='tensorflow'):
@@ -32,7 +58,7 @@ def DnMaxPooling(input_, pool_size=(2, 2), dim=2, padding='SAME', backend='tenso
             op = tf.nn.max_pool3d(input_, ksize=[1] + list(pool_size) + [1], strides=[1] + list(pool_size) + [1], padding='SAME')
 
     if op is None:
-        print 'Option Not Implemented'
+        raise NotImplementedError
 
     return op
 
