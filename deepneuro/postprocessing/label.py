@@ -20,8 +20,7 @@ class BinarizeLabel(Postprocessor):
 
     def postprocess(self, input_data):
 
-        # return (input_data > self.binarization_threshold).astype(float) * 255
-        return (input_data + 1) * 127.5
+        return (input_data > self.binarization_threshold).astype(float)
 
 
 class LargestComponents(Postprocessor):

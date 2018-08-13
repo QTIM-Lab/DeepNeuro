@@ -308,7 +308,7 @@ class KerasModel(DeepNeuroModel):
 
         return self.model.predict(input_data)
 
-    def build(self):
+    def build_model(self):
 
         self.model_input_shape = self.model.layers[0].input_shape
         self.model_output_shape = self.model.layers[-1].output_shape
@@ -491,9 +491,13 @@ def load_old_model(model_file, backend='keras'):
     """
 
     if backend == 'keras':
+
         custom_objects = cost_function_dict()
 
-        return KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+        model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+        model.build_model()
+
+        return model
 
     if backend == 'tf':
         sess = tf.Session()    

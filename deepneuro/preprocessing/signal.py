@@ -37,8 +37,8 @@ class Normalization(Preprocessor):
     def load(self, kwargs):
 
         # Naming Parameters
-        add_parameter(self, kwargs, 'name', 'ZeroMeanNormalization')
-        add_parameter(self, kwargs, 'preprocessor_string', '_ZeroNorm')
+        add_parameter(self, kwargs, 'name', 'Normalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Norm')
 
         # Mask parameters
         add_parameter(self, kwargs, 'mask', None)
@@ -48,7 +48,6 @@ class Normalization(Preprocessor):
         add_parameter(self, kwargs, 'mask_value', None)
 
         # Normalization Parameters
-        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
         add_parameter(self, kwargs, 'normalize_by_channel', True)
         add_parameter(self, kwargs, 'channels', None)
 
@@ -89,6 +88,10 @@ class RangeNormalization(Normalization):
         add_parameter(self, kwargs, 'input_intensity_range', None)
 
         add_parameter(self, kwargs, 'outlier_percent', None)  # Not Implemented
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'RangeNormalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Range')
 
     def normalize(self, normalize_numpy, mask_numpy=None):
 
@@ -136,6 +139,10 @@ class BinaryNormalization(Normalization):
         # Not Implemented
         add_parameter(self, kwargs, 'threshold', 0)
         add_parameter(self, kwargs, 'single_value', None)
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'BinaryNormalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Binary')
 
     def normalize(self, normalize_numpy, mask_numpy=None):
 
@@ -192,5 +199,4 @@ class ZeroMeanNormalization(Normalization):
             vol_std = np.std(normalize_numpy)
             normalize_numpy = (normalize_numpy - vol_mean) / vol_std
 
-        print np.unique(normalize_numpy)
         return normalize_numpy

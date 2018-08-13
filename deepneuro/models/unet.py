@@ -52,12 +52,12 @@ class UNet(KerasModel):
             filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
 
             if level == 0:
-                left_outputs += [DnConv(self.inputs, filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')]
-                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
+                left_outputs += [DnConv(self.inputs, filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')]
+                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
             else:
                 left_outputs += [DnMaxPooling(left_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras')]
-                left_outputs[level] = DnConv(left_outputs[level], filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')
-                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
+                left_outputs[level] = DnConv(left_outputs[level], filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')
+                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
 
             if self.dropout is not None and self.dropout != 0:
                 left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
@@ -74,8 +74,8 @@ class UNet(KerasModel):
             if level > 0:
                 right_outputs += [DnUpsampling(right_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras')]
                 right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=self.dim + 1)
-                right_outputs[level] = DnConv(right_outputs[level], filter_num, self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_1'.format(level), backend='keras')
-                right_outputs[level] = DnConv(right_outputs[level], int(filter_num / 2), self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_2'.format(level), backend='keras')
+                right_outputs[level] = DnConv(right_outputs[level], filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_1'.format(level), backend='keras')
+                right_outputs[level] = DnConv(right_outputs[level], int(filter_num / 2), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_2'.format(level), backend='keras')
             else:
                 continue
 

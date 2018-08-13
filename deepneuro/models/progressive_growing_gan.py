@@ -107,26 +107,10 @@ class PGGAN(GAN):
             self.init = tf.global_variables_initializer()
             self.sess.run(self.init)
 
-            self.graph = tf.get_default_graph()
-            for layer in self.graph.get_operations():
-                if any(op_type in layer.name for op_type in ['']):
-                    try:
-                        if self.graph.get_tensor_by_name(layer.name + ':0').get_shape() != ():
-                            print(layer.name, self.graph.get_tensor_by_name(layer.name + ':0').get_shape())
-                    except:
-                        continue
-
             if self.transition:
-                # for i in self.d_vars_n_2_rgb + self.g_vars_n_2_rgb:
-                    # print i
-                # print ''
-                # for i in self.d_vars_n_read + self.g_vars_n_read:
-                    # print i
                 self.r_saver.restore(self.sess, previous_model_path)
                 self.rgb_saver.restore(self.sess, previous_model_path)
             elif self.progressive_depth > 0:
-                # for i in self.d_vars + self.g_vars:
-                    # print i
                 self.saver.restore(self.sess, previous_model_path)
 
             for epoch in range(self.num_epochs):
@@ -270,8 +254,7 @@ class PGGAN(GAN):
         # Create Optimizers
         self.opti_D = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(
             self.D_loss, var_list=self.d_vars)
-        self.opti_G = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(
-            self.G_loss, var_list=self.g_vars)
+        self.opti_G = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.G_loss, var_list=self.g_vars)
 
     def load_model(self, input_model_path, batch_size=1):
 

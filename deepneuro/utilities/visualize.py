@@ -28,7 +28,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     for label, data in output_data.items():
 
         if data.ndim == 5:
-            output_images = display_3d_data(data, viz_mode_3d, label, output_images)
+            output_images = display_3d_data(data, viz_mode_3d, label, output_images, viz_rows, viz_columns)
 
         elif data.ndim == 4:
             if data.shape[-1] not in [1, 3]:
@@ -41,21 +41,22 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     if show_output:
 
         fig, axarr = plt.subplots(len(output_images.keys()))
-        if type(axarr) is not list:
-            axarr = [axarr]
 
         for plot_idx, (label, data) in enumerate(output_images.items()):
 
             if data.shape[-1] == 3:
+
                 # Weird matplotlib bug:
                 if np.min(data) < 0:
                     data = (data - np.min(data)) / (np.max(data) - np.min(data))
+
                 plt_image = axarr[plot_idx].imshow(np.squeeze(data), cmap=plt.get_cmap('hot'), vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
 
                 fig.colorbar(plt_image, ax=axarr[plot_idx])
 
             elif data.shape[-1] == 1:
                 plt_image = axarr[plot_idx].imshow(np.squeeze(data), cmap='gray', vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
+
                 fig.colorbar(plt_image, ax=axarr[plot_idx], cmap='gray')
 
             axarr[plot_idx].set_title(label)
@@ -84,7 +85,7 @@ def image_preprocess(input_data):
 
 def combine_outputs(input_data_list):
 
-    """ Merges images rowsie
+    """ Merges images rows
     """
 
     # height_width = [0, 0]
@@ -96,11 +97,33 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, viz_mode_3d, label=None, input_dict=None):
+def display_3d_data(input_data, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2):
 
-    raise NotImplementedError
+    if input_dict is None:
+        input_dict = {}
 
-    return
+    if label is None:
+        label = 'input_data'
+
+    for i in range(input_data.shape[-1]):
+
+        if viz_mode_3d == '2d_center':
+
+            input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
+            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
+
+        else:
+
+            raise NotImplementedError
+
+        if input_dict is not None:
+
+            if input_data.shape[-1] == 1:
+                input_dict[label] = input_data_slice
+            else:
+                input_dict[label + '_' + str(i)] = input_data_slice
+
+    return input_dict
 
 
 def merge_data(images, size, channels=3):

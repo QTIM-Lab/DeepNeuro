@@ -59,7 +59,7 @@ def read_image_files(image_files, return_affine=False, channels=True, batch=Fals
 
 
 def get_dicom_pixel_array(dicom, filename):
-    return pydicom.pixel_array
+    return dicom.pixel_array
 
 
 def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_all=False):
@@ -151,7 +151,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
                 try:
                     output_numpy += [get_dicom_pixel_array(current_dicoms[i], current_files[i])]
                 except:
-                    print('Warning, error at slice', i)
+                    print('Warning, error at slice', i, 'in folder', input_folder)
             output_numpy = np.stack(output_numpy, -1)
 
             # If preferred, harden to identity matrix space (LPS, maybe?)
@@ -307,17 +307,17 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data()
 
 
-def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None, metadata=None, **kwargs):
+def save_numpy_2_nifti(image_numpy, output_filepath=None, reference_data=None, metadata=None, **kwargs):
 
     """ This is a bit convoluted.
     """
 
-    if reference_nifti_filepath is not None:
-        if isinstance(reference_nifti_filepath, str):
-            nifti_image = nib.load(reference_nifti_filepath)
+    if reference_data is not None:
+        if isinstance(reference_data, str):
+            nifti_image = nib.load(reference_data)
             image_affine = nifti_image.affine
         else:
-            image_affine = reference_nifti_filepath
+            image_affine = reference_data
     else:
         image_affine = np.eye(4)
 

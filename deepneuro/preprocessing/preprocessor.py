@@ -70,22 +70,30 @@ class Preprocessor(object):
 
             self.generate_output_filenames(data_collection, data_group)
 
-            if self.array_input:
-                data_group.convert_to_array_data()
-            else:
-                # This will have errors -- TODO
-                self.save_to_file(data_group)
-                data_group.preprocessed_case = self.output_filenames
-
             self.preprocess(data_group)
 
             if self.save_output:
                 self.save_to_file(data_group)
 
+            # Duplicated code here. In general, this is pretty messy.
+            if self.next_prepreprocessor is not None:
+                if self.next_prepreprocessor.array_input:
+                    self.convert_to_array_data(data_group)
+                else:
+                    self.save_to_file(data_group)
+                    data_group.preprocessed_case = self.output_filenames
+
             if self.return_array:
                 self.convert_to_array_data(data_group)
 
             self.store_outputs(data_collection, data_group)
+
+    def convert_to_array_data(self, data_group):
+
+        data_group.preprocessed_case, affine = read_image_files(self.output_data, return_affine=True)
+
+        if affine is not None:
+            data_group.preprocessed_affine = affine
 
     def convert_to_filename_data(self, data_group):
 
@@ -143,7 +151,7 @@ class Preprocessor(object):
         if type(self.output_data) is not list:
             for file_idx, output_filename in enumerate(self.output_filenames):
                 if self.overwrite or not os.path.exists(output_filename):
-                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), data_group.preprocessed_affine, output_filename)
+                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), output_filename, data_group.preprocessed_affine, )
 
         return
 
@@ -194,7 +202,6 @@ class Preprocessor(object):
             self.data_groups = data_collection.data_groups
         else:
             self.data_groups = {label: data_group for label, data_group in data_collection.data_groups.items() if label in self.data_groups}
-
 
         return
 

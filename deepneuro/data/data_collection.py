@@ -64,7 +64,6 @@ class DataCollection(object):
 
         # Search for modality files, and skip those missing with files modalities.
         for data_group, modality_group_files in case_dict.items():
-
             self.data_groups[data_group].add_case(case_name, list(modality_group_files))
         
         self.cases.append(case_name)
@@ -287,7 +286,7 @@ class DataCollection(object):
         recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
         next(recursive_augmentation_generator)
                     
-        return tuple([data_group.base_case for data_group in data_groups])
+        return {data_group.label: data_group.base_case for data_group in data_groups}
 
     def preprocess(self):
 
