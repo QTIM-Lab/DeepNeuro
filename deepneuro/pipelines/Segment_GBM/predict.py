@@ -97,11 +97,4 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
 
 if __name__ == '__main__':
 
-    output_folder = '../../../../test_output'
-    T1POST = '/mnt/nas2/data/Personal/Andrew/DRIVE/test_output/13-AX__T1__POST-19694_Registered_preprocessed.nii.gz'
-    FLAIR = '/mnt/nas2/data/Personal/Andrew/DRIVE/test_output/11-AX__FLAIR-06577_N4Bias_preprocessed.nii.gz'
-    T1PRE = '/mnt/nas2/data/Personal/Andrew/DRIVE/test_output/12-AX__T1-90444_Registered_preprocessed.nii.gz'
-
-    predict_GBM(output_folder, T1POST, FLAIR, T1PRE, bias_corrected=True, resampled=True, registered=True, skullstripped=True, preprocessed=True, save_preprocess=False, save_all_steps=True, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True, input_data=None)
-
     pass

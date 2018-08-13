@@ -21,7 +21,7 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
     # Step 2, Load Models
     #--------------------------------------------------------------------#
 
-    skullstripping_prediction_parameters = {'inputs': ['input_modalities'], 
+    skullstripping_prediction_parameters = {'inputs': ['input_data'], 
             'output_filename': os.path.join(output_folder, mask_output),
             'batch_size': 50,
             'patch_overlaps': 6,
@@ -38,15 +38,15 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
     if not preprocessed:
 
         # Random hack to save DICOMs to niftis for further processing.
-        preprocessing_steps = [DICOMConverter(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
+        preprocessing_steps = [DICOMConverter(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not bias_corrected:
-            preprocessing_steps += [N4BiasCorrection(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
+            preprocessing_steps += [N4BiasCorrection(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_modalities'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
+            preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
 
-        preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_modalities'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_normed')]
+        preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
