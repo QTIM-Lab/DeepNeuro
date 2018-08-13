@@ -365,7 +365,6 @@ class ExtractPatches(Augmentation):
                 # Tempfix -- Eek
                 region = self.patch_regions[self.region_list[1]]
             if len(region[0]) == 0:
-                print self.region_list[self.iteration]
                 print('emergency brain region..')
                 region = np.where(self.data_groups['input_data'].augmentation_cases[augmentation_num] != 0)
                 self.patch_regions[self.region_list[0]] = region

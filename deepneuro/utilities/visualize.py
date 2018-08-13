@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import lycon
 
 from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix

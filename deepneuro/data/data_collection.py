@@ -345,7 +345,7 @@ class DataCollection(object):
             for case_idx, case_name in enumerate(case_list):
 
                 if verbose:
-                    print 'Working on image.. ', case_idx, 'at', case_name
+                    print('Working on image.. ', case_idx, 'at', case_name)
 
                 if True:
                 # try:
