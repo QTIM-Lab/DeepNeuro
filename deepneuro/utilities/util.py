@@ -1,5 +1,4 @@
-
-
+import glob
 import math
 import numpy as np
 import os
@@ -30,7 +29,7 @@ def rot90(array, n=1, axis=2):
     return array
 
 
-def grab_files_recursive(input_directory, regex='*', return_dir=False, return_file=True):
+def grab_files_recursive(input_directory, regex='*', return_dir=False, return_file=True, recursive=True):
 
     """ Returns all files recursively in a directory. Essentially a convenience wrapper 
         around os.walk.
@@ -51,15 +50,21 @@ def grab_files_recursive(input_directory, regex='*', return_dir=False, return_fi
 
     output_list = []
 
-    for root, subFolders, files in os.walk(input_directory):
-        if return_dir:
-            for subFolder in subFolders:
-                if fnmatch.fnmatch(subFolder, regex):
-                    output_list += [os.path.join(root, subFolder)]
-        if return_file:
-            for file in files:
-                if fnmatch.fnmatch(file, regex):
-                    output_list += [os.path.join(root, file)]
+    if recursive:
+
+        for root, subFolders, files in os.walk(input_directory):
+            if return_dir:
+                for subFolder in subFolders:
+                    if fnmatch.fnmatch(subFolder, regex):
+                        output_list += [os.path.join(root, subFolder)]
+            if return_file:
+                for file in files:
+                    if fnmatch.fnmatch(file, regex):
+                        output_list += [os.path.join(root, file)]
+
+    else:
+
+        output_list = glob.glob(os.path.join(input_directory, regex))
 
     return output_list
 

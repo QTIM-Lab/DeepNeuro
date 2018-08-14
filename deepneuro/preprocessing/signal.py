@@ -32,26 +32,30 @@ class N4BiasCorrection(Preprocessor):
         self.output_data = self.output_filenames
 
 
-class ZeroMeanNormalization(Preprocessor):
+class Normalization(Preprocessor):
 
     def load(self, kwargs):
 
         # Naming Parameters
-        add_parameter(self, kwargs, 'name', 'ZeroMeanNormalization')
-        add_parameter(self, kwargs, 'preprocessor_string', '_ZeroNorm')
+        add_parameter(self, kwargs, 'name', 'Normalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Norm')
 
         # Mask parameters
         add_parameter(self, kwargs, 'mask', None)
         add_parameter(self, kwargs, 'mask_preprocessor', None)
         add_parameter(self, kwargs, 'mask_name', 'skullstrip_mask')
-        add_parameter(self, kwargs, 'mask_zeros', True)
+        add_parameter(self, kwargs, 'mask_zeros', False)
+        add_parameter(self, kwargs, 'mask_value', None)
 
         # Normalization Parameters
         add_parameter(self, kwargs, 'normalize_by_channel', True)
+        add_parameter(self, kwargs, 'channels', None)
 
         self.array_input = True
 
     def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
 
         if self.mask is not None:
             mask_numpy = read_image_files(self.mask)[..., 0]
@@ -62,14 +66,123 @@ class ZeroMeanNormalization(Preprocessor):
 
         if self.normalize_by_channel:
             for channel in range(data_group.preprocessed_case.shape[-1]):
-                data_group.preprocessed_case[..., channel] = self.normalize(data_group.preprocessed_case[..., channel], mask_numpy)
+                data_group.preprocessed_case[..., channel] = self.normalize(input_data[..., channel], mask_numpy)
         else:
-            data_group.preprocessed_case = self.normalize(data_group.preprocessed_case, mask_numpy)
+            data_group.preprocessed_case = self.normalize(input_data, mask_numpy)
 
         # TODO: Reduce redundancy in naming
         self.output_data = data_group.preprocessed_case
 
     def normalize(self, normalize_numpy, mask_numpy=None):
+
+        return normalize_numpy
+
+
+class RangeNormalization(Normalization):
+
+    def load(self, kwargs):
+
+        super(RangeNormalization, self).load(kwargs)
+
+        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
+        add_parameter(self, kwargs, 'input_intensity_range', None)
+
+        add_parameter(self, kwargs, 'outlier_percent', None)  # Not Implemented
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'RangeNormalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Range')
+
+    def normalize(self, normalize_numpy, mask_numpy=None):
+
+        normalize_numpy = normalize_numpy.astype(float)
+
+        if mask_numpy is not None:
+            mask = mask_numpy > 0
+        elif self.mask_zeros:
+            mask = np.nonzero(normalize_numpy)
+        else:
+            mask = None
+
+        if mask is None:
+            
+            if self.input_intensity_range is None:
+                input_intensity_range = [np.min(normalize_numpy), np.max(normalize_numpy)]
+            else:
+                input_intensity_range = self.input_intensity_range
+
+            if input_intensity_range[0] == input_intensity_range[1]:
+                normalize_numpy[:] = self.intensity_range[0]
+                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum.')
+
+            else:
+                normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 
+            
+            if self.input_intensity_range is not None:
+                normalize_numpy[normalize_numpy < self.intensity_range[0]] = self.intensity_range[0]
+                normalize_numpy[normalize_numpy > self.intensity_range[1]] = self.intensity_range[1]
+       
+        else:
+            raise NotImplementedError
+
+        return normalize_numpy
+
+
+class BinaryNormalization(Normalization):
+
+    def load(self, kwargs):
+
+        super(BinaryNormalization, self).load(kwargs)
+
+        add_parameter(self, kwargs, 'intensity_range', [-1, 1])
+        
+        # Not Implemented
+        add_parameter(self, kwargs, 'threshold', 0)
+        add_parameter(self, kwargs, 'single_value', None)
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'BinaryNormalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_Binary')
+
+    def normalize(self, normalize_numpy, mask_numpy=None):
+
+        normalize_numpy = normalize_numpy.astype(float)
+
+        if mask_numpy is not None:
+            mask = mask_numpy > 0
+        elif self.mask_zeros:
+            mask = np.nonzero(normalize_numpy)
+        else:
+            mask = None
+
+        if mask is None:
+            
+            if self.single_value is None:
+                normalize_numpy[normalize_numpy <= self.threshold] = self.intensity_range[0]
+                normalize_numpy[normalize_numpy > self.threshold] = self.intensity_range[1]
+            else:
+                normalize_numpy[normalize_numpy != self.single_value] = self.intensity_range[0]
+                normalize_numpy[normalize_numpy == self.single_value] = self.intensity_range[1]
+
+        else:
+            raise NotImplementedError
+
+        return normalize_numpy
+
+
+class ZeroMeanNormalization(Normalization):
+
+    def load(self, kwargs):
+
+        super(ZeroMeanNormalization, self).load(kwargs)
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'ZeroMeanNormalization')
+        add_parameter(self, kwargs, 'preprocessor_string', '_ZeroNorm')
+
+    def normalize(self, normalize_numpy, mask_numpy=None):
+
+        normalize_numpy = normalize_numpy.astype(float)
 
         if mask_numpy is not None:
             vol_mean = np.mean(normalize_numpy[mask_numpy > 0])

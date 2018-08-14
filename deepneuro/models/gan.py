@@ -1,29 +1,18 @@
-""" unet.py includes different implementations of the popular U-Net model.
-    See more at https://arxiv.org/abs/1505.04597
+""" This is a vanilla implementation of a generative adversarial network. It includes
+    the Wasserstein Gradient-Penalty by default.
 """
 
-from keras.engine import Model
-from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization
-from keras.optimizers import Nadam
-from keras.layers.merge import concatenate
-
-from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
-from deepneuro.models.model import DeepNeuroModel
-from deepneuro.utilities.conversion import round_up
-from deepneuro.models.dn_ops import batch_norm, relu, tanh, leaky_relu, dense, reshape, sigmoid, conv2d, deconv2d, conv3d, deconv3d, UpConvolution
-
-from qtim_tools.qtim_utilities.nifti_util import save_numpy_2_nifti
-
-import os
-import time
-import math
-from glob import glob
-import tensorflow as tf
 import numpy as np
-import csv
+import tensorflow as tf
+import os
+
+from deepneuro.models.model import TensorFlowModel
+from deepneuro.utilities.util import add_parameter
+from deepneuro.models.blocks import generator, discriminator
+from deepneuro.models.cost_functions import wasserstein_loss
 
 
-class GAN(DeepNeuroModel):
+class GAN(TensorFlowModel):
     
     def load(self, kwargs):
 
@@ -38,253 +27,106 @@ class GAN(DeepNeuroModel):
 
         """
 
-        if 'depth' in kwargs:
-            self.depth = kwargs.get('depth')
+        super(GAN, self).load(kwargs)
+
+        # Generator Parameters
+        add_parameter(self, kwargs, 'latent_size', 128)
+        add_parameter(self, kwargs, 'depth', 4)
+        add_parameter(self, kwargs, 'generator_updates', 1)
+
+        # Model Parameters
+        add_parameter(self, kwargs, 'filter_cap', 128)
+        add_parameter(self, kwargs, 'filter_floor', 16)
+
+        add_parameter(self, kwargs, 'generator_max_filter', 128)
+
+        # Discriminator Parameters
+        add_parameter(self, kwargs, 'discriminator_depth', 4)
+        add_parameter(self, kwargs, 'discriminator_max_filter', 128)
+        add_parameter(self, kwargs, 'discriminator_updates', 1)
+
+        # Loss Parameters
+        add_parameter(self, kwargs, 'gradient_penalty_weight', 10)  # For WP
+
+        self.sess = None
+        self.init = None
+
+    def get_filter_num(self, depth):
+
+        # This will need to be a bit more complicated; see PGGAN paper.
+        if self.max_filter / (2 ** (depth)) <= self.filter_floor:
+            return self.filter_floor
         else:
-            self.depth = 4
+            return min(self.max_filter / (2 ** (depth)), self.filter_cap)
 
-        if 'max_filter' in kwargs:
-            self.max_filter = kwargs.get('max_filter')
-        else:
-            self.max_filter = 512
+    def process_step(self, step_counter):
 
-        if 'vector_size' in kwargs:
-            self.vector_size = kwargs.get('vector_size')
-        else:
-            self.vector_size = 64
+        # Replace with GPU function?
+        sample_latent = np.random.normal(size=[self.training_batch_size, self.latent_size])
+        reference_data = next(self.training_data_generator)[self.input_data]
 
-        self.batch_size = 32
-        self.input_shape = (64,64,8,1)
+        # Optimize!
 
-    def generator(self, vector):
+        _, g_loss = self.sess.run([self.opti_G, self.G_loss], feed_dict={self.reference_images: reference_data, self.latent: sample_latent})
+        _, d_loss, d_origin_loss = self.sess.run([self.opti_D, self.D_loss, self.d_origin_loss], feed_dict={self.reference_images: reference_data, self.latent: sample_latent})
 
-        with tf.variable_scope("generator") as scope:
+        # This is a little weird -- it only records loss on discriminator steps.
+        self.log([g_loss, d_loss, d_origin_loss], headers=['Generator Loss', 'WP Discriminator Loss', 'Discriminator Loss'], verbose=self.hyperverbose)
+        step_counter.set_description("Generator Loss: {0:.5f}".format(g_loss) + " Discriminator Loss: {0:.5f}".format(d_loss))
 
-            convs = []
-            output_shapes = []
-            filter_nums = []
-            kernel_shapes = [(2,2,1), (4,4,2), (8,8,2), (8,8,2)]
+        return
 
-            for level in range(self.depth):
+    def build_tensorflow_model(self, batch_size):
 
-                if level == 0:
-                    output_shapes += [list(self.input_shape[:-1])]
-                    filter_nums += [self.max_filter]
-                else:
-                    output_shapes = [[round_up(dim, 2 ** level) for dim in self.input_shape[:-1]]] + output_shapes
-                    filter_nums += [round_up(self.max_filter, 2 ** level)]
-
-            filter_nums[-1] = self.input_shape[-1]
-
-            dense_layer = dense(vector, filter_nums[0] * np.prod(output_shapes[0]), with_w=True)
-            convs += [leaky_relu((batch_norm()((reshape()(dense_layer[0], [-1] + output_shapes[0] + [filter_nums[0]])))))]
-
-            for level in range(1, self.depth):
-
-                if level == self.depth - 1:
-                    convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level-1]], with_w=False, name='g_deconv3d_' + str(level))]
-                    convs[-1] = leaky_relu((convs[-1]))
-                    convs[-1] = tf.nn.dropout(convs[-1], .5)
-                    convs[-1] = batch_norm()(convs[-1])
-
-                    convs += [conv3d(convs[-1], filter_nums[level], name='g_conv3d_' + str(level), stride_size=(1,1,1))]
-                    # convs[-1] = tanh()(convs[-1])
-                else:
-                    convs += [deconv3d(convs[-1], [self.batch_size] + output_shapes[level] + [filter_nums[level]], with_w=False, name='g_deconv3d_' + str(level))]
-                    convs[-1] = leaky_relu((convs[-1]))
-                    convs[-1] = tf.nn.dropout(convs[-1], .5)
-                    convs[-1] = batch_norm()(convs[-1])
-
-                    # convs += [conv3d(convs[-1], filter_nums[level]/2, name='g_conv3d_' + str(level), padding='SAME', stride_size=(1,1,1))]
-                    # convs[-1] = leaky_relu((convs[-1]))
-                    # convs[-1] = tf.nn.dropout(convs[-1], .5)
-                    # convs[-1] = batch_norm()(convs[-1])
-
-            for i in convs:
-                print('GENERATOR', i)
-
-            return convs[-1]
-
-    def discriminator(self, image, reuse=False):
-
-        with tf.variable_scope("discriminator") as scope:
-
-            if reuse:
-                scope.reuse_variables()
-
-            convs = []
-            output_shapes = []
-            filter_nums = []
-            kernel_shapes = [(8,8,2), (4,4,2), (2,2,2), (2,2,1)]
-
-            for level in range(self.depth):
-
-                if level == 0:
-                    filter_nums += [self.max_filter]
-                else:
-                    filter_nums = [round_up(self.max_filter, 2 ** level)] + filter_nums
-
-            print(image)
-
-            for level in range(self.depth):
-
-                print('DISCRIMINATOR', convs)
-
-                if level == 0:
-                    convs += [conv3d(image, filter_nums[level], name='d_conv3d_' + str(level), kernel_size=kernel_shapes[level], padding='VALID', stride_size=(2,2,2))]
-                else:
-                    convs += [conv3d(convs[-1], filter_nums[level], name='d_conv3d_' + str(level), kernel_size=kernel_shapes[level], padding='VALID', stride_size=(2,2,2))]
-                
-                convs[-1] = leaky_relu((convs[-1]))
-
-                if self.batch_norm:
-                    convs[-1] = batch_norm()(convs[-1])
-
-            dense_layer = reshape()(convs[-1], [self.batch_size, -1])
-            dense_layer = dense(dense_layer, 1)
-
-            return sigmoid()(dense_layer), dense_layer
-
-    def build_model(self):
-        
-        """ A basic implementation of the U-Net proposed in https://arxiv.org/abs/1505.04597
-        
-            TODO: specify optimizer
-
-            Returns
-            -------
-            Keras model or tensor
-                If input_tensor is provided, this will return a tensor. Otherwise,
-                this will return a Keras model.
+        """ Break it out into functions?
         """
 
-        self.channels = 1
+        # Set input/output shapes for reference during inference.
+        self.model_input_shape = tuple([batch_size] + list(self.input_shape))
+        self.model_output_shape = tuple([batch_size] + list(self.input_shape))
 
-        self.inputs = tf.placeholder(tf.float32, [self.batch_size] + list(self.input_shape), name='real_images')
-        self.vectors = tf.placeholder(tf.float32, [None, self.vector_size], name='vectors')
+        self.latent = tf.placeholder(tf.float32, [None, self.latent_size])
+        self.reference_images = tf.placeholder(tf.float32, [None] + list(self.model_input_shape)[1:])
+        self.synthetic_images = generator(self, self.latent, depth=self.depth, name='generator')
 
-        self.true_labels = tf.placeholder(tf.float32, [self.batch_size, 1], name='true_labels')
-        self.false_labels = tf.placeholder(tf.float32, [self.batch_size, 1], name='false_labels')
-
-        self.G                  = self.generator(self.vectors)
-        self.D, self.D_logits   = self.discriminator(self.inputs, reuse=False)
-        self.D_, self.D_logits_ = self.discriminator(self.G, reuse=True)
-        
-        # self.sampler            = self.sampler(self.z, self.y)
-
-        def gaussian_noise_layer(input_layer, std=.2):
-            noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32) 
-            return input_layer + noise
-
-        def sigmoid_cross_entropy_with_logits(x, y):
-            try:
-                return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, labels=y)
-            except:
-                return tf.nn.sigmoid_cross_entropy_with_logits(logits=x, targets=y)
-
-        self.d_loss_real = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits), self.true_labels))
-        self.d_loss_fake = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits_), self.false_labels))
-        self.d_loss = self.d_loss_real + self.d_loss_fake
-
-        self.g_loss = tf.reduce_mean(sigmoid_cross_entropy_with_logits(gaussian_noise_layer(self.D_logits_), self.true_labels))
+        self.discriminator_real, self.discriminator_real_logits = discriminator(self, self.reference_images, depth=self.depth + 1, name='discriminator')
+        self.discriminator_fake, self.discriminator_fake_logits = discriminator(self, self.synthetic_images, depth=self.depth + 1, name='discriminator', reuse=True)
 
         t_vars = tf.trainable_variables()
-        self.d_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
-        self.g_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+        self.d_vars = [var for var in t_vars if 'discriminator' in var.name]
+        self.g_vars = [var for var in t_vars if 'generator' in var.name]
+        self.saver = tf.train.Saver(self.g_vars + self.d_vars)
 
-        self.saver = tf.train.Saver()
+        self.calculate_losses()
 
-        return self.model
+        if self.hyperverbose:
+            self.model_summary()
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model'], **kwargs):
+    def calculate_losses(self):
 
-        with tf.Session() as sess:
+        self.D_loss, self.G_loss, self.D_origin_loss = wasserstein_loss(self, discriminator, self.discriminator_fake_logits, self.discriminator_real_logits, self.synthetic_images, self.real_images, gradient_penalty_weight=self.gradient_penalty_weight, name='discriminator', dim=self.dim)
 
-            self.sess = sess
-            self.batch_size = training_batch_size
+        # A little sketchy. Attempting to make variable loss functions extensible later.
+        self.D_loss = self.D_loss[0]
+        self.G_loss = self.G_loss[0]
+        self.D_origin_loss = self.D_origin_loss[0]
 
-            if training_steps_per_epoch is None:
-                training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
+        # Create Optimizers
+        self.opti_D = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(
+            self.D_loss, var_list=self.d_vars)
+        self.opti_G = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.G_loss, var_list=self.g_vars)
 
-            training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
+    def load_model(self, input_model_path, batch_size=1):
 
-            sample_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size))
+        self.build_tensorflow_model(batch_size)
+        self.init_sess()
+        self.saver.restore(self.sess, os.path.join(input_model_path, 'model.ckpt'))
 
-            discriminator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.d_loss, var_list=self.d_vars)
-            generator_optimizer = tf.train.AdamOptimizer(initial_learning_rate).minimize(self.g_loss, var_list=self.g_vars)
+    def predict(self, sample_latent=None, batch_size=1):
 
-            try:
-              tf.global_variables_initializer().run()
-            except:
-              tf.initialize_all_variables().run()
+        self.init_sess()
 
-            start_time = time.time()
+        if sample_latent is None:
+            sample_latent = np.random.normal(size=[batch_size, self.latent_size])
 
-            try:
-                    # Save output.
-                with open('loss_log.csv', 'ab') as writefile:
-                    csvfile = csv.writer(writefile, delimiter=',')
-                    csvfile.writerow(['g_loss', 'd_loss_real', 'd_loss_fake', 'd_loss'])
-                    for epoch in range(num_epochs):
-
-                        for batch_idx in range(training_steps_per_epoch):
-
-                            batch_vector = np.random.uniform(-1, 1, size=(self.batch_size, self.vector_size)).astype(np.float32)
-                            batch_images = next(training_data_generator)[0]
-
-                            # batch_images = ((batch_images - np.min(batch_images)) / (np.max(batch_images) - np.min(batch_images))) * 2 - 1
-
-                            if batch_idx % 10 == 0:
-                                true = np.random.normal(0, 0.3, [self.batch_size, 1]).astype(np.float32)
-                                false = np.random.normal(0.7, 1.3, [self.batch_size, 1]).astype(np.float32)
-                            else:
-                                false = np.random.normal(0, 0.3, [self.batch_size, 1]).astype(np.float32)
-                                true = np.random.normal(0.7, 1.3, [self.batch_size, 1]).astype(np.float32)
-
-                            # Update D network
-                            _ = self.sess.run([discriminator_optimizer], feed_dict={ self.inputs: batch_images, self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
-
-                            # Update G network (twice to help training)
-                            _ = self.sess.run([generator_optimizer], feed_dict={ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
-                            # _ = self.sess.run([generator_optimizer], feed_dict={ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
-
-                            errD_fake = self.d_loss_fake.eval({ self.vectors: batch_vector, self.true_labels: true, self.false_labels: false })
-                            errD_real = self.d_loss_real.eval({ self.inputs: batch_images, self.true_labels: true, self.false_labels: false})
-                            errG = self.g_loss.eval({self.vectors: batch_vector, self.true_labels: true, self.false_labels: false})
-
-                            # print 'FAKE ERR', errD_fake, 'REAL ERR', errD_real, 'G ERR', errG
-
-                            # if batch_idx % 50 == 0:
-                            #     print batch_idx
-                            #     samples, d_loss, g_loss = self.sess.run([self.sampler, self.d_loss, self.g_loss],feed_dict={self.z: sample_z, self.inputs: sample_inputs})
-                            #     save_images(samples, image_manifold_size(samples.shape[0]), './{}/train_{:02d}_{:04d}.png'.format(config.sample_dir, epoch, idx))
-                            #     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss)) 
-                          
-                        print(("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f" % (epoch, batch_idx, batch_idx, time.time() - start_time, errD_fake+errD_real, errG)))
-                        self.save(epoch)
-                        # csvfile.writerow([errG, errD_real, errD_fake, errD_fake+errD_real])
-
-                        batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
-                        test_output = self.sess.run([self.G], feed_dict={ self.vectors: batch_vector })
-                        for i in range(test_output[0].shape[0]):
-                            data = test_output[0][i,...,0]
-                            save_numpy_2_nifti(data, np.eye(4), 'other_gan_test_' + str(i) + '.nii.gz')
-                            if epoch == 0:
-                                save_numpy_2_nifti(batch_images[i,...,0], np.eye(4), 'sample_patch_' + str(i) + '.nii.gz')
-
-            except KeyboardInterrupt:
-                pass
-            #     batch_vector = np.random.uniform(-1, 1, [self.batch_size, self.vector_size]).astype(np.float32)
-            #     test_output = self.sess.run([self.G], feed_dict={ self.vectors: batch_vector })
-            #     for i in xrange(test_output[0].shape[0]):
-            #         data = test_output[0][i,...,0]
-            #         save_numpy_2_nifti(data, np.eye(4), 'other_gan_test_' + str(i) + '.nii.gz')
-            #         save_numpy_2_nifti(data, np.eye(4), 'sample_patch_' + str(i) + '.nii.gz')
-
-
-    def save(self, epoch):
-        model_name = 'DCGAN_final_small' + str(epoch) + '.model'
-
-        self.saver.save(self.sess, model_name)
-
-        
+        return self.sess.run(self.synthetic_images, feed_dict={self.latent: sample_latent})

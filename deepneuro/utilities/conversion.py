@@ -3,12 +3,12 @@ import os
 import numpy as np
 import nibabel as nib
 import nrrd
-import dicom
-import scipy
+import pydicom
+import lycon
 import subprocess
 
 from collections import defaultdict
-# from subprocess import call, PIPE
+from scipy.misc import imsave, imread
 
 from deepneuro.utilities.util import grab_files_recursive, quotes
 
@@ -33,12 +33,18 @@ def read_image_files(image_files, return_affine=False, channels=True, batch=Fals
     image_list = []
     affine = None
     for image_file in image_files:
-        data, _, affine, _ = convert_input_2_numpy(image_file, return_all=True)
-        image_list.append(data)
-        
-        # Badly presumes only one affine.
+        data, _, affine, data_format = convert_input_2_numpy(image_file, return_all=True)
 
-    if image_list[0].ndim == 4:
+        if 'image' in data_format and data.ndim == 2:
+            data = data[..., np.newaxis]
+
+        image_list.append(data)
+
+    # This is hacked together, will need to be more flexible
+    # as data types expand.
+    if 'image' in data_format:
+        array = np.concatenate([image for image in image_list], axis=-1)
+    elif image_list[0].ndim == 4:
         array = np.rollaxis(np.stack([image for image in image_list], axis=-1), 3, 0)
     else:
         array = np.stack([image for image in image_list], axis=-1)
@@ -74,7 +80,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
     dicom_files = []
     for file in found_files:
         try:
-            temp_dicom = dicom.read_file(file)
+            temp_dicom = pydicom.read_file(file)
             dicom_files += [[file, temp_dicom.data_element('SeriesInstanceUID').value]]
         except:
             continue
@@ -101,7 +107,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
         # try:
             # Grab DICOMs for a certain Instance
             current_files = unique_dicoms[UID]
-            current_dicoms = [dicom.read_file(dcm) for dcm in unique_dicoms[UID]]
+            current_dicoms = [pydicom.read_file(dcm) for dcm in unique_dicoms[UID]]
             # print current_files
 
             # Sort DICOMs by Instance.
@@ -145,7 +151,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
                 try:
                     output_numpy += [get_dicom_pixel_array(current_dicoms[i], current_files[i])]
                 except:
-                    print('Warning, error at slice', i)
+                    print('Warning, error at slice', i, 'in folder', input_folder)
             output_numpy = np.stack(output_numpy, -1)
 
             # If preferred, harden to identity matrix space (LPS, maybe?)
@@ -222,7 +228,7 @@ def itk_transform_2_numpy(input_filepath, return_all=False):
         return output_array
 
 
-def img_2_numpy(input_image, return_all=False):
+def image_jpg_png_2_numpy(input_image, return_all=False):
     
     """ Loads image data and returns a numpy array. There
         will likely be many parameters to specify because
@@ -230,12 +236,28 @@ def img_2_numpy(input_image, return_all=False):
         in loading images.
     """
 
-    image_nifti = scipy.misc.imread(input_image)
+    output_array = lycon.load(input_image)
 
     if return_all:
-        return image_nifti, None, None
+        return output_array, None, None
     else:
-        return image_nifti
+        return output_array
+
+
+def image_other_2_numpy(input_image, return_all=False):
+    
+    """ Loads image data and returns a numpy array. There
+        will likely be many parameters to specify because
+        of the strange quantization issues seemingly inherent
+        in loading images.
+    """
+
+    output_array = imread(input_image)
+
+    if return_all:
+        return output_array, None, None
+    else:
+        return output_array
 
 
 def nrrd_2_numpy(input_nrrd, return_all=False):
@@ -285,20 +307,17 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data()
 
 
-def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepath=None, metadata=None):
+def save_numpy_2_nifti(image_numpy, output_filepath=None, reference_data=None, metadata=None, **kwargs):
 
     """ This is a bit convoluted.
-
-        TODO: Documentation, rearrange reference_nifti and output_filepath, and
-        propagate changes to the rest of qtim_tools.
     """
 
-    if reference_nifti_filepath is not None:
-        if isinstance(reference_nifti_filepath, str):
-            nifti_image = nib.load(reference_nifti_filepath)
+    if reference_data is not None:
+        if isinstance(reference_data, str):
+            nifti_image = nib.load(reference_data)
             image_affine = nifti_image.affine
         else:
-            image_affine = reference_nifti_filepath
+            image_affine = reference_data
     else:
         image_affine = np.eye(4)
 
@@ -311,20 +330,38 @@ def save_numpy_2_nifti(image_numpy, reference_nifti_filepath=None, output_filepa
         return output_filepath
 
 
+def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
+
+    lycon.save(output_filepath, input_numpy)
+
+    return output_filepath
+
+
+def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
+
+    imsave(os.path.abspath(output_filepath), input_numpy)
+
+    return output_filepath
+
+
 # Consider merging these into one dictionary. Separating them is easier to visaulize though.
 FORMAT_LIST = {'dicom': ('.dcm', '.ima'), 
                 'nifti': ('.nii', '.nii.gz'), 
                 'nrrd': ('.nrrd', '.nhdr'), 
-                'image': ('.jpg', '.png'), 
+                'image_jpg_png': ('.jpg', '.png'),
+                'image_other': ('.tif', 'gif'), 
                 'itk_transform': ('.txt', '.tfm')}
 
 NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
                 'nifti': nifti_2_numpy, 
                 'nrrd': nrrd_2_numpy, 
-                'image': img_2_numpy, 
+                'image_jpg_png': image_jpg_png_2_numpy, 
+                'image_other': image_other_2_numpy,
                 'itk_transform': itk_transform_2_numpy}
 
-SAVE_EXPORTER_LIST = {'nifti': save_numpy_2_nifti}
+SAVE_EXPORTER_LIST = {'nifti': save_numpy_2_nifti,
+                    'image_jpg_png': save_numpy_2_image_jpg_png,
+                    'image_other': save_numpy_2_image_other}
 
 
 def check_format(filepath):
@@ -342,7 +379,6 @@ def check_format(filepath):
 
     if format_type is None:
         raise ValueError
-        # print 'Error! Input file extension is not supported by qtim_tools. Returning None.'
     else:
         return format_type
 
@@ -394,20 +430,15 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
             return input_data
 
 
-def save_data(input_data, output_filename, reference_data=None, metadata=None, affine=None, output_format='.nii.gz'):
+def save_data(input_data, output_filename, reference_data=None, metadata=None, affine=None, output_format=None, **kwargs):
 
-    """ This is a bit convoluted.
+    if output_format is None:
+        output_format = check_format(output_filename)
 
-        TODO: Documentation, rearrange reference_nifti and output_filepath, and
-        propagate changes to the rest of qtim_tools.
-    """
-
-    output_filetype = check_format(output_format)
-
-    if isinstance(input_data, str) and output_filetype is not 'text':
+    if isinstance(input_data, str) and output_format is not 'text':
         input_data, metadata, reference_data, data_format = convert_input_2_numpy(input_data, return_all=True)
 
-    return SAVE_EXPORTER_LIST[output_filetype](input_data, reference_data, output_filename, metadata)
+    return SAVE_EXPORTER_LIST[output_format](input_data, output_filename, reference_data=reference_data, metadata=metadata, affine=affine)
 
 
 def execute(cmd):

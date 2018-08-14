@@ -25,6 +25,7 @@ class Preprocessor(object):
         add_parameter(self, kwargs, 'preprocessor_string', '_convert')
 
         # Internal Parameters
+        add_parameter(self, kwargs, 'data_groups', None)
         add_parameter(self, kwargs, 'verbose', True)
 
         # Derived Parameters
@@ -65,7 +66,7 @@ class Preprocessor(object):
 
         self.initialize(data_collection)  # TODO: make overwrite work with initializations
 
-        for label, data_group in data_collection.data_groups.items():
+        for label, data_group in self.data_groups.items():
 
             self.generate_output_filenames(data_collection, data_group)
 
@@ -150,7 +151,7 @@ class Preprocessor(object):
         if type(self.output_data) is not list:
             for file_idx, output_filename in enumerate(self.output_filenames):
                 if self.overwrite or not os.path.exists(output_filename):
-                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), data_group.preprocessed_affine, output_filename)
+                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), output_filename, data_group.preprocessed_affine, )
 
         return
 
@@ -197,6 +198,11 @@ class Preprocessor(object):
         if self.order_index != len(data_collection.preprocessors) - 1:
             self.next_prepreprocessor = data_collection.preprocessors[self.order_index + 1]
 
+        if self.data_groups is None:
+            self.data_groups = data_collection.data_groups
+        else:
+            self.data_groups = {label: data_group for label, data_group in data_collection.data_groups.items() if label in self.data_groups}
+
         return
 
     def reset(self):
@@ -204,9 +210,6 @@ class Preprocessor(object):
         self.outputs = defaultdict(list)
 
         return
-
-    def append_data_group(self, data_group):
-        self.data_groups[data_group.label] = data_group
 
 
 class DICOMConverter(Preprocessor):

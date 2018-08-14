@@ -9,7 +9,7 @@ from keras.layers.merge import concatenate
 
 from deepneuro.models.model import KerasModel
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
-from deepneuro.models.dn_ops import UpConvolution, DnConv
+from deepneuro.models.dn_ops import DnConv, DnMaxPooling, DnDeConv, DnUpsampling
 from deepneuro.utilities.util import add_parameter
 
 
@@ -30,9 +30,7 @@ class UNet(KerasModel):
 
         super(UNet, self).load(kwargs)
 
-        add_parameter(self, kwargs, 'dim', 3)
         add_parameter(self, kwargs, 'depth', 4)
-        add_parameter(self, kwargs, 'max_filter', 512)
 
     def build_model(self):
         
@@ -54,12 +52,12 @@ class UNet(KerasModel):
             filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
 
             if level == 0:
-                left_outputs += [Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(self.inputs)]
-                left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
+                left_outputs += [DnConv(self.inputs, filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')]
+                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
             else:
-                left_outputs += [MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])]
-                left_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
-                left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
+                left_outputs += [DnMaxPooling(left_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras')]
+                left_outputs[level] = DnConv(left_outputs[level], filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_1'.format(level), backend='keras')
+                left_outputs[level] = DnConv(left_outputs[level], 2 * filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_2'.format(level), backend='keras')
 
             if self.dropout is not None and self.dropout != 0:
                 left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
@@ -74,10 +72,10 @@ class UNet(KerasModel):
             filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
 
             if level > 0:
-                right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level - 1])]
-                right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=4)
-                right_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
-                right_outputs[level] = Conv3D(int(filter_num / 2), self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
+                right_outputs += [DnUpsampling(right_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras')]
+                right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=self.dim + 1)
+                right_outputs[level] = DnConv(right_outputs[level], filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_1'.format(level), backend='keras')
+                right_outputs[level] = DnConv(right_outputs[level], int(filter_num / 2), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_2'.format(level), backend='keras')
             else:
                 continue
 
@@ -87,25 +85,35 @@ class UNet(KerasModel):
             if self.batch_norm:
                 right_outputs[level] = BatchNormalization()(right_outputs[level])
 
-        output_layer = Conv3D(int(self.num_outputs), (1, 1, 1))(right_outputs[-1])
+        self.output_layer = DnConv(right_outputs[level], 1, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
 
         # TODO: Brainstorm better way to specify outputs
-        if self.input_tensor is not None:
-            return output_layer
+        if self.input_tensor is None:
 
-        if self.output_type == 'regression':
-            self.model = Model(inputs=self.inputs, outputs=output_layer)
-            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
+            if self.output_type == 'regression':
+                self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-        if self.output_type == 'binary_label':
-            act = Activation('sigmoid')(output_layer)
-            self.model = Model(inputs=self.inputs, outputs=act)
-            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+            if self.output_type == 'dice':
+                act = Activation('sigmoid')(self.output_layer)
+                self.model = Model(inputs=self.inputs, outputs=act)
+                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-        if self.output_type == 'categorical_label':
-            act = Activation('softmax')(output_layer)
-            self.model = Model(inputs=self.inputs, outputs=act)
-            self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
-                          metrics=['categorical_accuracy'])
+            if self.output_type == 'binary_label':
+                act = Activation('sigmoid')(self.output_layer)
+                self.model = Model(inputs=self.inputs, outputs=act)
+                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
 
-        return self.model
+            if self.output_type == 'categorical_label':
+                act = Activation('softmax')(self.output_layer)
+                self.model = Model(inputs=self.inputs, outputs=act)
+                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
+                              metrics=['categorical_accuracy'])
+
+            super(UNet, self).build()
+
+            return self.model
+
+        else:
+
+            return

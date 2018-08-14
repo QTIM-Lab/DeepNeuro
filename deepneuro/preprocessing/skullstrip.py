@@ -125,9 +125,9 @@ class SkullStrip_Model(Preprocessor):
             # Also Hacky
             self.model.outputs[-1].model = self.model
             self.model.outputs[-1].input_patch_shape = self.model.outputs[-1].model.model.layers[0].input_shape
-            self.model.outputs[-1].process_case([input_data])
+            self.model.outputs[-1].process_case(input_data)
             self.model.outputs[-1].postprocess()
-            save_numpy_2_nifti(np.squeeze(self.model.outputs[-1].return_objects[-1]), data_group.preprocessed_affine, self.mask_filename)  # Hacky
+            save_numpy_2_nifti(np.squeeze(self.model.outputs[-1].return_objects[-1]), self.mask_filename, data_group.preprocessed_affine)  # Hacky
 
         self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
 

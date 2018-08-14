@@ -49,10 +49,10 @@ class DataGroup(object):
                 print('No Data!')
                 return (0,)
             elif self.base_shape is None:
-                if self.source == 'directory':
-                    self.base_shape = read_image_files(list(self.data.values())[0]).shape
-                elif self.source == 'storage':
+                if self.source == 'storage':
                     self.base_shape = self.data[0].shape
+                else:
+                    self.base_shape = read_image_files(list(self.data.values())[0]).shape
                 self.output_shape = self.base_shape
             else:
                 return None
@@ -68,7 +68,12 @@ class DataGroup(object):
 
     def get_data(self, index, return_affine=False):
 
-        if self.source == 'directory':
+        if self.source == 'storage':
+            if return_affine:
+                return self.data[index][:][np.newaxis], self.data_affines[index]
+            else:
+                return self.data[index][:][np.newaxis]
+        else:
             self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
             if affine is not None:
                 self.preprocessed_affine = affine
@@ -76,11 +81,6 @@ class DataGroup(object):
                 return self.preprocessed_case, self.preprocessed_affine
             else:
                 return self.preprocessed_case
-        elif self.source == 'storage':
-            if return_affine:
-                return self.data[index][:][np.newaxis], self.data_affines[index]
-            else:
-                return self.data[index][:][np.newaxis]
 
         return None
 
@@ -92,17 +92,30 @@ class DataGroup(object):
             return self.preprocessed_affine
         # A little unsure of the practical implication of the storage code below.
         elif self.source == 'storage':
-            return self.data[index][:][np.newaxis], self.data_affines[index]
+            if self.data_affines.shape[0] == 0:
+                affine = None
+            else:
+                affine = self.data_affines[index]
+            return self.data[index][:][np.newaxis], affine
 
         return None
+
+    def convert_to_array_data(self):
+
+        self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
+
+        if affine is not None:
+            self.preprocessed_affine = affine
 
     # @profile
     def write_to_storage(self):
 
-            if len(self.augmentation_cases) == 1:
-                self.data_storage.append(self.base_case)
-            else:
-                self.data_storage.append(self.augmentation_cases[-1])
+        if len(self.augmentation_cases) == 1:
+            self.data_storage.append(self.base_case)
+        else:
+            self.data_storage.append(self.augmentation_cases[-1])
 
-            self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
+        self.casename_storage.append(np.array(self.base_casename)[np.newaxis][np.newaxis])
+
+        if self.base_affine is not None:
             self.affine_storage.append(self.base_affine[:][np.newaxis])

@@ -18,7 +18,6 @@ if sys.version_info[:2] < (2, 7):
 
 setup(
   name = 'deepneuro',
-  # packages = ['qtim_tools'], # this must be the same as the name above
   version = '0.1.1',
   description = DOCLINES[0],
   packages = find_packages(),
@@ -31,6 +30,6 @@ setup(
   url = 'https://github.com/QTIM-Lab/DeepNeuro', # use the URL to the github repo
   download_url = 'https://github.com/QTIM-Lab/DeepNeuro/tarball/0.1.1',
   keywords = ['neuroimaging', 'neuroncology', 'neural networks', 'neuroscience', 'neurology', 'deep learning', 'fmri', 'pet', 'mri', 'dce', 'dsc', 'dti', 'machine learning', 'computer vision', 'learning', 'keras', 'theano', 'tensorflow', 'nfiti', 'nrrd', 'dicom'],
-  install_requires=['keras', 'pydicom', 'pynrrd', 'nibabel', 'numpy', 'scipy', 'scikit-image==0.12.3', 'tqdm'],
+  install_requires=['keras', 'pydicom', 'pynrrd', 'nibabel', 'pyyaml', 'six', 'imageio', 'matplotlib', 'pydot', 'scipy', 'scikit-image==0.12.3', 'tqdm', 'lycon', 'numpy'],
   classifiers = [],
 )
