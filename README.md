@@ -11,6 +11,7 @@ A deep learning python package for neuroimaging data. Focused on validated comma
 - [Installation](#installation) 
 - [Modules](#modules)
 - [Contact](#contact)
+- [Acknowledgements](#acknowledgements)
 
 ## About
 DeepNeuro is an open-source toolset of deep learning applications for neuroimaging. We have several goals for this package:
@@ -48,3 +49,7 @@ This package is in an initial testing phase, and will be released soon. Currentl
 ## Contact
 
 DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
+
+## Acknowledgements
+
+The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to high-powered graphical processing units.
