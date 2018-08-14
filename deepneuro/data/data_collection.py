@@ -1,7 +1,5 @@
 
-
-import os
-import glob
+import csv
 import numpy as np
 import tables
 import copy
@@ -12,26 +10,26 @@ from collections import defaultdict
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
-from deepneuro.data.data_load import parse_modality_directories, parse_subject_directory
+from deepneuro.data.data_load import parse_directories, parse_filepaths, parse_hdf5, parse_csv
 from deepneuro.utilities.util import add_parameter
 
 
 class DataCollection(object):
 
-    def __init__(self, data_directory=None, data_storage=None, data_group_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False, **kwargs):
+    def __init__(self, case_list=None, verbose=False, **kwargs):
 
-        # Input vars
-        self.data_directory = data_directory
-        self.data_storage = data_storage
-        self.data_group_dict = data_group_dict
-        self.spreadsheet_dict = spreadsheet_dict
-        
+        # Data sources
+        add_parameter(self, kwargs, 'data_sources', None)
+        self.data_types = ['directories', 'filepaths', 'csv', 'numpy', 'hdf5']
+        for data_type in self.data_types:
+            if data_type not in self.data_sources.keys():
+                self.data_sources[data_type] = None
+
         # File location variables
         add_parameter(self, kwargs, 'source', 'directories')
         add_parameter(self, kwargs, 'recursive', False)
         add_parameter(self, kwargs, 'file_identifying_chars', None)
 
-        self.value_dict = value_dict
         self.case_list = case_list
         self.verbose = verbose
 
@@ -49,8 +47,82 @@ class DataCollection(object):
         # Data group variables
         self.data_groups = {}
 
-        if data_group_dict is not None or data_storage is not None:
-            self.fill_data_groups()
+        self.fill_data_groups()
+
+    def fill_data_groups(self):
+
+        """ Populates data collection variables from either a directory structure or an hdf5 file.
+        """
+
+        # Create all data groups
+        for data_type in self.data_types:
+
+            if self.data_sources[data_type] is None:
+                continue
+
+            if data_type in ['file', 'directory', 'numpy', 'csv']:
+                # Create DataGroups for this DataCollection.
+                for data_group_name in self.data_sources[data_type]:
+                    if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
+                        self.data_groups[data_group_name] = DataGroup(data_group_name)
+                        self.data_groups[data_group_name].source = data_type
+
+            elif data_type == 'storage':
+
+                with tables.open_file(self.data_sources[data_type], "r") as open_hdf5:
+
+                    for data_group in open_hdf5.root._f_iter_nodes():
+                        if '_affines' not in data_group.name and '_casenames' not in data_group.name:
+
+                            self.data_groups[data_group.name] = DataGroup(data_group.name)
+                            self.data_groups[data_group_name].source = data_type
+
+            elif data_type == 'csv':
+
+                with open(self.data_sources[data_type], 'r') as infile:
+                    csv_reader = csv.reader(infile)
+                    for data_group_name in next(csv_reader):
+                        if data_group_name != 'casename':
+                            if data_group_name not in self.data_groups.keys():
+                                self.data_groups[data_group_name] = DataGroup(data_group_name)
+                                self.data_groups[data_group_name].source = data_type
+
+        print self.data_groups
+
+        # Load data into groups
+        for data_type in self.data_types:
+
+            if self.data_sources[data_type] is None:
+                continue
+
+            if data_type == 'file':
+
+                parse_filepaths(self, self.data_sources[data_type], case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
+
+            if data_type == 'directory':
+
+                parse_directories(self, self.data_sources[data_type], case_list=None)
+
+            if data_type == 'numpy':
+
+                raise NotImplementedError
+                # parse_numpy(self, self.data_sources[data_type], case_list=self.case_list)
+
+            if data_type == 'hdf5':
+
+                parse_hdf5(self, self.data_sources[data_type], case_list=self.case_list)
+
+            if data_type == 'csv':
+
+                parse_csv(self, self.data_sources[data_type], case_list=self.case_list)
+
+        self.total_cases = len(self.cases)
+
+        if self.total_cases == 0:
+            print('Found zero cases. Are you sure you have entered your data sources correctly?')
+            exit(1)
+        else:
+            print('Found', self.total_cases, 'number of cases..')            
 
     def add_case(self, case_dict, case_name=None):
 
@@ -69,100 +141,6 @@ class DataCollection(object):
         self.cases.append(case_name)
         self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
-
-    def fill_data_groups(self):
-
-        """ Populates data collection variables from either a directory structure or an hdf5 file.
-            Repeated usage may have unexpected results.
-        """
-
-        if self.source == 'files':
-
-            # Create DataGroups for this DataCollection.
-            for modality_group in self.data_group_dict:
-                if modality_group not in list(self.data_groups.keys()):
-                    self.data_groups[modality_group] = DataGroup(modality_group)
-                    self.data_groups[modality_group].source = 'file'
-
-            parse_modality_directories(self, self.data_group_dict, case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
-
-            self.total_cases = len(self.cases)
-
-            if self.total_cases == 0:
-                print('Found zero cases. Are you sure you have the right path for your input directories?')
-                exit(1)
-            else:
-                print('Found', self.total_cases, 'number of cases..')            
-
-        elif self.data_directory is not None and self.source == 'directories':
-
-            if self.verbose:
-                print('Gathering image data from...', self.data_directory, '\n')
-
-            # Create DataGroups for this DataCollection.
-            for modality_group in self.data_group_dict:
-                if modality_group not in list(self.data_groups.keys()):
-                    self.data_groups[modality_group] = DataGroup(modality_group)
-                    self.data_groups[modality_group].source = 'directory'
-
-            # Iterate through directories.. Always looking for a better way to check optional list typing.
-            if isinstance(self.data_directory, str):
-                if not os.path.exists(self.data_directory):
-                    print('The data directory you have input does not exist!')
-                    exit(1)   
-                directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
-            else:
-                directory_list = []
-                for d in self.data_directory:
-                    if not os.path.exists(d):
-                        print('WARNING: One of the data directories you have input,', d, 'does not exist!')
-                    directory_list += glob.glob(os.path.join(d, "*/"))
-                directory_list = sorted(directory_list)
-
-            for subject_dir in directory_list:
-
-                parse_subject_directory(self, subject_dir, case_list=self.case_list)
-
-            self.total_cases = len(self.cases)
-
-            if self.total_cases == 0:
-                print('Found zero cases. Are you sure you have the right path for your input directory?')
-                exit(1)
-            else:
-                print('Found', self.total_cases, 'number of cases..')
-
-        elif self.data_storage is not None:
-
-            if self.verbose:
-                print('Gathering image metadata from...', self.data_storage)
-
-            open_hdf5 = tables.open_file(self.data_storage, "r")
-
-            for data_group in open_hdf5.root._f_iter_nodes():
-                if '_affines' not in data_group.name and '_casenames' not in data_group.name:
-
-                    self.data_groups[data_group.name] = DataGroup(data_group.name)
-                    self.data_groups[data_group.name].data = data_group
-                    
-                    # Affines and Casenames. Also not great praxis.
-                    self.data_groups[data_group.name].data_affines = getattr(open_hdf5.root, data_group.name + '_affines')
-                    self.data_groups[data_group.name].data_casenames = getattr(open_hdf5.root, data_group.name + '_casenames')
-
-                    # Unsure if .source is needed. Convenient for now.
-                    self.data_groups[data_group.name].source = 'storage'
-
-                    # There's some double-counting here. TODO: revise, chop down one or the other.
-                    self.data_groups[data_group.name].cases = range(data_group.shape[0])
-                    self.data_groups[data_group.name].case_num = data_group.shape[0]
-                    self.total_cases = data_group.shape[0]
-                    self.cases = list(range(data_group.shape[0]))
-
-            if self.total_cases == 0:
-                print('No cases could be extracted from the provided HDF5 file.')
-                exit(1)
-
-        else:
-            print('No directory or data storage file specified. No data groups can be filled.')
 
     def append_augmentation(self, augmentations, multiplier=None):
 
@@ -319,7 +297,7 @@ class DataCollection(object):
             data_group.base_case = data_group.get_data(index=case)
             data_group.base_affine = data_group.get_affine(index=case)
 
-            if data_group.source == 'storage':
+            if data_group.source == 'hdf5':
                 data_group.base_casename = data_group.data_casenames[case][0]
             else:
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
