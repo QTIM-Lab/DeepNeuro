@@ -351,14 +351,14 @@ class DataCollection(object):
                 # try:
                     self.load_case_data(case_name)
                 # except KeyboardInterrupt:
-                #     raise
+                    # raise
                 # except:
-                #     print 'Hit error on', case_name, 'skipping.'
-                #     yield False
+                    # print 'Hit error on', case_name, 'skipping.'
+                    # yield False
 
                 recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
 
-                for i in xrange(self.multiplier):
+                for i in range(self.multiplier):
                     next(recursive_augmentation_generator)
 
                     if yield_data:
