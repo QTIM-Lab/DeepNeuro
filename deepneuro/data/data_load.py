@@ -67,7 +67,6 @@ def parse_directories(data_collection, directory_list, case_list=None):
                 data_collection.data_groups[data_group].add_case(os.path.abspath(case_dir), list(data_group_files))
 
         data_collection.cases.append(case_name)
-        data_collection.preprocessed_cases[case_name] = defaultdict(list)
 
 
 def parse_hdf5(data_collection, data_hdf5, case_list=None):
@@ -156,7 +155,6 @@ def parse_filepaths(data_collection, data_group_dict, case_list=None, recursive=
         if lead_filepath is not None:
             case_name = lead_filepath
             data_collection.cases.append(case_name)
-            data_collection.preprocessed_cases[case_name] = defaultdict(list)
 
 
 def parse_csv(data_collection, data_csv, case_list=None):
@@ -179,13 +177,12 @@ def parse_csv(data_collection, data_csv, case_list=None):
 
                 for idx, data_group_name in enumerate(header[1:]):
 
-                    data_group_files[data_group_name] += [row[idx]]
+                    data_group_files[data_group_name] += [row[idx + 1]]
 
                 for data_group_name in data_group_names:    
                     data_collection.data_groups[data_group_name].add_case(casename, data_group_files[data_group_name])
 
                 data_collection.cases.append(casename)
-                data_collection.preprocessed_cases[casename] = defaultdict(list)
 
     return
 

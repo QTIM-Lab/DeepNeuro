@@ -3,6 +3,7 @@ import csv
 import numpy as np
 import tables
 import copy
+import os
 
 from tqdm import tqdm
 from collections import defaultdict
@@ -40,7 +41,6 @@ class DataCollection(object):
 
         # Empty vars
         self.cases = []
-        self.preprocessed_cases = {}
         self.total_cases = 0
         self.current_case = None
 
@@ -87,8 +87,6 @@ class DataCollection(object):
                                 self.data_groups[data_group_name] = DataGroup(data_group_name)
                                 self.data_groups[data_group_name].source = data_type
 
-        print self.data_groups
-
         # Load data into groups
         for data_type in self.data_types:
 
@@ -126,20 +124,23 @@ class DataCollection(object):
 
     def add_case(self, case_dict, case_name=None):
 
-        # Currently only works for filepaths. Maybe add functionality for python data types, hdf5s?
+        # Currently only works for filepaths. TODO: add functionality for python data types, hdf5s?
+        # 
 
         # Create DataGroups for this DataCollection.
-        for modality_group in case_dict:
-            if modality_group not in list(self.data_groups.keys()):
-                self.data_groups[modality_group] = DataGroup(modality_group)
-                self.data_groups[modality_group].source = 'directory'
+        for data_group_name in case_dict:
+            if data_group_name not in list(self.data_groups.keys()):
+                self.data_groups[data_group_name] = DataGroup(data_group_name)
+                self.data_groups[data_group_name].source = 'directory'
 
         # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_group_files in case_dict.items():
-            self.data_groups[data_group].add_case(case_name, list(modality_group_files))
+        for data_group_name in self.data_groups.keys():
+            if data_group_name in case_dict.keys():
+                self.data_groups[data_group_name].add_case(case_name, list(case_dict[data_group_name]))
+            else:
+                self.data_groups[data_group_name].add_case(case_name, None)
         
         self.cases.append(case_name)
-        self.preprocessed_cases[case_name] = {}
         self.total_cases = len(self.cases)
 
     def append_augmentation(self, augmentations, multiplier=None):
@@ -204,53 +205,6 @@ class DataCollection(object):
 
         return
 
-    def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
-        
-        # TODO: Add functionality for inserting channel at specific index, multiple channels
-
-        if isinstance(input_data, str):
-            input_data = read_image_files([input_data])
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        for data_group in data_groups:
-
-            if data_group.base_case is None:
-                self.load_case_data(case)
-
-            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
-
-            # # Perhaps should not use tuples for output shape.
-            # This is broken.
-            if data_group.output_shape is not None:
-                output_shape = list(data_group.output_shape)
-                output_shape[channel_dim] = output_shape[channel_dim] + 1
-                data_group.output_shape = tuple(output_shape)
-
-    def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
-
-        # TODO: Add functionality for removing multiple channels
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        for data_group in data_groups:
-
-            data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
-
-            # Perhaps should not use tuples for output shape.
-            if data_group.output_shape is not None:
-                output_shape = list(data_group.output_shape)
-                output_shape[channel_dim] -= 1
-                data_group.output_shape = tuple(output_shape)
-
-        return
-
     def get_data(self, case, data_group_labels=None):
 
         data_groups = self.get_data_groups(data_group_labels)
@@ -266,10 +220,8 @@ class DataCollection(object):
                     
         return {data_group.label: data_group.base_case for data_group in data_groups}
 
+    # @profile
     def preprocess(self):
-
-        # print self.preprocessed_cases, self.current_case
-        self.preprocessed_cases[self.current_case] = defaultdict(list)
 
         data_groups = self.get_data_groups()
 
@@ -283,6 +235,7 @@ class DataCollection(object):
             preprocessor.reset()
             preprocessor.execute(self)
 
+    # @profile
     def load_case_data(self, case):
 
         data_groups = self.get_data_groups()
@@ -405,7 +358,7 @@ class DataCollection(object):
 
     def clear_augmentations(self):
 
-        # This function is basically a memory leak. Good for loading data and then immediately
+        # Good for loading data and then immediately
         # using it to train. Not yet implemented
 
         self.augmentations = []
@@ -420,12 +373,14 @@ class DataCollection(object):
 
             # This is terrible code. TODO: rewrite.
             missing_case = False
+
             for data_label, data_group in self.data_groups.items():
                 if data_label not in data_group_labels:
                     continue
                 if case_name not in data_group.cases:
                     missing_case = True
                     break
+
             if not missing_case:
                 valid_cases += [case_name]
 
@@ -443,11 +398,11 @@ class DataCollection(object):
             raise ValueError('No output_filepath provided; data cannot be written.')
 
         # Create Data File
-        # try:
-        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
-        # except Exception as e:
-            # os.remove(output_filepath)
-            # raise e
+        try:
+            hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
+        except Exception as e:
+            os.remove(output_filepath)
+            raise e
 
         # Write data
         self.write_image_data_to_storage(data_group_labels)
@@ -514,11 +469,55 @@ class DataCollection(object):
 
         return data_groups
 
-    def clear_outputs(self, clear_files_only=True):
+    def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
+        
+        """ This function and remove_channel are edge cases that might be best dealt with outside of data_collection.
+        """
 
-        for data_group in self.get_data_groups():
-            for preprocessor in self.preprocessors:
-                preprocessor.clear_outputs(self, data_group, clear_files_only)
+        # TODO: Add functionality for inserting channel at specific index, multiple channels
+
+        if isinstance(input_data, str):
+            input_data = read_image_files([input_data])
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            if data_group.base_case is None:
+                self.load_case_data(case)
+
+            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
+
+            # # Perhaps should not use tuples for output shape.
+            # This is broken.
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] = output_shape[channel_dim] + 1
+                data_group.output_shape = tuple(output_shape)
+
+    def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
+
+        # TODO: Add functionality for removing multiple channels
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
+
+            # Perhaps should not use tuples for output shape.
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] -= 1
+                data_group.output_shape = tuple(output_shape)
+
+        return
 
 
 if __name__ == '__main__':

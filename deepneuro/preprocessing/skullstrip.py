@@ -74,12 +74,6 @@ class SkullStrip(Preprocessor):
 
         data_group.preprocessed_data = self.output_data
 
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['skullstrip_mask'] = [self.mask_filename]
-
-        return   
-
 
 class SkullStrip_Model(Preprocessor):
 
@@ -139,9 +133,3 @@ class SkullStrip_Model(Preprocessor):
         self.output_data[self.mask_numpy[..., 0] == 0] = 0
 
         data_group.preprocessed_data = self.output_data
-
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['skullstrip_mask'] = [self.mask_filename]
-
-        return   

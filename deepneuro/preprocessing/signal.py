@@ -113,7 +113,7 @@ class RangeNormalization(Normalization):
 
             if input_intensity_range[0] == input_intensity_range[1]:
                 normalize_numpy[:] = self.intensity_range[0]
-                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum.')
+                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum value.')
 
             else:
                 normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 

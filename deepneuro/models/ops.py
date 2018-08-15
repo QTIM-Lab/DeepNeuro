@@ -108,11 +108,11 @@ def deconv3d(input_, output_shape, kernel_size=(5, 5, 5), stride_size=(2, 2, 2),
 
 
 def pixel_norm_2d(input_, eps=1e-8):
-    return input_ / tf.sqrt(tf.reduce_mean(input_ ** 2, axis=3, keepdims=True) + eps)
+    return input_ / tf.sqrt(tf.reduce_mean(input_ ** 2, axis=3, keep_dims=True) + eps)
 
 
 def pixel_norm_3d(input_, eps=1e-8):
-    return input_ / tf.sqrt(tf.reduce_mean(input_ ** 2, axis=4, keepdims=True) + eps)
+    return input_ / tf.sqrt(tf.reduce_mean(input_ ** 2, axis=4, keep_dims=True) + eps)
 
 
 def adjusted_std(x, **kwargs): 

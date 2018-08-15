@@ -66,7 +66,11 @@ class DataGroup(object):
         else:
             return len(self.data[0])
 
-    def get_data(self, index, return_affine=False):
+    # @profile
+    def get_data(self, index=None, return_affine=False):
+
+        """ Wonky behavior reading from hdf5 here.
+        """
 
         if self.source == 'storage':
             if return_affine:

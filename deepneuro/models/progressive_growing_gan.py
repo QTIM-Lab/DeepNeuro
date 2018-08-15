@@ -144,6 +144,7 @@ class PGGAN(GAN):
 
         return
 
+    # @profile
     def process_step(self, step_counter, step, epoch):
 
         for i in range(self.discriminator_updates):
@@ -239,7 +240,7 @@ class PGGAN(GAN):
 
         self.calculate_losses()
 
-        if self.hyperverbose:
+        if self.hyperverbose or True:
             self.model_summary()
 
     def calculate_losses(self):
@@ -290,7 +291,10 @@ class PGGANPredict(keras.callbacks.Callback):
         add_parameter(self, kwargs, 'batch_size', 1)
         add_parameter(self, kwargs, 'epoch_prediction_batch_size', self.batch_size)
         add_parameter(self, kwargs, 'latent_size', 128)
-        add_parameter(self, kwargs, 'sample_latent', np.random.normal(size=[self.epoch_prediction_batch_size, self.latent_size]))
+        add_parameter(self, kwargs, 'sample_latent', None)
+
+        if self.sample_latent is None:
+            self.sample_latent = np.random.normal(size=[self.epoch_prediction_batch_size, self.latent_size])
 
         if not os.path.exists(self.epoch_prediction_dir):
             os.mkdir(self.epoch_prediction_dir)
@@ -307,7 +311,11 @@ class PGGANPredict(keras.callbacks.Callback):
 
             if predictions[0].shape[0] != max_size:
                 upsample_ratio = max_size / predictions[0].shape[0]
-                predictions = [scipy.misc.imresize(prediction, upsample_ratio * 100, interp='nearest') for prediction in predictions]
+                for prediction in predictions:
+                    if prediction.shape[-1] == 3:
+                        predictions += [scipy.misc.imresize(prediction, upsample_ratio * 100, interp='nearest')]
+                    elif prediction.shape[-1] == 3:
+                        predictions += [scipy.misc.imresize(np.repeat(prediction, (1, 1, 3)), upsample_ratio * 100, interp='nearest')]
 
             final_predictions += predictions
 
@@ -319,7 +327,7 @@ class PGGANPredict(keras.callbacks.Callback):
 
         # Hacky, revise later.
         epoch = data[0]
-        reference_data = data[1]
+        reference_data = data[1][0:self.epoch_prediction_batch_size]
 
         if self.epoch_prediction_object is None:
             prediction = self.deepneuro_model.predict(sample_latent=self.sample_latent)
@@ -328,7 +336,7 @@ class PGGANPredict(keras.callbacks.Callback):
 
         output_filepaths, output_images = check_data({'prediction': prediction, 'real_data': reference_data}, output_filepath=os.path.join(self.depth_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size)
 
-        self.predictions[-1] += [output_images['prediction'].astype('uint8')]
+        self.predictions[-1] += [output_images['prediction_0'].astype('uint8')]
 
         return
 

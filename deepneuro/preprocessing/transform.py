@@ -7,6 +7,38 @@ from deepneuro.utilities.util import add_parameter, quotes
 FNULL = open(os.devnull, 'w')
 
 
+class MergeChannels(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Merge')
+
+        # Registration Parameters
+        add_parameter(self, kwargs, 'dimensions', [1, 1, 1])
+        add_parameter(self, kwargs, 'interpolation', 'linear')
+        add_parameter(self, kwargs, 'reference_channel', None)
+
+        # Derived Parameters
+        add_parameter(self, kwargs, 'preprocessor_string', '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', ''))
+        self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
+        self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
+
+        self.array_input = False
+
+    def preprocess(self, data_group):
+
+        for file_idx, filename in enumerate(data_group.preprocessed_case):
+            if self.reference_channel is None:
+                specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, quotes(filename), quotes(self.output_filenames[file_idx])]
+            else:
+                specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_channel, '--interpolation', self.interpolation_dict[self.interpolation], quotes(self.base_file), quotes(self.output_filename)]
+            subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+
+        self.output_data = self.output_filenames
+        data_group.preprocessed_case = self.output_filenames
+
+
 class Resample(Preprocessor):
 
     def load(self, kwargs):
@@ -97,9 +129,3 @@ class Coregister(Preprocessor):
 
         self.output_data = self.output_filenames
         data_group.preprocessed_case = self.output_filenames
-
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['output_transforms'] = self.output_transforms
-
-        return super(Coregister, self).store_outputs(data_collection, data_group)

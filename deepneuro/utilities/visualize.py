@@ -5,7 +5,7 @@ from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=6, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False):
 
     if data_collection is not None:
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
@@ -21,10 +21,16 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         output_data = {label: data for label, data in output_data.items() if label in output_groups}
 
     output_images = {}
+
+    if viz_rows is None:
+        viz_rows = int(np.ceil(np.sqrt(batch_size)))
+
     viz_rows = min(viz_rows, batch_size)
     viz_columns = int(np.ceil(batch_size / float(viz_rows)))
 
     for label, data in output_data.items():
+
+        print data.shape
 
         if data.ndim == 5:
             output_images = display_3d_data(data, viz_mode_3d, label, output_images, viz_rows, viz_columns)
@@ -32,33 +38,46 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         elif data.ndim == 4:
             if data.shape[-1] not in [1, 3]:
                 for i in range(data.shape[-1]):
-                    output_images[label + '_' + str(i)] = merge_data(data[..., -1][..., np.newaxis], [viz_rows, viz_columns], 1)
+                    output_images[label + '_' + str(i)] = merge_data(data[..., i][..., np.newaxis], [viz_rows, viz_columns], 1)
+                    color_range[label + '_' + str(i)] = color_range[label]
 
             else:
                 output_images[label] = merge_data(data, [viz_rows, viz_columns], data.shape[-1])
 
     if show_output:
 
-        fig, axarr = plt.subplots(len(output_images.keys()))
+        plots = len(output_images.keys())
+        plot_rows = int(np.ceil(np.sqrt(plots)))
+        plot_columns = int(np.ceil(plots / float(plot_rows)))
+        fig, axarr = plt.subplots(plot_rows, plot_columns)
+
+        # matplotlib is so annoying
+        if plot_rows == 1 and plot_columns == 1:
+            axarr = np.array([axarr]).reshape(1, 1)
+        elif plot_rows == 1 or plot_columns == 1:
+            axarr = axarr.reshape(plot_rows, plot_columns)
 
         for plot_idx, (label, data) in enumerate(output_images.items()):
 
+            image_row = plot_idx % plot_rows
+            image_column = plot_idx % plot_columns
+
             if data.shape[-1] == 3:
 
-                # Weird matplotlib bug:
+                # Weird matplotlib bug/feature:
                 if np.min(data) < 0:
                     data = (data - np.min(data)) / (np.max(data) - np.min(data))
 
-                plt_image = axarr[plot_idx].imshow(np.squeeze(data), cmap=plt.get_cmap('hot'), vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
+                plt_image = axarr[image_row, image_column].imshow(np.squeeze(data), cmap=plt.get_cmap('hot'), vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
 
-                fig.colorbar(plt_image, ax=axarr[plot_idx])
+                fig.colorbar(plt_image, ax=axarr[image_row, image_column])
 
             elif data.shape[-1] == 1:
-                plt_image = axarr[plot_idx].imshow(np.squeeze(data), cmap='gray', vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
+                plt_image = axarr[image_row, image_column].imshow(np.squeeze(data), cmap='gray', vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
 
-                fig.colorbar(plt_image, ax=axarr[plot_idx], cmap='gray')
+                fig.colorbar(plt_image, ax=axarr[image_row, image_column], cmap='gray')
 
-            axarr[plot_idx].set_title(label)
+            axarr[image_row, image_column].set_title(label)
 
         plt.show()
 
