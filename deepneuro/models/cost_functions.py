@@ -46,3 +46,10 @@ def wasserstein_loss(model, discriminator, discriminator_fake_logits, discrimina
     D_loss += 0.001 * tf.reduce_mean(tf.square(discriminator_real_logits - 0.0))
 
     return [D_loss], [G_loss], [D_origin_loss]
+
+
+def focal_loss(y_true, y_pred, gamma=2):
+    y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
+    eps = K.epsilon()
+    y_pred = K.clip(y_pred, eps, 1. - eps)
+    return -K.sum(K.pow(1. - y_pred, gamma) * y_true * K.log(y_pred), axis=-1)
