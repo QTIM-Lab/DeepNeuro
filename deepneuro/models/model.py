@@ -3,6 +3,7 @@
 """
 
 import os
+import glob
 import tensorflow as tf
 import numpy as np
 import csv
@@ -21,7 +22,7 @@ from deepneuro.models.callbacks import get_callbacks
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), initial_learning_rate=0.00001, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -92,14 +93,15 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'activation', 'relu')
         add_parameter(self, kwargs, 'optimizer', 'Nadam')
         add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
-
-        self.dropout = dropout
-        self.batch_norm = batch_norm
+        add_parameter(self, kwargs, 'dropout', None)
+        add_parameter(self, kwargs, 'batch_norm', True)
 
         self.initial_learning_rate = initial_learning_rate
 
         # Logging Parameters - Temporary
         add_parameter(self, kwargs, 'output_log_file', 'deepneuro_log.csv')
+        add_parameter(self, kwargs, 'tensorboard_directory', None)
+        add_parameter(self, kwargs, 'tensorboard_run_directory', None)
 
         # DeepNeuro Parameters
         add_parameter(self, kwargs, 'input_data', 'input_data')
@@ -443,6 +445,24 @@ class TensorFlowModel(DeepNeuroModel):
         # builder.save()
 
         return save_path
+
+    def log_variables(self):
+
+        self.summary_op = tf.summary.merge_all()
+
+        if self.tensorboard_directory is not None:
+
+            if self.tensorboard_run_directory is None:
+
+                previous_runs = glob.glob(os.path.join(self.tensorboard_directory, 'tensorboard_run*'))
+                if len(previous_runs) == 0:
+                    run_number = 0
+                else:
+                    run_number = max([int(s.split('tensorboard_run_')[1]) for s in previous_runs]) + 1
+
+                self.tensorboard_run_directory = os.path.join(self.tensorboard_directory, 'tensorboard_run_%02d' % run_number)
+
+            self.summary_writer = tf.summary.FileWriter(self.tensorboard_run_directory, self.sess.graph)
 
     def model_summary(self):
 
