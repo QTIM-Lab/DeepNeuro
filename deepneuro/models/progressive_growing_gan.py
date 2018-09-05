@@ -83,15 +83,15 @@ class PGGAN(GAN):
         # solely on the current resolution. The loop below looks odd because the lowest 
         # resolution only has one stage.
 
-        for training_stage in range(int(np.ceil((self.starting_depth - 1) / 2.)), (self.depth * 2) - 1):
+        for self.training_stage in range(int(np.ceil((self.starting_depth - 1) / 2.)), (self.depth * 2) - 1):
 
-            if (training_stage % 2 == 0):
+            if (self.training_stage % 2 == 0):
                 self.transition = False
             else:
                 self.transition = True
 
-            current_depth = np.ceil((training_stage + 2) / 2.)
-            previous_depth = np.ceil((training_stage + 1) / 2.)
+            current_depth = np.ceil((self.training_stage + 2) / 2.)
+            previous_depth = np.ceil((self.training_stage + 1) / 2.)
             self.progressive_depth = int(current_depth - 1)
 
             current_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(current_depth), str(self.transition)), 'model.ckpt')
@@ -130,7 +130,7 @@ class PGGAN(GAN):
 
                 self.callback_process('on_epoch_end', [str(epoch), reference_data])
 
-                save_path = self.saver.save(self.sess, current_model_path)
+                self.saver.save(self.sess, current_model_path)
 
             self.callback_process('on_depth_end', [current_depth, self.transition])
 
@@ -176,6 +176,10 @@ class PGGAN(GAN):
             step_counter.set_description("Generator Loss: {0:.5f}".format(g_loss) + " Discriminator Loss: {0:.5f}".format(d_loss) + " Alpha: {0:.2f}".format(transition))
         else:
             step_counter.set_description("Generator Loss: {0:.5f}".format(g_loss) + " Discriminator Loss: {0:.5f}".format(d_loss))
+
+        summary_str = self.sess.run(self.summary_op, feed_dict={self.reference_images: reference_data, self.latent: sample_latent})
+        if self.tensorboard_directory is not None:
+            self.summary_writer.add_summary(summary_str, (self.num_epochs * self.training_steps_per_epoch * self.training_stage) + (self.training_steps_per_epoch * epoch) + step)
 
         return reference_data
 
@@ -233,12 +237,17 @@ class PGGAN(GAN):
         self.d_vars_n_2_rgb = [var for var in self.d_vars_n_2 if '{}'.format(self.output_size) not in var.name]
         self.g_vars_n_2_rgb = [var for var in self.g_vars_n_2 if '{}'.format(self.output_size) not in var.name]
 
+        print self.g_vars
+        print self.g_vars_n_read
+        print self.g_vars_n_2_rgb
+
         self.saver = tf.train.Saver(self.d_vars + self.g_vars)
         self.r_saver = tf.train.Saver(self.d_vars_n_read + self.g_vars_n_read)
         if len(self.d_vars_n_2_rgb + self.g_vars_n_2_rgb):
             self.rgb_saver = tf.train.Saver(self.d_vars_n_2_rgb + self.g_vars_n_2_rgb)
 
         self.calculate_losses()
+        self.log_variables()
 
         if self.hyperverbose or True:
             self.model_summary()
@@ -256,6 +265,17 @@ class PGGAN(GAN):
         self.opti_D = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(
             self.D_loss, var_list=self.d_vars)
         self.opti_G = self.tensorflow_optimizer_dict[self.optimizer](learning_rate=self.initial_learning_rate, beta1=0.0, beta2=0.99).minimize(self.G_loss, var_list=self.g_vars)
+
+    def log_variables(self):
+
+        tf.summary.scalar('Generator Loss', self.G_loss)
+        tf.summary.scalar('Discriminator Loss (WP)', self.D_loss)
+        tf.summary.scalar('Discriminator Loss (Basic)', self.D_origin_loss)
+        tf.summary.scalar('Interpolation %', self.alpha_transition)
+
+        super(PGGAN, self).log_variables()
+
+        return
 
     def load_model(self, input_model_path, batch_size=1):
 

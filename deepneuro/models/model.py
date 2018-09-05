@@ -3,8 +3,11 @@
 """
 
 import os
+import glob
 import tensorflow as tf
+import numpy as np
 import csv
+import keras
 
 from shutil import rmtree
 from tqdm import tqdm
@@ -19,7 +22,7 @@ from deepneuro.models.callbacks import get_callbacks
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), dropout=.1, batch_norm=False, initial_learning_rate=0.00001, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, downsize_filters_factor=1, pool_size=(2, 2, 2), filter_shape=(3, 3, 3), initial_learning_rate=0.00001, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -88,16 +91,17 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'kernel_size', (3, 3, 3))
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
-        add_parameter(self, kwargs, 'optimizer', 'Adam')
+        add_parameter(self, kwargs, 'optimizer', 'Nadam')
         add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
-
-        self.dropout = dropout
-        self.batch_norm = batch_norm
+        add_parameter(self, kwargs, 'dropout', None)
+        add_parameter(self, kwargs, 'batch_norm', True)
 
         self.initial_learning_rate = initial_learning_rate
 
         # Logging Parameters - Temporary
         add_parameter(self, kwargs, 'output_log_file', 'deepneuro_log.csv')
+        add_parameter(self, kwargs, 'tensorboard_directory', None)
+        add_parameter(self, kwargs, 'tensorboard_run_directory', None)
 
         # DeepNeuro Parameters
         add_parameter(self, kwargs, 'input_data', 'input_data')
@@ -238,9 +242,11 @@ class KerasModel(DeepNeuroModel):
 
     def load(self, kwargs):
 
+        self.keras_optimizer_dict = {'Nadam': keras.optimizers.Nadam}
+
         super(KerasModel, self).load(kwargs)
 
-    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model', 'log'], **kwargs):
+    def train(self, training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, num_epochs=None, callbacks=['save_model', 'log'], **kwargs):
 
         """
         input_groups : list of strings, optional
@@ -440,6 +446,24 @@ class TensorFlowModel(DeepNeuroModel):
 
         return save_path
 
+    def log_variables(self):
+
+        self.summary_op = tf.summary.merge_all()
+
+        if self.tensorboard_directory is not None:
+
+            if self.tensorboard_run_directory is None:
+
+                previous_runs = glob.glob(os.path.join(self.tensorboard_directory, 'tensorboard_run*'))
+                if len(previous_runs) == 0:
+                    run_number = 0
+                else:
+                    run_number = max([int(s.split('tensorboard_run_')[1]) for s in previous_runs]) + 1
+
+                self.tensorboard_run_directory = os.path.join(self.tensorboard_directory, 'tensorboard_run_%02d' % run_number)
+
+            self.summary_writer = tf.summary.FileWriter(self.tensorboard_run_directory, self.sess.graph)
+
     def model_summary(self):
 
         for layer in tf.trainable_variables():
@@ -505,91 +529,3 @@ def load_old_model(model_file, backend='keras'):
         saver = tf.train.import_meta_graph(model_file)
         saver.restore(sess, tf.train.latest_checkpoint('./'))
         return sess
-
-
-# def MinimalModel(DeepNeuroModel):
-
-#     def load(self, kwargs):
-
-#         if 'dummy_parameter' in kwargs:
-#             self.depth = kwargs.get('depth')
-#         else:
-#             self.depth = False
-
-#     def build_model(self):
-        
-#         """ A basic implementation of the U-Net proposed in https://arxiv.org/abs/1505.04597
-        
-#             TODO: specify optimizer
-
-#             Returns
-#             -------
-#             Keras model or tensor
-#                 If input_tensor is provided, this will return a tensor. Otherwise,
-#                 this will return a Keras model.
-#         """
-
-#         print self.inputs.get_shape()
-
-#         left_outputs = []
-
-#         for level in xrange(self.depth):
-
-#             filter_num = int(self.max_filter / (2 ** (self.depth - level)) / self.downsize_filters_factor)
-
-#             if level == 0:
-#                 left_outputs += [Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(self.inputs)]
-#                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
-#             else:
-#                 left_outputs += [MaxPooling3D(pool_size=self.pool_size)(left_outputs[level - 1])]
-#                 left_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
-#                 left_outputs[level] = Conv3D(2 * filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(left_outputs[level])
-
-#             if self.dropout is not None and self.dropout != 0:
-#                 left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
-
-#             if self.batch_norm:
-#                 left_outputs[level] = BatchNormalization()(left_outputs[level])
-
-#         right_outputs = [left_outputs[self.depth - 1]]
-
-#         for level in xrange(self.depth):
-
-#             filter_num = int(self.max_filter / (2 ** (level)) / self.downsize_filters_factor)
-
-#             if level > 0:
-#                 right_outputs += [UpConvolution(pool_size=self.pool_size)(right_outputs[level - 1])]
-#                 right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=4)
-#                 right_outputs[level] = Conv3D(filter_num, self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
-#                 right_outputs[level] = Conv3D(int(filter_num / 2), self.filter_shape, activation=self.activation, padding=self.padding)(right_outputs[level])
-#             else:
-#                 continue
-
-#             if self.dropout is not None and self.dropout != 0:
-#                 right_outputs[level] = Dropout(self.dropout)(right_outputs[level])
-
-#             if self.batch_norm:
-#                 right_outputs[level] = BatchNormalization()(right_outputs[level])
-
-#         output_layer = Conv3D(int(self.num_outputs), (1, 1, 1))(right_outputs[-1])
-
-#         # TODO: Brainstorm better way to specify outputs
-#         if self.input_tensor is not None:
-#             return output_layer
-
-#         if self.output_type == 'regression':
-#             self.model = Model(inputs=self.inputs, outputs=output_layer)
-#             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
-
-#         if self.output_type == 'binary_label':
-#             act = Activation('sigmoid')(output_layer)
-#             self.model = Model(inputs=self.inputs, outputs=act)
-#             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
-
-#         if self.output_type == 'categorical_label':
-#             act = Activation('softmax')(output_layer)
-#             self.model = Model(inputs=self.inputs, outputs=act)
-#             self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
-#                           metrics=['categorical_accuracy'])
-
-#         return self.model
