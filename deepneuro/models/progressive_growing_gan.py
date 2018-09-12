@@ -11,7 +11,7 @@ import keras
 import scipy
 
 from tqdm import tqdm
-
+from collections import defaultdict
 
 from deepneuro.utilities.util import add_parameter
 from deepneuro.models.blocks import generator, discriminator
@@ -237,10 +237,6 @@ class PGGAN(GAN):
         self.d_vars_n_2_rgb = [var for var in self.d_vars_n_2 if '{}'.format(self.output_size) not in var.name]
         self.g_vars_n_2_rgb = [var for var in self.g_vars_n_2 if '{}'.format(self.output_size) not in var.name]
 
-        print self.g_vars
-        print self.g_vars_n_read
-        print self.g_vars_n_2_rgb
-
         self.saver = tf.train.Saver(self.d_vars + self.g_vars)
         self.r_saver = tf.train.Saver(self.d_vars_n_read + self.g_vars_n_read)
         if len(self.d_vars_n_2_rgb + self.g_vars_n_2_rgb):
@@ -249,7 +245,7 @@ class PGGAN(GAN):
         self.calculate_losses()
         self.log_variables()
 
-        if self.hyperverbose or True:
+        if self.hyperverbose:
             self.model_summary()
 
     def calculate_losses(self):
@@ -324,22 +320,32 @@ class PGGANPredict(keras.callbacks.Callback):
 
     def on_train_end(self, logs={}):
         
-        max_size = self.predictions[-1][0].shape[0]
-        final_predictions = []
+        """ Very confusing, make more explicit
+        """
 
-        for predictions in self.predictions:
+        for key in self.predictions[-1].keys():
 
-            if predictions[0].shape[0] != max_size:
-                upsample_ratio = max_size / predictions[0].shape[0]
-                for prediction in predictions:
-                    if prediction.shape[-1] == 3:
-                        predictions += [scipy.misc.imresize(prediction, upsample_ratio * 100, interp='nearest')]
-                    elif prediction.shape[-1] == 3:
-                        predictions += [scipy.misc.imresize(np.repeat(prediction, (1, 1, 3)), upsample_ratio * 100, interp='nearest')]
+            max_size = self.predictions[-1][key][0].shape[0]
+            final_predictions = []
 
-            final_predictions += predictions
+            for predictions in self.predictions:
 
-        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'pggan_training.gif'), final_predictions)
+                new_predictions = []
+                data = predictions[key]
+
+                if data[0].shape[0] != max_size:
+                    upsample_ratio = max_size / data[0].shape[0]
+                    for prediction in data:
+                        if prediction.shape[-1] == 3:
+                            new_predictions += [scipy.misc.imresize(prediction, upsample_ratio * 100, interp='nearest')]
+                        elif prediction.shape[-1] == 1:
+                            new_predictions += [scipy.misc.imresize(np.repeat(prediction, 3, axis=2), upsample_ratio * 100, interp='nearest')]
+                else:
+                    new_predictions = data
+
+                final_predictions += new_predictions
+
+            imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'pggan_training_' + key + '.gif'), final_predictions)
 
         return
  
@@ -356,7 +362,8 @@ class PGGANPredict(keras.callbacks.Callback):
 
         output_filepaths, output_images = check_data({'prediction': prediction, 'real_data': reference_data}, output_filepath=os.path.join(self.depth_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size)
 
-        self.predictions[-1] += [output_images['prediction_0'].astype('uint8')]
+        for key, images in output_images.iteritems():
+            self.predictions[-1][key] += [images.astype('uint8')]
 
         return
 
@@ -367,12 +374,13 @@ class PGGANPredict(keras.callbacks.Callback):
         if not os.path.exists(self.depth_dir):
             os.mkdir(self.depth_dir)
 
-        self.predictions += [[]]
+        self.predictions += [defaultdict(list)]
 
         return
 
     def on_depth_end(self, depth_transition, logs={}):
 
-        imageio.mimsave(os.path.join(self.depth_dir, 'epoch_prediction.gif'), self.predictions[-1])
+        for key, images in self.predictions[-1].iteritems():
+            imageio.mimsave(os.path.join(self.depth_dir, 'epoch_prediction_' + key + '.gif'), images)
 
         return

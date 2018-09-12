@@ -7,6 +7,9 @@ class DataGroup(object):
 
     def __init__(self, label):
 
+        """ Inconsistent behavior when reading from HDF5 or filepaths in DataGroups.
+        """ 
+
         self.label = label
         self.augmentations = []
         self.data = {}
@@ -49,7 +52,7 @@ class DataGroup(object):
                 print('No Data!')
                 return (0,)
             elif self.base_shape is None:
-                if self.source == 'storage':
+                if self.source == 'hdf5':
                     self.base_shape = self.data[0].shape
                 else:
                     self.base_shape = read_image_files(list(self.data.values())[0]).shape
@@ -59,20 +62,13 @@ class DataGroup(object):
         
         return self.output_shape
 
-    def get_modalities(self):
-
-        if self.data == []:
-            return 0
-        else:
-            return len(self.data[0])
-
     # @profile
     def get_data(self, index=None, return_affine=False):
 
         """ Wonky behavior reading from hdf5 here.
         """
 
-        if self.source == 'storage':
+        if self.source == 'hdf5':
             if return_affine:
                 return self.data[index][:][np.newaxis], self.data_affines[index]
             else:
@@ -95,7 +91,7 @@ class DataGroup(object):
                 self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
             return self.preprocessed_affine
         # A little unsure of the practical implication of the storage code below.
-        elif self.source == 'storage':
+        elif self.source == 'hdf5':
             if self.data_affines.shape[0] == 0:
                 affine = None
             else:

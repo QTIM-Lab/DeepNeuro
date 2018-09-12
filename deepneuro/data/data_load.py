@@ -187,6 +187,11 @@ def parse_csv(data_collection, data_csv, case_list=None):
     return
 
 
+def parse_numpy(data_collection, data_numpy, case_list=None):
+
+    raise NotImplementedError
+    
+
 if __name__ == '__main__':
 
     pass

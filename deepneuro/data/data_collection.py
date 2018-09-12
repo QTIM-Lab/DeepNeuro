@@ -11,7 +11,7 @@ from collections import defaultdict
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
-from deepneuro.data.data_load import parse_directories, parse_filepaths, parse_hdf5, parse_csv
+from deepneuro.data.data_load import parse_directories, parse_filepaths, parse_hdf5, parse_csv, parse_numpy
 from deepneuro.utilities.util import add_parameter
 
 
@@ -67,15 +67,16 @@ class DataCollection(object):
                         self.data_groups[data_group_name] = DataGroup(data_group_name)
                         self.data_groups[data_group_name].source = data_type
 
-            elif data_type == 'storage':
+            elif data_type == 'hdf5':
 
-                with tables.open_file(self.data_sources[data_type], "r") as open_hdf5:
+                open_hdf5 = tables.open_file(self.data_sources[data_type], "r")
 
-                    for data_group in open_hdf5.root._f_iter_nodes():
-                        if '_affines' not in data_group.name and '_casenames' not in data_group.name:
+                for data_group in open_hdf5.root._f_iter_nodes():
+                    if '_affines' not in data_group.name and '_casenames' not in data_group.name:
 
-                            self.data_groups[data_group.name] = DataGroup(data_group.name)
-                            self.data_groups[data_group_name].source = data_type
+                        self.data_groups[data_group.name] = DataGroup(data_group.name)
+                        self.data_groups[data_group.name].data = data_group
+                        self.data_groups[data_group.name].source = data_type
 
             elif data_type == 'csv':
 
@@ -104,7 +105,7 @@ class DataCollection(object):
             if data_type == 'numpy':
 
                 raise NotImplementedError
-                # parse_numpy(self, self.data_sources[data_type], case_list=self.case_list)
+                parse_numpy(self, self.data_sources[data_type], case_list=self.case_list)
 
             if data_type == 'hdf5':
 
@@ -196,12 +197,12 @@ class DataCollection(object):
         for preprocessor in preprocessors:
             preprocessor.order_index = len(self.preprocessors)
             self.preprocessors.append(preprocessor)
+            preprocessor.initialize(self)
 
-        # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
-        # for preprocessor in preprocessors:
-        #     for data_group_label in preprocessor.data_groups:
-        #         if preprocessor.output_shape is not None:
-        #             self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
+            # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
+            for data_group_label in preprocessor.data_groups:
+                if preprocessor.output_shape is not None:
+                    self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
 
         return
 
@@ -226,6 +227,7 @@ class DataCollection(object):
         data_groups = self.get_data_groups()
 
         for data_group in data_groups:
+
             if self.preprocessors != []:
                 data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
             else:
@@ -296,6 +298,7 @@ class DataCollection(object):
                         # TODO: This section is terribly complex and repetitive. Revise!
 
                         for data_idx, data_group in enumerate(data_groups):
+                            
                             if len(self.augmentations) == 0:
                                 data_batch[data_group.label].append(data_group.base_case[0])
                             else:
@@ -398,11 +401,12 @@ class DataCollection(object):
             raise ValueError('No output_filepath provided; data cannot be written.')
 
         # Create Data File
-        try:
+        if True:
+        # try:
             hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
-        except Exception as e:
-            os.remove(output_filepath)
-            raise e
+        # except Exception as e:
+            # os.remove(output_filepath)
+            # raise e
 
         # Write data
         self.write_image_data_to_storage(data_group_labels)
@@ -424,11 +428,11 @@ class DataCollection(object):
             if num_cases == 0:
                 raise Exception('WARNING: No cases found. Cannot write to file.')
 
-            output_shape = data_group.get_shape()
+            output_shape = tuple(data_group.get_shape())
 
             # Add batch dimension
             data_shape = (0,) + output_shape
-            
+
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
 
             # Naming convention is bad here, TODO, think about this.
@@ -442,7 +446,7 @@ class DataCollection(object):
 
         # This is very shady. Currently trying to reconcile between loading data from a
         # directory and loading data from an hdf5.
-        if self.data_directory is not None:
+        if False:
             storage_cases, total_cases = self.return_valid_cases(data_group_labels)
         else:
             storage_cases, total_cases = self.cases, self.total_cases

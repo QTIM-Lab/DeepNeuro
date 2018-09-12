@@ -1,5 +1,6 @@
 import subprocess
 import os
+import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, quotes
@@ -15,28 +16,58 @@ class MergeChannels(Preprocessor):
         add_parameter(self, kwargs, 'name', 'Merge')
 
         # Registration Parameters
-        add_parameter(self, kwargs, 'dimensions', [1, 1, 1])
-        add_parameter(self, kwargs, 'interpolation', 'linear')
-        add_parameter(self, kwargs, 'reference_channel', None)
+        add_parameter(self, kwargs, 'channels', None)
+        add_parameter(self, kwargs, 'merge_method', 'maximum')
 
-        # Derived Parameters
-        add_parameter(self, kwargs, 'preprocessor_string', '_Resampled_' + str(self.dimensions).strip('[]').replace(' ', '').replace(',', ''))
-        self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
-        self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
+        self.output_shape = {}
 
-        self.array_input = False
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(MergeChannels, self).initialize(data_collection)
+
+        if self.channels is None:
+            self.output_num = 1
+        else:
+            self.output_num = len(self.channels)
+
+        for label, data_group in self.data_groups.items():
+            data_shape = list(data_group.get_shape())
+            if self.channels is None:
+                data_shape[-1] = 1
+            else:
+                data_shape[-1] = data_shape[-1] - len(self.channels) + 1
+            self.output_shape[label] = data_shape
 
     def preprocess(self, data_group):
 
-        for file_idx, filename in enumerate(data_group.preprocessed_case):
-            if self.reference_channel is None:
-                specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, quotes(filename), quotes(self.output_filenames[file_idx])]
-            else:
-                specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_channel, '--interpolation', self.interpolation_dict[self.interpolation], quotes(self.base_file), quotes(self.output_filename)]
-            subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+        """ I think there should be a more pythonic/numpythonic way to do this.
+        """
 
-        self.output_data = self.output_filenames
-        data_group.preprocessed_case = self.output_filenames
+        input_data = data_group.preprocessed_case
+
+        # Split Channels
+        if self.channels is None:
+            channel_subset = np.copy(input_data)
+        else:
+            all_channels = set(range(input_data.shape[-1]))
+            remaining_channels = list(all_channels.difference(set(self.channels)))
+            reminaing_channel_subset = np.take(input_data, remaining_channels, axis=-1)
+            channel_subset = np.take(input_data, self.channels, axis=-1)
+
+        # Merge Target Channels
+        if self.merge_method == 'maximum':
+            channel_subset = np.max(channel_subset, axis=-1)[..., np.newaxis]
+
+        # Join Channels
+        if self.channels is None:
+            output_data = channel_subset
+        else:
+            output_data = np.concatenate((reminaing_channel_subset, channel_subset), axis=-1)
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
 
 
 class Resample(Preprocessor):

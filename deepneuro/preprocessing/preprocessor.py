@@ -64,15 +64,13 @@ class Preprocessor(object):
         if self.verbose:
             docker_print('Working on Preprocessor:', self.name)
 
-        self.initialize(data_collection)  # TODO: make overwrite work with initializations
-
         for label, data_group in self.data_groups.items():
 
             # self.generate_output_filenames(data_collection, data_group)
 
             if self.array_input and type(data_group.preprocessed_case) is list:
                 data_group.get_data()
-            else:
+            elif not self.array_input:
                 self.save_to_file(data_group)
                 data_group.preprocessed_case = self.output_filenames
 
@@ -166,12 +164,6 @@ class Preprocessor(object):
         return
 
     def initialize(self, data_collection):
-
-        if self.order_index > 0:
-            self.previous_preprocessor = data_collection.preprocessors[self.order_index - 1]
-
-        if self.order_index != len(data_collection.preprocessors) - 1:
-            self.next_prepreprocessor = data_collection.preprocessors[self.order_index + 1]
 
         if self.data_groups is None:
             self.data_groups = data_collection.data_groups
