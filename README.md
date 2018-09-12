@@ -11,6 +11,7 @@ A deep learning python package for neuroimaging data. Focused on validated comma
 - [Installation](#installation) 
 - [Modules](#modules)
 - [Contact](#contact)
+- [Citation](#citation)
 - [Acknowledgements](#acknowledgements)
 
 ## About
@@ -49,6 +50,19 @@ This package is in an initial testing phase, and will be released soon. Currentl
 ## Contact
 
 DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
+
+## Citation
+
+If you use DeepNeuro in your published work, please cite:
+
+Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy-Cramer, J. (2018). <a href="https://arxiv.org/pdf/1808.04589.pdf">DeepNeuro: an open-source deep learning toolbox for neuroimaging</a>. arXiv preprint arXiv:1808.04589.
+
+@article{beers2018deepneuro,
+  title={DeepNeuro: an open-source deep learning toolbox for neuroimaging},
+  author={Beers, Andrew and Brown, James and Chang, Ken and Hoebel, Katharina and Gerstner, Elizabeth and Rosen, Bruce and Kalpathy-Cramer, Jayashree},
+  journal={arXiv preprint arXiv:1808.04589},
+  year={2018}
+}
 
 ## Acknowledgements
 
