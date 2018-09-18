@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-from keras.layers import UpSampling2D, UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation, Dropout, BatchNormalization
-
 
 def conv2d(input_, output_dim, kernel_size=(3, 3), stride_size=(2, 2), initializer_std=0.02, padding='SAME', name="conv2d"):
 
@@ -30,8 +28,7 @@ def conv3d(input_, output_dim, kernel_size=(3, 3, 3), stride_size=(2, 2, 2), ini
         w = tf.get_variable('w', list(kernel_size) + [input_.get_shape()[-1], output_dim], initializer=tf.contrib.layers.xavier_initializer())
 
         if padding == 'Other':
-            # Not sure what's up with this r n --andrew
-            # Something about going from latent space to first conv.
+            # GAN-Specific Setting. Consider removal.
             padding = 'VALID'
             input_ = tf.pad(input_, [[0, 0], [3, 3], [3, 3], [3, 3], [0, 0]], "CONSTANT")
 
@@ -46,15 +43,6 @@ def conv3d(input_, output_dim, kernel_size=(3, 3, 3), stride_size=(2, 2, 2), ini
             return conv, w, biases
         else:
             return conv
-
-        # w = tf.get_variable('w', [kernel_size[0], kernel_size[1], kernel_size[2], input_.get_shape()[-1], output_dim], initializer=tf.contrib.layers.xavier_initializer())
-        
-        # print input_, output_dim
-        # conv = tf.layers.conv3d(input_, w, kernel_size=list(kernel_size), strides=[stride_size[0], stride_size[1], stride_size[2]], padding=padding)
-        # biases = tf.get_variable('biases', [output_dim], initializer=tf.zeros_initializer())
-        # conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
-
-        # return conv
 
 
 def deconv2d(input_, output_dim, kernel_size=(3, 3), stride_size=(2, 2), stddev=0.02, name="deconv2d", with_w=False):
@@ -130,11 +118,12 @@ def minibatch_state_concat(_input, averaging='all', dim=2):
     else:
         print "nothing"
 
-    multiples = (tf.shape(_input)[0], 4, 4, 1)
+    # This is specific to the PGGAN implementation currently. Rewrite to infer size
+    multiples = (tf.shape(_input)[0]) + (4,) * dim + (1,)
 
     vals = tf.tile(vals, multiples=multiples)  # Be aware, need updated TF for this to work.
     
-    return tf.concat([_input, vals], axis=3)
+    return tf.concat([_input, vals], axis=dim + 1)
 
 
 # Some of the following functions may be redundant

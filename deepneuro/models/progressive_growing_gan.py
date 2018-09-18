@@ -71,6 +71,10 @@ class PGGAN(GAN):
 
     def train(self, training_data_collection, validation_data_collection=None, **kwargs):
 
+        """ TODO: Make the model naming structure more explicit.
+            TODO: Create more explicit documentation for callbacks.
+        """
+
         self.init_training(training_data_collection, kwargs)
 
         if not os.path.exists(self.output_model_filepath):
@@ -180,7 +184,9 @@ class PGGAN(GAN):
 
     def build_tensorflow_model(self, batch_size):
 
-        """ Break it out into functions?
+        """ TODO: Break out into functions?
+            TODO: Create progressive growing for non-square and non-2-power resolutions.
+            TODO: Investigate cause of loss jumps at transitions.
         """
 
         # Set input/output shapes for reference during inference.

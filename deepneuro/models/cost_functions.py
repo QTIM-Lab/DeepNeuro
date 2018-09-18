@@ -1,8 +1,3 @@
-import tensorflow as tf
-
-from keras import backend as K
-
-
 def cost_function_dict():
 
     return {'dice_coef': dice_coef,
@@ -17,6 +12,8 @@ def dice_coef_loss(y_true, y_pred):
 
 def dice_coef(y_true, y_pred, smooth=1.):
 
+    from keras import backend as K
+
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
@@ -24,6 +21,8 @@ def dice_coef(y_true, y_pred, smooth=1.):
 
 
 def wasserstein_loss(model, discriminator, discriminator_fake_logits, discriminator_real_logits, synthetic_images, reference_images, gradient_penalty_weight=10, name='discriminator', dim=2, depth=None, transition=False, alpha_transition=0):
+
+    import tensorflow as tf
 
     if depth is None:
         depth = model.depth
