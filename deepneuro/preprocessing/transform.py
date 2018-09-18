@@ -1,10 +1,73 @@
 import subprocess
 import os
+import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
+
+
+class MergeChannels(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Merge')
+
+        # Registration Parameters
+        add_parameter(self, kwargs, 'channels', None)
+        add_parameter(self, kwargs, 'merge_method', 'maximum')
+
+        self.output_shape = {}
+
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(MergeChannels, self).initialize(data_collection)
+
+        if self.channels is None:
+            self.output_num = 1
+        else:
+            self.output_num = len(self.channels)
+
+        for label, data_group in self.data_groups.items():
+            data_shape = list(data_group.get_shape())
+            if self.channels is None:
+                data_shape[-1] = 1
+            else:
+                data_shape[-1] = data_shape[-1] - len(self.channels) + 1
+            self.output_shape[label] = data_shape
+
+    def preprocess(self, data_group):
+
+        """ I think there should be a more pythonic/numpythonic way to do this.
+        """
+
+        input_data = data_group.preprocessed_case
+
+        # Split Channels
+        if self.channels is None:
+            channel_subset = np.copy(input_data)
+        else:
+            all_channels = set(range(input_data.shape[-1]))
+            remaining_channels = list(all_channels.difference(set(self.channels)))
+            reminaing_channel_subset = np.take(input_data, remaining_channels, axis=-1)
+            channel_subset = np.take(input_data, self.channels, axis=-1)
+
+        # Merge Target Channels
+        if self.merge_method == 'maximum':
+            channel_subset = np.max(channel_subset, axis=-1)[..., np.newaxis]
+
+        # Join Channels
+        if self.channels is None:
+            output_data = channel_subset
+        else:
+            output_data = np.concatenate((reminaing_channel_subset, channel_subset), axis=-1)
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
 
 
 class Resample(Preprocessor):
@@ -97,9 +160,3 @@ class Coregister(Preprocessor):
 
         self.output_data = self.output_filenames
         data_group.preprocessed_case = self.output_filenames
-
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['output_transforms'] = self.output_transforms
-
-        return super(Coregister, self).store_outputs(data_collection, data_group)

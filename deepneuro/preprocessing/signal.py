@@ -64,6 +64,10 @@ class Normalization(Preprocessor):
         else:
             mask_numpy = None
 
+        # return_data = np.copy(input_data)
+        # if self.channels is not None:
+            # input_data = np.take(input_data, indices=self.channels, axis=-1)
+
         if self.normalize_by_channel:
             for channel in range(data_group.preprocessed_case.shape[-1]):
                 data_group.preprocessed_case[..., channel] = self.normalize(input_data[..., channel], mask_numpy)
@@ -113,7 +117,7 @@ class RangeNormalization(Normalization):
 
             if input_intensity_range[0] == input_intensity_range[1]:
                 normalize_numpy[:] = self.intensity_range[0]
-                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum.')
+                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum value.')
 
             else:
                 normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 

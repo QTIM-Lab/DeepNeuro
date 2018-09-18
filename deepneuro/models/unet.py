@@ -3,8 +3,7 @@
 """
 
 from keras.engine import Model
-from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization
-from keras.optimizers import Nadam
+from keras.layers import Activation, Dropout, BatchNormalization
 from keras.layers.merge import concatenate
 
 from deepneuro.models.keras_model import KerasModel
@@ -90,6 +89,7 @@ class UNet(KerasModel):
         if self.input_tensor is None:
 
             super(UNet, self).build()
+
             return self.model
 
         else:

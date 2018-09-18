@@ -18,6 +18,7 @@ def _modify_dims(input_data, channels=False, batch=False, dim=None):
     return
 
 
+# @profile
 def read_image_files(image_files, return_affine=False, channels=True, batch=False):
 
     # Rename this function to something more descriptive?

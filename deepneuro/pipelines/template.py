@@ -14,7 +14,6 @@ def parse_template(input_file):
     ### Process Inputs ###
     print template['Inputs']
 
-
     return
 
 

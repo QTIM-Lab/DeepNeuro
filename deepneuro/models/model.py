@@ -3,6 +3,7 @@
 """
 
 import csv
+import keras
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
@@ -73,7 +74,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'kernel_size', (3, 3, 3))
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
-        add_parameter(self, kwargs, 'optimizer', 'Adam')
+        add_parameter(self, kwargs, 'optimizer', 'Nadam')
         add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
@@ -81,6 +82,8 @@ class DeepNeuroModel(object):
 
         # Logging Parameters - Temporary
         add_parameter(self, kwargs, 'output_log_file', 'deepneuro_log.csv')
+        add_parameter(self, kwargs, 'tensorboard_directory', None)
+        add_parameter(self, kwargs, 'tensorboard_run_directory', None)
 
         # DeepNeuro Parameters
         add_parameter(self, kwargs, 'input_data', 'input_data')
