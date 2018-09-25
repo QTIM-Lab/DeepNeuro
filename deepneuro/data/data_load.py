@@ -3,8 +3,6 @@ import glob
 import csv
 import tables
 
-from collections import defaultdict
-
 from deepneuro.utilities.util import grab_files_recursive, nifti_splitext
 
 
@@ -161,8 +159,11 @@ def parse_csv(data_collection, data_csv, case_list=None):
 
     input_csvs = set()
 
-    for data_group_name, csv_file in data_csv.items():
-        input_csvs.update([csv_file])
+    if type(data_csv) is str:
+        input_csvs = [data_csv]
+    else:
+        for data_group_name, csv_file in data_csv.items():
+            input_csvs.update([csv_file])
 
     for input_csv in input_csvs:
         with open(input_csv, 'r') as infile:

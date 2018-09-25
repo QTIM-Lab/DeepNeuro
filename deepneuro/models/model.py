@@ -3,10 +3,10 @@
 """
 
 import csv
-import keras
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter
+
 
 class DeepNeuroModel(object):
     
@@ -93,6 +93,9 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'verbose', True)
         add_parameter(self, kwargs, 'hyperverbose', False)
 
+        # Callbacks -- Refactor later.
+        self.callbacks = []
+
         # Derived Parameters
         self.write_file = None
         self.csv_writer = None
@@ -154,14 +157,14 @@ class DeepNeuroModel(object):
 
     def generate_outputs(self, data_collection, case=None):
 
-        callbacks = []
+        return_outputs = []
 
         for output in self.outputs:
             # A little odd.
             output.model, output.data_collection, output.case = self, data_collection, case
-            callbacks += [output.generate()]
+            return_outputs += [output.generate()]
 
-        return callbacks
+        return return_outputs
 
     def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None):
 

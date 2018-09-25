@@ -85,25 +85,26 @@ class Output(object):
                 self.return_objects = []
                 self.return_filenames = []
                 self.process_case(input_data[self.inputs[0]])
-                self.postprocess()
+                self.postprocess(input_data)
                 input_data = next(data_generator)
 
         else:
             self.return_objects = []
             self.return_filenames = []
-            self.process_case(self.data_collection.get_data(self.case)[self.inputs[0]])
-            self.postprocess()         
+            input_data = self.data_collection.get_data(self.case)[self.inputs[0]]
+            self.process_case(input_data)
+            self.postprocess(input_data)         
 
         return_dict = {'data': self.return_objects, 'filenames': self.return_filenames}
         return return_dict
 
-    def postprocess(self):
+    def postprocess(self, input_data):
 
         if self.save_to_file and (self.save_initial or self.postprocessors == []):
             self.save_output()
 
         for p_idx, postprocessor in enumerate(self.postprocessors):
-            postprocessor.execute(self)
+            postprocessor.execute(self, raw_data=input_data)
             if self.save_all_steps and p_idx != len(self.postprocessors) - 1:
                 self.save_output(postprocessor)
 
@@ -129,8 +130,11 @@ class Output(object):
             else:
                 output_directory = os.path.abspath(self.output_directory)
 
+            # This is very messed up, revise. Unclear what these conditions are conditioning for.
             if os.path.exists(casename) and not os.path.isdir(casename):
                 output_filename = os.path.basename(nifti_splitext(os.path.abspath(casename))[0]) + os.path.abspath(self.output_filename)
+            elif self.output_directory is not None:
+                output_filename = os.path.join(output_directory, os.path.basename(nifti_splitext(os.path.abspath(casename))[0]) + self.output_filename)
             else:
                 output_filename = os.path.abspath(self.output_filename)
 

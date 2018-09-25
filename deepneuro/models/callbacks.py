@@ -169,7 +169,8 @@ class EpochPredict(Callback):
         self.predict_data = next(self.epoch_prediction_data_collection.data_generator(perpetual=True, verbose=False, just_one_batch=True, batch_size=self.epoch_prediction_batch_size))
  
     def on_train_end(self, logs={}):
-        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+        if self.predictions != []:
+            imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
         return
  
     def on_epoch_end(self, epoch, logs={}):

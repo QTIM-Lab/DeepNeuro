@@ -86,11 +86,4 @@ class UNet(KerasModel):
 
         self.output_layer = DnConv(right_outputs[level], 1, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
 
-        if self.input_tensor is None:
-
-            super(UNet, self).build()
-
-            return self.model
-
-        else:
-            return self.output_layer
+        super(UNet, self).build_model()

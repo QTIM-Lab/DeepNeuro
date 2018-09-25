@@ -3,10 +3,8 @@ import csv
 import numpy as np
 import tables
 import copy
-import os
 
 from tqdm import tqdm
-from collections import defaultdict
 
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
@@ -60,7 +58,7 @@ class DataCollection(object):
             if self.data_sources[data_type] is None:
                 continue
 
-            if data_type in ['file', 'directory', 'numpy', 'csv']:
+            if data_type in ['file', 'directory', 'numpy']:
                 # Create DataGroups for this DataCollection.
                 for data_group_name in self.data_sources[data_type]:
                     if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
@@ -100,7 +98,7 @@ class DataCollection(object):
 
             if data_type == 'directory':
 
-                parse_directories(self, self.data_sources[data_type], case_list=None)
+                parse_directories(self, self.data_sources[data_type], case_list=self.case_list)
 
             if data_type == 'numpy':
 

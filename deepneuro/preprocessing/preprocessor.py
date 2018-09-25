@@ -1,8 +1,6 @@
 import os
 import numpy as np
 
-from collections import defaultdict
-
 from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize, docker_print
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti, save_data
 

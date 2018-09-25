@@ -7,6 +7,8 @@ class Postprocessor(object):
 
         # Default Variables
         add_parameter(self, kwargs, 'verbose', False)
+        add_parameter(self, kwargs, 'raw_data', None)
+        add_parameter(self, kwargs, 'ground_truth', 'ground_truth')
 
         # Naming Variables
         add_parameter(self, kwargs, 'name', 'Postprocesser')
@@ -18,20 +20,21 @@ class Postprocessor(object):
 
         return
 
-    def execute(self, output):
+    def execute(self, output, raw_data):
 
         postprocessed_objects = []
 
+        # TODO: Return object syntax is broken / not implemented
         for return_object in output.return_objects:
 
             if self.verbose:
                 print('Postprocessing with...', self.name)
 
-            postprocessed_objects += [self.postprocess(return_object)]
+            postprocessed_objects += [self.postprocess(return_object, raw_data=raw_data, casename=output.data_collection.data_groups[self.ground_truth].base_casename)]
 
         output.return_objects = postprocessed_objects
 
-    def postprocess(self, input_data):
+    def postprocess(self, input_data, raw_data=None, casename=None):
 
         return input_data
 

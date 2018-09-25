@@ -18,10 +18,46 @@ class BinarizeLabel(Postprocessor):
 
         add_parameter(self, kwargs, 'binarization_threshold', 0.5)
 
-    def postprocess(self, input_data):
+    def postprocess(self, input_data, raw_data=None, casename=None):
 
         return (input_data > self.binarization_threshold).astype(float)
 
+
+class Rescale(Postprocessor):
+
+    """ TODO: Merge with Normalization Preprocessor
+    """
+
+    def load(self, kwargs):
+
+        # Naming parameter
+        add_parameter(self, kwargs, 'name', 'Rescale')
+        add_parameter(self, kwargs, 'postprocessor_string', '_rescaled')
+
+        add_parameter(self, kwargs, 'input_intensity_range', None)
+        add_parameter(self, kwargs, 'output_intensity_range', [0, 255])
+
+    def postprocess(self, input_data, raw_data=None, casename=None):
+
+        normalize_numpy = input_data.astype(float)
+            
+        if self.input_intensity_range is None:
+            input_intensity_range = [np.min(normalize_numpy), np.max(normalize_numpy)]
+        else:
+            input_intensity_range = self.input_intensity_range
+
+        if input_intensity_range[0] == input_intensity_range[1]:
+            normalize_numpy[:] = self.output_intensity_range[0]
+            print('Warning: normalization edge case. All array values are equal. Normalizing to minimum value.')
+        else:
+            normalize_numpy = ((self.output_intensity_range[1] - self.output_intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.output_intensity_range[0] 
+        
+        if self.input_intensity_range is not None:
+            normalize_numpy[normalize_numpy < self.output_intensity_range[0]] = self.output_intensity_range[0]
+            normalize_numpy[normalize_numpy > self.output_intensity_range[1]] = self.output_intensity_range[1]
+
+        return normalize_numpy
+       
 
 class LargestComponents(Postprocessor):
 
@@ -34,7 +70,7 @@ class LargestComponents(Postprocessor):
         add_parameter(self, kwargs, 'component_number', 1)
         add_parameter(self, kwargs, 'connectivity', 2)
 
-    def postprocess(self, input_data):
+    def postprocess(self, input_data, raw_data=None, casename=None):
 
         """ I rewrote Ken's script, but I think I made it worse... TODO: Rewrite again? For clarity.
         """
@@ -78,7 +114,7 @@ class FillHoles(Postprocessor):
         # Hole-Filling Parameters
         add_parameter(self, kwargs, 'slice_dimension', -2)  # Currently not operational
 
-    def postprocess(self, input_data):
+    def postprocess(self, input_data, raw_data=None, casename=None):
 
         """ Although I don't know, this seems a bit ineffecient. See if there's a better 3D hole-filler out there
             Or better yet, arbitrary dimension hole_filler.

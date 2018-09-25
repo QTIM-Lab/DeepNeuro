@@ -1,7 +1,11 @@
-from keras.engine import Input
+from keras.engine import Input, Model
+from keras.layers import Activation
+from keras.optimizers import Nadam
 
+from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
 from deepneuro.models.model import DeepNeuroModel
 from deepneuro.utilities.visualize import check_data
+from deepneuro.models.callbacks import get_callbacks
 
 
 class KerasModel(DeepNeuroModel):
@@ -29,11 +33,18 @@ class KerasModel(DeepNeuroModel):
 
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 
-        if validation_data_collection is None:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(callbacks=callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, batch_size=training_batch_size, model=self, backend='keras', **kwargs))
+        self.callbacks = get_callbacks(callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs)
 
-        else:
-            self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=get_callbacks(callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs))
+        try:
+            if validation_data_collection is None:
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=self.callbacks)
+            else:
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
+        except KeyboardInterrupt:
+            for callback in self.callbacks:
+                callback.on_train_end()
+        except:
+            raise
 
         return
 
@@ -41,13 +52,16 @@ class KerasModel(DeepNeuroModel):
 
         one_batch_generator = self.keras_generator(training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, just_one_batch=True, batch_size=training_batch_size))
 
+        self.callbacks = get_callbacks(callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs)
+
         if training_steps_per_epoch is None:
             training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
 
         try:
-            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=get_callbacks(callbacks=callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs))
+            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=self.callbacks)
         except KeyboardInterrupt:
-            pass
+            for callback in self.callbacks:
+                callback.on_train_end()
         except:
             raise
 
@@ -88,7 +102,7 @@ class KerasModel(DeepNeuroModel):
         # TODO: Brainstorm better way to specify outputs
         if self.input_tensor is None:
 
-            if self.output_type == 'regression':
+            if self.output_type == 'msq':
                 self.model = Model(inputs=self.inputs, outputs=self.output_layer)
                 self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
@@ -97,20 +111,27 @@ class KerasModel(DeepNeuroModel):
                 self.model = Model(inputs=self.inputs, outputs=act)
                 self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-            if self.output_type == 'binary_label':
+            if self.output_type == 'binary_crossentropy':
                 act = Activation('sigmoid')(self.output_layer)
                 self.model = Model(inputs=self.inputs, outputs=act)
                 self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
 
-            if self.output_type == 'categorical_label':
+            if self.output_type == 'categorical_crossentropy':
                 act = Activation('softmax')(self.output_layer)
                 self.model = Model(inputs=self.inputs, outputs=act)
                 self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
                               metrics=['categorical_accuracy'])
 
-        self.model_input_shape = self.model.layers[0].input_shape
-        self.model_output_shape = self.model.layers[-1].output_shape
+            self.model_input_shape = self.model.layers[0].input_shape
+            self.model_output_shape = self.model.layers[-1].output_shape
+
+            return self.model
+
+        else:
+
+            return self.output_layer
 
 
 if __name__ == '__main__':
 
+    pass

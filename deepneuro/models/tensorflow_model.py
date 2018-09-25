@@ -38,9 +38,6 @@ class TensorFlowModel(DeepNeuroModel):
         add_parameter(self, kwargs, 'num_epochs', 100)
         add_parameter(self, kwargs, 'training_steps_per_epoch', 10)
         add_parameter(self, kwargs, 'training_batch_size', 16)
-        add_parameter(self, kwargs, 'callbacks')
-
-        self.callbacks = get_callbacks(backend='tensorflow', model=self, batch_size=self.training_batch_size, **kwargs)
 
         self.init_sess()
         self.build_tensorflow_model(self.training_batch_size)
@@ -57,24 +54,32 @@ class TensorFlowModel(DeepNeuroModel):
 
         self.callback_process('on_train_begin')
 
-        for epoch in range(self.num_epochs):
+        try:
 
-            print('Epoch {}/{}'.format(epoch, self.num_epochs))
-            self.callback_process('on_epoch_begin', epoch)
+            for epoch in range(self.num_epochs):
 
-            step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
+                print('Epoch {}/{}'.format(epoch, self.num_epochs))
+                self.callback_process('on_epoch_begin', epoch)
 
-            for step in step_counter:
+                step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
 
-                self.callback_process('on_batch_begin', step)
+                for step in step_counter:
 
-                self.process_step(step_counter)
+                    self.callback_process('on_batch_begin', step)
 
-                self.callback_process('on_batch_end', step)
+                    self.process_step(step_counter)
 
-            self.callback_process('on_epoch_end', epoch)
+                    self.callback_process('on_batch_end', step)
 
-        self.callback_process('on_train_end')
+                self.callback_process('on_epoch_end', epoch)
+
+            self.callback_process('on_train_end')
+
+        except KeyBoardInterrupt:
+
+            self.callback_process('on_train_end')
+        except:
+            raise
 
     def process_step(self):
 
