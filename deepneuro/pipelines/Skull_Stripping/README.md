@@ -26,7 +26,7 @@ A brief explanation of this functions parameters follows:
 | Parameter       | Documenation           |
 | ------------- |-------------|
 | -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
-| -T1, -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
+| -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
 | -mask_output | Optional. Name of output for skullstripping mask. Should not be a filepath, like '/home/user/mask.nii.gz', but just a name, like "mask.nii.gz"      |
 | -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
 | -debiased | If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step. |
