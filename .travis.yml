@@ -6,7 +6,6 @@ python:
 
 env:
   - TOX_ENV=flake8
-  - TOX_ENV=py27
   - TOX_ENV=py36
 
 before_install:
@@ -23,7 +22,7 @@ install:
 #   - pip install travis-sphinx
 #   - pip install numpydoc
 #   - pip install sphinx_rtd_theme
-  - pip install tox
+  - pip3 install tox
 
 notifications:
   slack: qtim:jp1UTPVP5wscM2R6eyFHJIb4
