@@ -7,6 +7,7 @@ python:
 env:
   - TOX_ENV=flake8
   - TOX_ENV=py27
+  - TOX_ENV=py36
 
 before_install:
   - pip install --upgrade pip setuptools wheel
