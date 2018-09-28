@@ -6,9 +6,9 @@ python:
 env:
   - TOX_ENV=flake8
 
-before_install:
-  - pip3 install --upgrade pip setuptools wheel
-  - pip3 install --only-binary=numpy,scipy numpy scipy
+# before_install:
+  # - pip3 install --upgrade pip setuptools wheel
+  # - pip3 install --only-binary=numpy,scipy numpy scipy
 
 # command to install dependencies
 
