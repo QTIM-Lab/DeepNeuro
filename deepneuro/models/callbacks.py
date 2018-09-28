@@ -112,8 +112,7 @@ def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_mode
     """ Very disorganized currently. Replace with dictionary? Also address never-ending parameters
     """
 
-    print kwargs
-    print model
+    print 'test error'
     return_callbacks = []
 
     for callback in callbacks:
