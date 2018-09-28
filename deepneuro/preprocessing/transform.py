@@ -15,7 +15,7 @@ class MergeChannels(Preprocessor):
         # Naming Parameters
         add_parameter(self, kwargs, 'name', 'Merge')
 
-        # Registration Parameters
+        # Merge Parameters
         add_parameter(self, kwargs, 'channels', None)
         add_parameter(self, kwargs, 'merge_method', 'maximum')
 
@@ -65,6 +65,56 @@ class MergeChannels(Preprocessor):
             output_data = channel_subset
         else:
             output_data = np.concatenate((reminaing_channel_subset, channel_subset), axis=-1)
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
+
+
+class SplitData(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Merge')
+
+        # Splitting Parameters
+        add_parameter(self, kwargs, 'split_method', 'integer_levels')
+        add_parameter(self, kwargs, 'label_splits', [1, 2, 3, 4])
+
+        self.output_shape = {}
+
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(SplitData, self).initialize(data_collection)
+
+        for label, data_group in self.data_groups.items():
+            data_shape = list(data_group.get_shape())
+            data_shape[-1] = len(self.label_splits)
+            self.output_shape[label] = data_shape
+
+    def preprocess(self, data_group):
+
+        """ I think there should be a more pythonic/numpythonic way to do this.
+        """
+
+        input_data = data_group.preprocessed_case
+        output_data = np.zeros(self.output_shape[data_group.label])
+
+        # Merge Target Channels
+        if self.split_method == 'integer_levels':
+            for label_idx, label in enumerate(self.label_splits):
+                if type(label) is list:
+                    # This is a little clunky
+                    single_label_data = np.zeros(self.output_shape[data_group.label][0:-1])[..., np.newaxis]
+                    for index in label:
+                        single_label_data += np.where(input_data == index, 1, 0)
+                    single_label_data = np.where(single_label_data > 0, 1, 0)
+                else:
+                    single_label_data = np.where(input_data == label, 1, 0)
+
+                output_data[..., label_idx] = single_label_data[..., 0]
 
         data_group.preprocessed_case = output_data
         self.output_data = output_data

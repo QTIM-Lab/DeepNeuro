@@ -31,7 +31,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     for label, data in output_data.items():
 
         if data.ndim == 5:
-            output_images = display_3d_data(data, viz_mode_3d, label, output_images, viz_rows, viz_columns)
+            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns)
 
         elif data.ndim == 4:
             if data.shape[-1] == 2:
@@ -118,7 +118,7 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2):
 
     if input_dict is None:
         input_dict = {}
@@ -143,8 +143,9 @@ def display_3d_data(input_data, viz_mode_3d='2d_center', label=None, input_dict=
                 input_dict[label] = input_data_slice
             else:
                 input_dict[label + '_' + str(i)] = input_data_slice
+                color_range[label + '_' + str(i)] = color_range[label]
 
-    return input_dict
+    return input_dict, color_range
 
 
 def merge_data(images, size, channels=3):

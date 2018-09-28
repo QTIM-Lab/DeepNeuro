@@ -409,6 +409,7 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
     """
 
     if isinstance(input_data, str):
+
         if input_format is None:
             input_format = check_format(input_data)
 

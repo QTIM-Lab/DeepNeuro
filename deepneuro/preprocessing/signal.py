@@ -69,6 +69,8 @@ class Normalization(Preprocessor):
             # input_data = np.take(input_data, indices=self.channels, axis=-1)
 
         if self.normalize_by_channel:
+            # Make this an optional parameter.
+            data_group.preprocessed_case = data_group.preprocessed_case.astype(float)
             for channel in range(data_group.preprocessed_case.shape[-1]):
                 data_group.preprocessed_case[..., channel] = self.normalize(input_data[..., channel], mask_numpy)
         else:

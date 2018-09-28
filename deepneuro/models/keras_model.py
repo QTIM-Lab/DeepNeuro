@@ -111,6 +111,11 @@ class KerasModel(DeepNeuroModel):
                 self.model = Model(inputs=self.inputs, outputs=act)
                 self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
+            if self.output_type == 'multi_dice':
+                act = Activation('sigmoid')(self.output_layer)
+                self.model = Model(inputs=self.inputs, outputs=act)
+                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
             if self.output_type == 'binary_crossentropy':
                 act = Activation('sigmoid')(self.output_layer)
                 self.model = Model(inputs=self.inputs, outputs=act)

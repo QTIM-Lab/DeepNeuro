@@ -30,7 +30,13 @@ class Postprocessor(object):
             if self.verbose:
                 print('Postprocessing with...', self.name)
 
-            postprocessed_objects += [self.postprocess(return_object, raw_data=raw_data, casename=output.data_collection.data_groups[self.ground_truth].base_casename)]
+            # Hacky.
+            if self.ground_truth in output.data_collection.data_groups.keys():
+                casename = output.data_collection.data_groups[self.ground_truth].base_casename
+            else:
+                casename = None
+
+            postprocessed_objects += [self.postprocess(return_object, raw_data=raw_data, casename=casename)]
 
         output.return_objects = postprocessed_objects
 

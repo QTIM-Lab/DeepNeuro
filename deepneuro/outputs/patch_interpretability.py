@@ -4,7 +4,7 @@ from deepneuro.outputs.output import Output
 from deepneuro.utilities.util import add_parameter, docker_print
 
 
-class ModelInference(Output):
+class PatchPrediction(Output):
 
     def load(self, kwargs):
 
@@ -19,90 +19,22 @@ class ModelInference(Output):
 
         """
 
-        # Evaluation Params
-        add_parameter(self, kwargs, 'ground_truth', None)
-
-        # Saving Params
-        add_parameter(self, kwargs, 'postprocessor_string', '_pseudoprobability')
-
-        # Model Parameters
-        add_parameter(self, kwargs, 'input_channels', None)
-
-        add_parameter(self, kwargs, 'channels_dim', None)
-
-        if self.channels_dim is None:
-            if self.channels_first:
-                self.channels_dim = 1
-            else:
-                self.channels_dim = -1
-
-    def process_case(self, input_data, model=None):
-
-        # A little bit strange to access casename this way. Maybe make it an optional
-        # return of the generator.
-
-        # Note that input_modalities as the first input is hard-coded here. Very fragile.
-
-        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
-        # the input data. This is wonky. Move this to PatchInference, maybe.
-
-        if model is not None:
-            self.model = model
-
-        if self.channels_first:
-            input_data = np.swapaxes(input_data, 1, -1)
-
-        if self.input_channels is not None:
-            input_data = np.take(input_data, self.input_channels, self.channels_dim)
-
-        self.output_shape = [1] + list(self.model.model_output_shape)[1:]  # Weird
-        for i in range(len(self.patch_dimensions)):
-            self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
-
-        output_data = self.predict(input_data, model)
-
-        # Will fail for time-data.
-        if self.channels_first:
-            output_data = np.swapaxes(output_data, 1, -1)
-
-        self.return_objects.append(output_data)
-
-        return output_data
-
-    def predict(self, input_data):
-
-        # Vanilla prediction case is obivously not fleshed out.
-        prediction = self.model.predict(input_data)
-
-        return prediction
-
-
-class ModelPatchesInference(ModelInference):
-
-    def load(self, kwargs):
-
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
-
-        super(ModelPatchesInference, self).load(kwargs)
+        super(PatchPrediction, self).load(kwargs)
 
         # Patching Parameters
+        add_parameter(self, kwargs, 'patch_method', 'random')
+        add_parameter(self, kwargs, 'patch_num', 10000)
+        add_parameter(self, kwargs, 'mask_condition', 0)
+
         add_parameter(self, kwargs, 'patch_overlaps', 1)
         add_parameter(self, kwargs, 'output_patch_shape', None)
         add_parameter(self, kwargs, 'check_empty_patch', True)
         add_parameter(self, kwargs, 'pad_borders', True)
-
         add_parameter(self, kwargs, 'patch_dimensions', None)
-
         add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
+
+        # Output Paramters
+        add_parameter(self, kwargs, 'patch_output', None)
 
     def process_case(self, input_data, model=None):
 
@@ -144,19 +76,17 @@ class ModelPatchesInference(ModelInference):
         for i in range(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
-        output_data = self.predict(input_data, model)
+        patch_data = self.generate_patches(input_data, model)
 
         # Will fail for time-data.
-        if self.channels_first:
-            output_data = np.swapaxes(output_data, 1, -1)
+        # if self.channels_first:
+            # output_data = np.swapaxes(output_data, 1, -1)
 
-        self.return_objects.append(output_data)
+        # self.return_objects.append(output_data)
 
-        return output_data
+        return patch_data
 
-    def predict(self, input_data, model=None):
-
-        repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
+    def generate_patches(self, input_data, model=None):
 
         if self.pad_borders:
             # TODO -- Clean up this border-padding code and make it more readable.
@@ -178,45 +108,54 @@ class ModelPatchesInference(ModelInference):
             padded_input_data[tuple(input_slice)] = input_data
             input_data = padded_input_data
 
-        repatched_image = np.zeros(repatched_shape)
+        if self.patch_method == 'random':
 
-        corner_data_dims = [input_data.shape[axis] for axis in self.patch_dimensions]
-        corner_patch_dims = [self.output_patch_shape[axis] for axis in self.patch_dimensions]
+            raise NotImplementedError
+            pass
 
-        all_corners = np.indices(corner_data_dims)
+        elif self.patch_method == 'grid':
 
-        # There must be a better way to round up to an integer..
-        possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
-        all_corners = all_corners[tuple(possible_corners_slice)]
+            repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
+            repatched_image = np.zeros(repatched_shape)
 
-        for rep_idx in range(self.patch_overlaps):
+            corner_data_dims = [input_data.shape[axis] for axis in self.patch_dimensions]
+            corner_patch_dims = [self.output_patch_shape[axis] for axis in self.patch_dimensions]
 
-            if self.verbose:
-                docker_print('Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...')
+            all_corners = np.indices(corner_data_dims)
 
-            corners_grid_shape = [slice(None)]
-            for dim in range(all_corners.ndim - 1):
-                corners_grid_shape += [slice(repetition_offsets[dim][rep_idx], corner_data_dims[dim], corner_patch_dims[dim])]
+            # There must be a better way to round up to an integer..
+            possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+            all_corners = all_corners[tuple(possible_corners_slice)]
 
-            corners_list = all_corners[tuple(corners_grid_shape)]
-            corners_list = np.reshape(corners_list, (corners_list.shape[0], -1)).T
+            all_corners_list = []
+            for rep_idx in range(self.patch_overlaps):
 
-            if self.check_empty_patch:
-                corners_list = self.remove_empty_patches(input_data, corners_list)
+                if self.verbose:
+                    docker_print('Predicting patch set', str(rep_idx + 1) + '/' + str(self.patch_overlaps) + '...')
 
-            for corner_list_idx in range(0, corners_list.shape[0], self.batch_size):
+                corners_grid_shape = [slice(None)]
+                for dim in range(all_corners.ndim - 1):
+                    corners_grid_shape += [slice(repetition_offsets[dim][rep_idx], corner_data_dims[dim], corner_patch_dims[dim])]
 
-                corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
-                input_patches = self.grab_patch(input_data, corner_batch)
-                
-                prediction = self.model.predict(input_patches)
-                
-                self.insert_patch(repatched_image, prediction, corner_batch)
+                corners_list = all_corners[tuple(corners_grid_shape)]
+                corners_list = np.reshape(corners_list, (corners_list.shape[0], -1)).T
 
-            if rep_idx == 0:
-                output_data = np.copy(repatched_image)
-            else:
-                output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data)  # Running Average
+                if self.check_empty_patch:
+                    corners_list = self.remove_empty_patches(input_data, corners_list)
+
+                for corner_list_idx in range(0, corners_list.shape[0], self.batch_size):
+
+                    corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
+                    input_patches = self.grab_patch(input_data, corner_batch)
+                    
+                    prediction = self.model.predict(input_patches)
+                    
+                    self.insert_patch(repatched_image, prediction, corner_batch)
+
+                if rep_idx == 0:
+                    output_data = np.copy(repatched_image)
+                else:
+                    output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data)  # Running Average
 
         if self.pad_borders:
 
@@ -227,6 +166,10 @@ class ModelPatchesInference(ModelInference):
             output_data = output_data[tuple(output_slice)]
 
         return output_data
+
+    def write_patches_to_hdf5(self):
+
+        pass
 
     def pad_data(self, data, pad_dimensions):
 

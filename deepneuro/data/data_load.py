@@ -6,65 +6,57 @@ import tables
 from deepneuro.utilities.util import grab_files_recursive, nifti_splitext
 
 
-def parse_directories(data_collection, directory_list, case_list=None):
+def parse_directories(data_collection, data_directories, case_list=None):
 
     """ Broken out from fill_data_groups.
     """
 
-    data_directories = directory_list['directories']
     if data_collection.verbose:
         print('Gathering image data from...', data_directories, '\n')
 
     # Iterate through directories.. Always looking for a better way to check optional list typing.
-    if isinstance(data_directories, str):
-        if not os.path.exists(data_directories):
-            print('The data directory you have input does not exist!')
-            exit(1)   
-        directory_list = sorted(glob.glob(os.path.join(data_directories, "*/")))
-    else:
-        directory_list = []
-        for d in data_directories:
-            if not os.path.exists(d):
-                print('WARNING: One of the data directories you have input,', d, 'does not exist!')
-            directory_list += glob.glob(os.path.join(d, "*/"))
-        directory_list = sorted(directory_list)
+    directory_list = []
+    for d in data_directories:
+        if not os.path.exists(d):
+            print('WARNING: One of the data directories you have input,', d, 'does not exist!')
+        directory_list += glob.glob(os.path.join(d, "*/"))
+    directory_list = sorted(directory_list)
 
-    for case_dir in directory_list:
+    for data_directory, data_groups in data_directories.iteritems():
 
-        case_name = os.path.abspath(case_dir)
+        directory_list = glob.glob(os.path.join(data_directory, '*/'))
 
-        # If a predefined case list is provided, only choose these cases.
-        if data_collection.case_list is not None and os.path.basename(case_dir) not in data_collection.case_list:
-            return
+        for directory in directory_list:
 
-        # Search for sequence files, and skip those missing with files modalities.
-        for data_group, sequence_labels in data_collection.data_group_dict.items():
+            case_name = os.path.abspath(directory)
 
-            data_group_files = []
-            for sequence in sequence_labels:
+            for data_group, sequence_labels in data_groups.iteritems():
 
-                # Iterate through patterns.. Always looking for a better way to check optional list typing.
-                if isinstance(sequence, str):
-                    target_file = glob.glob(os.path.join(case_dir, sequence))
-                else:
-                    target_file = []
-                    for m in sequence:
-                        target_file += glob.glob(os.path.join(case_dir, m))
+                data_group_files = []
+                for sequence in sequence_labels:
 
-                if len(target_file) == 1:
-                    data_group_files.append(target_file[0])
-                else:
-                    print('Error loading', sequence, 'from', os.path.basename(os.path.dirname(case_dir)))
-                    if len(target_file) == 0:
-                        print('No file found.\n')
+                    # Iterate through patterns.. Always looking for a better way to check optional list typing.
+                    if isinstance(sequence, str):
+                        target_file = glob.glob(os.path.join(case_name, sequence))
                     else:
-                        print('Multiple files found.\n')
-                    return
+                        target_file = []
+                        for m in sequence:
+                            target_file += glob.glob(os.path.join(case_name, m))
 
-            if len(data_group_files) == len(sequence_labels):
-                data_collection.data_groups[data_group].add_case(os.path.abspath(case_dir), list(data_group_files))
+                    if len(target_file) == 1:
+                        data_group_files.append(target_file[0])
+                    else:
+                        print('Error loading', sequence, 'from', os.path.basename(os.path.dirname(case_name)))
+                        if len(target_file) == 0:
+                            print('No file found.\n')
+                        else:
+                            print('Multiple files found.\n')
+                        return
 
-        data_collection.cases.append(case_name)
+                if len(data_group_files) == len(sequence_labels):
+                    data_collection.data_groups[data_group].add_case(os.path.abspath(case_name), list(data_group_files))
+
+            data_collection.cases.append(case_name)
 
 
 def parse_hdf5(data_collection, data_hdf5, case_list=None):

@@ -30,6 +30,7 @@ class UNet(KerasModel):
         super(UNet, self).load(kwargs)
 
         add_parameter(self, kwargs, 'depth', 4)
+        add_parameter(self, kwargs, 'output_channels', 1)
 
     def build_model(self):
         
@@ -84,6 +85,6 @@ class UNet(KerasModel):
             if self.batch_norm:
                 right_outputs[level] = BatchNormalization()(right_outputs[level])
 
-        self.output_layer = DnConv(right_outputs[level], 1, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
+        self.output_layer = DnConv(right_outputs[level], self.output_channels, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
 
         super(UNet, self).build_model()

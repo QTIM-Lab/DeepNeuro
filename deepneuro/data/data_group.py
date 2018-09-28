@@ -86,7 +86,7 @@ class DataGroup(object):
 
     def get_affine(self, index):
 
-        if self.source == 'directory':
+        if self.source == 'directories':
             if self.preprocessed_affine is None:
                 self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
             return self.preprocessed_affine
@@ -96,7 +96,7 @@ class DataGroup(object):
                 affine = None
             else:
                 affine = self.data_affines[index]
-            return self.data[index][:][np.newaxis], affine
+            return affine
 
         return None
 

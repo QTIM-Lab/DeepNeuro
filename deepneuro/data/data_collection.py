@@ -20,9 +20,6 @@ class DataCollection(object):
         # Data sources
         add_parameter(self, kwargs, 'data_sources', None)
         self.data_types = ['directories', 'filepaths', 'csv', 'numpy', 'hdf5']
-        for data_type in self.data_types:
-            if data_type not in self.data_sources.keys():
-                self.data_sources[data_type] = None
 
         # File location variables
         add_parameter(self, kwargs, 'source', 'directories')
@@ -45,7 +42,13 @@ class DataCollection(object):
         # Data group variables
         self.data_groups = {}
 
-        self.fill_data_groups()
+        if self.data_sources is not None:
+            
+            for data_type in self.data_types:
+                if data_type not in self.data_sources.keys():
+                    self.data_sources[data_type] = None
+
+            self.fill_data_groups()
 
     def fill_data_groups(self):
 
@@ -58,17 +61,23 @@ class DataCollection(object):
             if self.data_sources[data_type] is None:
                 continue
 
-            if data_type in ['file', 'directory', 'numpy']:
+            if data_type in ['file', 'numpy']:
                 # Create DataGroups for this DataCollection.
                 for data_group_name in self.data_sources[data_type]:
                     if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
                         self.data_groups[data_group_name] = DataGroup(data_group_name)
                         self.data_groups[data_group_name].source = data_type
 
+            # This is a little fragile
+            elif data_type == 'directories':
+                for directory in self.data_sources[data_type]:
+                    for data_group_name in self.data_sources[data_type][directory]:
+                        if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
+                            self.data_groups[data_group_name] = DataGroup(data_group_name)
+                            self.data_groups[data_group_name].source = data_type
+
             elif data_type == 'hdf5':
-
                 open_hdf5 = tables.open_file(self.data_sources[data_type], "r")
-
                 for data_group in open_hdf5.root._f_iter_nodes():
                     if '_affines' not in data_group.name and '_casenames' not in data_group.name:
 
@@ -77,7 +86,6 @@ class DataCollection(object):
                         self.data_groups[data_group.name].source = data_type
 
             elif data_type == 'csv':
-
                 with open(self.data_sources[data_type], 'r') as infile:
                     csv_reader = csv.reader(infile)
                     for data_group_name in next(csv_reader):
@@ -86,7 +94,7 @@ class DataCollection(object):
                                 self.data_groups[data_group_name] = DataGroup(data_group_name)
                                 self.data_groups[data_group_name].source = data_type
 
-        # Load data into groups
+        # Load data into groups. Replace with dictionary at some point?
         for data_type in self.data_types:
 
             if self.data_sources[data_type] is None:
@@ -95,10 +103,12 @@ class DataCollection(object):
             if data_type == 'file':
 
                 parse_filepaths(self, self.data_sources[data_type], case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
+                self.source = 'directories'
 
-            if data_type == 'directory':
+            if data_type == 'directories':
 
                 parse_directories(self, self.data_sources[data_type], case_list=self.case_list)
+                self.source = 'directories'
 
             if data_type == 'numpy':
 
@@ -109,9 +119,17 @@ class DataCollection(object):
 
                 parse_hdf5(self, self.data_sources[data_type], case_list=self.case_list)
 
+                """ An existing problem with DeepNeuro is that loading from filepaths and
+                    loading from HDF5s are fundamentally different, but this difference is
+                    encoded in a very slapdash way, like with the "source" parameter below.
+                """
+
+                self.source = 'hdf5'
+
             if data_type == 'csv':
 
                 parse_csv(self, self.data_sources[data_type], case_list=self.case_list)
+                self.source = 'directories'
 
         self.total_cases = len(self.cases)
 
@@ -121,9 +139,9 @@ class DataCollection(object):
         else:
             print('Found', self.total_cases, 'number of cases..')            
 
-    def add_case(self, case_dict, case_name=None):
+    def add_case(self, case_dict, case_name=None, load_data=False):
 
-        # Currently only works for filepaths. TODO: add functionality for python data types, hdf5s?
+        # add_case currently needs to be refactored to match the new data_load.py data_loading process.
         # 
 
         # Create DataGroups for this DataCollection.
@@ -141,6 +159,9 @@ class DataCollection(object):
         
         self.cases.append(case_name)
         self.total_cases = len(self.cases)
+
+        if load_data:
+            self.load_case_data(case_name)
 
     def append_augmentation(self, augmentations, multiplier=None):
 
@@ -233,6 +254,7 @@ class DataCollection(object):
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
+            print preprocessor.name
             preprocessor.execute(self)
 
     # @profile
@@ -276,7 +298,10 @@ class DataCollection(object):
             for case_idx, case_name in enumerate(case_list):
 
                 if verbose:
-                    print('Working on image.. ', case_idx, 'at', case_name)
+                    if self.source == 'hdf5':
+                        print('Working on image.. ', case_idx, 'at', data_groups[0].data_casenames[case_name][0])
+                    else:
+                        print('Working on image.. ', case_idx, 'at', case_name)
 
                 if True:
                 # try:
@@ -298,7 +323,7 @@ class DataCollection(object):
                         for data_idx, data_group in enumerate(data_groups):
                             
                             if len(self.augmentations) == 0:
-                                data_batch[data_group.label].append(data_group.base_case[0])
+                                data_batch[data_group.label].append(data_group.preprocessed_case)
                             else:
                                 data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
 
