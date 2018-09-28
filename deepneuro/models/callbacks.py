@@ -113,7 +113,7 @@ def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_mode
     """
 
     print 'test error'
-    return_callbacks = []
+    return_callbacks =  [ ]
 
     for callback in callbacks:
 
