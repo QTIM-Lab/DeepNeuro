@@ -40,17 +40,6 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
     wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
     enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
 
-    # if not preprocessed and not skullstripped:
-
-    #     skullstripping_prediction_parameters = {'inputs': ['input_data'], 
-    #             'output_filename': os.path.join(output_folder, 'skullstrip_mask.nii.gz'),
-    #             'batch_size': 50,
-    #             'patch_overlaps': 3,
-    #             'output_patch_shape': (56, 56, 6, 1),
-    #             'save_to_file': False}
-
-    #     skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[ModelPatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents()])
-
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
     #--------------------------------------------------------------------#

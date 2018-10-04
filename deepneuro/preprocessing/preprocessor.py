@@ -71,7 +71,6 @@ class Preprocessor(object):
             elif not self.array_input and type(data_group.preprocessed_case) is list:
                 pass
             elif not self.array_input:
-                print(self.array_input, type(data_group.preprocessed_case) is list)
                 self.output_data = data_group.preprocessed_case
                 self.save_to_file(data_group)
                 data_group.preprocessed_case = self.output_filenames
