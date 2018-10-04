@@ -39,7 +39,8 @@ class PGGAN(GAN):
         super(PGGAN, self).load(kwargs)
 
         # PGGAN Parameters
-        self.starting_depth = 0
+        self.starting_depth = 1
+        self.transition_dict = {True: 'Transition', False: ''}
 
         if self.dim == 3:
             raise NotImplementedError 
@@ -87,22 +88,22 @@ class PGGAN(GAN):
         # solely on the current resolution. The loop below looks odd because the lowest 
         # resolution only has one stage.
 
-        for self.training_stage in range(int(np.ceil((self.starting_depth - 1) / 2.)), (self.depth * 2) - 1):
+        for self.training_stage in range(int(np.ceil((self.starting_depth - 1) / 2)), (self.depth * 2) - 1):
 
             if (self.training_stage % 2 == 0):
                 self.transition = False
             else:
                 self.transition = True
 
-            current_depth = np.ceil((self.training_stage + 2) / 2.)
-            previous_depth = np.ceil((self.training_stage + 1) / 2.)
-            self.progressive_depth = int(current_depth - 1)
+            current_depth = np.ceil((self.training_stage + 2) / 2)
+            previous_depth = np.ceil((self.training_stage + 1) / 2)
+            self.progressive_depth = int(current_depth)
 
-            current_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(current_depth), str(self.transition)), 'model.ckpt')
+            current_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(current_depth), self.transition_dict[self.transition]), 'model.ckpt')
             if not os.path.exists(os.path.dirname(current_model_path)):
                 os.mkdir(os.path.dirname(current_model_path))
 
-            previous_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(previous_depth), str(not self.transition)), 'model.ckpt')
+            previous_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(previous_depth), self.transition_dict[not self.transition]), 'model.ckpt')
 
             self.callback_process('on_depth_begin', [current_depth, self.transition])
 
@@ -114,12 +115,12 @@ class PGGAN(GAN):
             if self.transition:
                 self.r_saver.restore(self.sess, previous_model_path)
                 self.rgb_saver.restore(self.sess, previous_model_path)
-            elif self.progressive_depth > 0:
+            elif self.training_stage > int(np.ceil((self.starting_depth - 1) / 2)):
                 self.saver.restore(self.sess, previous_model_path)
 
             for epoch in range(self.num_epochs):
 
-                print('Depth {}/{}, Epoch {}/{}'.format(self.progressive_depth + 1, self.depth, epoch, self.num_epochs))
+                print(('Depth {}/{}, Epoch {}/{}'.format(self.progressive_depth, self.depth, epoch + 1, self.num_epochs)))
                 self.callback_process('on_epoch_begin', '_'.join([str(current_depth), str(epoch)]))
 
                 step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
@@ -204,24 +205,23 @@ class PGGAN(GAN):
 
         self.latent = tf.placeholder(tf.float32, [None, self.latent_size])
         self.reference_images = tf.placeholder(tf.float32, [None] + list(self.model_input_shape)[1:])
-        self.synthetic_images = generator(self, self.latent, depth=self.progressive_depth, transition=self.transition, alpha_transition=self.alpha_transition, name='generator')
+        self.synthetic_images = generator(self, self.latent, depth=self.progressive_depth - 1, transition=self.transition, alpha_transition=self.alpha_transition, name='generator')
 
         # Derived Parameters
-        self.output_size = pow(2, self.progressive_depth + 2)
-        self.zoom_level = self.progressive_depth + 1
+        self.output_size = pow(2, self.progressive_depth + 1)
+        self.zoom_level = self.progressive_depth
         self.reference_images = tf.placeholder(tf.float32, [None] + [self.output_size] * self.dim + [self.channels])
 
         max_downscale = np.floor(math.log(self.model_input_shape[1], 2))
-        downscale_factor = 2 ** max_downscale / (2 ** (self.progressive_depth + 2))
+        downscale_factor = 2 ** max_downscale / (2 ** (self.progressive_depth + 1))
         self.raw_volumes = tf.placeholder(tf.float32, self.model_input_shape)
         self.input_volumes = downscale2d(self.raw_volumes, downscale_factor)
-
         # Data Loading Tools
         self.low_images = upscale2d(downscale2d(self.reference_images, 2), 2)
         self.real_images = self.alpha_transition * self.reference_images + (1 - self.alpha_transition) * self.low_images
 
-        self.discriminator_real, self.discriminator_real_logits = discriminator(self, self.reference_images, depth=self.progressive_depth, name='discriminator', transition=self.transition, alpha_transition=self.alpha_transition)
-        self.discriminator_fake, self.discriminator_fake_logits = discriminator(self, self.synthetic_images, depth=self.progressive_depth, name='discriminator', transition=self.transition, alpha_transition=self.alpha_transition, reuse=True)
+        self.discriminator_real, self.discriminator_real_logits = discriminator(self, self.reference_images, depth=self.progressive_depth - 1, name='discriminator', transition=self.transition, alpha_transition=self.alpha_transition)
+        self.discriminator_fake, self.discriminator_fake_logits = discriminator(self, self.synthetic_images, depth=self.progressive_depth - 1, name='discriminator', transition=self.transition, alpha_transition=self.alpha_transition, reuse=True)
 
         # Hmmm.. better way to do this? Or at least move to function.
         t_vars = tf.trainable_variables()
@@ -256,7 +256,7 @@ class PGGAN(GAN):
 
     def calculate_losses(self):
 
-        self.D_loss, self.G_loss, self.D_origin_loss = wasserstein_loss(self, discriminator, self.discriminator_fake_logits, self.discriminator_real_logits, self.synthetic_images, self.real_images, gradient_penalty_weight=self.gradient_penalty_weight, name='discriminator', depth=self.progressive_depth, transition=self.transition, alpha_transition=self.alpha_transition, dim=self.dim)
+        self.D_loss, self.G_loss, self.D_origin_loss = wasserstein_loss(self, discriminator, self.discriminator_fake_logits, self.discriminator_real_logits, self.synthetic_images, self.real_images, gradient_penalty_weight=self.gradient_penalty_weight, name='discriminator', depth=self.progressive_depth - 1, transition=self.transition, alpha_transition=self.alpha_transition, dim=self.dim)
 
         # A little sketchy. Attempting to make variable loss functions extensible later.
         self.D_loss = self.D_loss[0]
@@ -329,7 +329,7 @@ class PGGANPredict(keras.callbacks.Callback):
         """ Very confusing, make more explicit
         """
 
-        for key in self.predictions[-1].keys():
+        for key in list(self.predictions[-1].keys()):
 
             max_size = self.predictions[-1][key][0].shape[0]
             final_predictions = []
@@ -368,7 +368,7 @@ class PGGANPredict(keras.callbacks.Callback):
 
         output_filepaths, output_images = check_data({'prediction': prediction, 'real_data': reference_data}, output_filepath=os.path.join(self.depth_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size)
 
-        for key, images in output_images.iteritems():
+        for key, images in output_images.items():
             self.predictions[-1][key] += [images.astype('uint8')]
 
         return
@@ -386,7 +386,7 @@ class PGGANPredict(keras.callbacks.Callback):
 
     def on_depth_end(self, depth_transition, logs={}):
 
-        for key, images in self.predictions[-1].iteritems():
+        for key, images in self.predictions[-1].items():
             imageio.mimsave(os.path.join(self.depth_dir, 'epoch_prediction_' + key + '.gif'), images)
 
         return

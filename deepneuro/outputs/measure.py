@@ -346,7 +346,7 @@ def calc_surface_area(input_data, pixdim=None, affine=None, mask_value=0, mode='
         surface_area = np.sum(edge_image)
 
     else:
-        print('Warning, mode parameter', mode, 'not available. Returning None.')
+        print(('Warning, mode parameter', mode, 'not available. Returning None.'))
         surface_area = None
 
     return surface_area

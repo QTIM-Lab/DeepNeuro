@@ -77,8 +77,7 @@ class LargestComponents(Postprocessor):
 
         for batch in range(input_data.shape[0]):
             for channel in range(input_data.shape[-1]):
-                    print(batch, channel)
-                    input_data[batch, ..., channel] = largest_components(input_data[batch, ..., channel], component_number=1, connectivity=self.connectivity)
+                input_data[batch, ..., channel] = largest_components(input_data[batch, ..., channel], component_number=1, connectivity=self.connectivity)
 
         return input_data
 

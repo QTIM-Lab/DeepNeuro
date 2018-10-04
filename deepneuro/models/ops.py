@@ -107,23 +107,22 @@ def adjusted_std(x, **kwargs):
     return tf.sqrt(tf.reduce_mean((x - tf.reduce_mean(x, **kwargs)) ** 2, **kwargs) + 1e-8)
 
 
-def minibatch_state_concat(_input, averaging='all', dim=2):
-
-    # Rewrite this later, and understand it --andrew
+def minibatch_state_concat(input_, averaging='all', dim=2):
     
-    vals = adjusted_std(_input, axis=0, keep_dims=True)
+    vals = adjusted_std(input_, axis=0, keep_dims=True)
     
     if averaging == 'all':
         vals = tf.reduce_mean(vals, keep_dims=True)
     else:
-        print "nothing"
+        raise NotImplementedError
 
-    # This is specific to the PGGAN implementation currently. Rewrite to infer size
-    multiples = (tf.shape(_input)[0]) + (4,) * dim + (1,)
+    batch_size = tf.shape(input_)[0]
+    multiples = (4,) * dim + (1,)
+    multiples = (batch_size,) + multiples
 
     vals = tf.tile(vals, multiples=multiples)  # Be aware, need updated TF for this to work.
     
-    return tf.concat([_input, vals], axis=dim + 1)
+    return tf.concat([input_, vals], axis=dim + 1)
 
 
 # Some of the following functions may be redundant

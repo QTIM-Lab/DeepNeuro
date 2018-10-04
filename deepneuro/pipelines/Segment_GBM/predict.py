@@ -10,7 +10,9 @@ from deepneuro.pipelines.shared import load_data, load_model_with_output
 from deepneuro.utilities.util import docker_print
 
 
-def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True, input_data=None):
+def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True, input_data=None, registration_reference='FLAIR'):
+
+    registration_reference_channel = None
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -76,12 +78,14 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
             preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=0)]
 
         if not skullstripped:
-
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
             preprocessing_steps += [SkullStrip_Model(data_groups=['input_data'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[0, 1])]
 
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+
+        else:
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -91,7 +95,7 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
 
     for case in data_collection.cases:
 
-        docker_print('\nStarting New Case...\n')
+        docker_print('Starting New Case...')
         
         docker_print('Whole Tumor Prediction')
         docker_print('======================')
@@ -102,8 +106,6 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
         docker_print('Enhancing Tumor Prediction')
         docker_print('======================')
         enhancing_model.generate_outputs(data_collection, case)
-
-        # data_collection.clear_outputs()
 
 
 if __name__ == '__main__':

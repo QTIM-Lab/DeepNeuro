@@ -141,7 +141,7 @@ class CyclicLR(Callback):
         self.history.setdefault('lr', []).append(K.get_value(self.model.optimizer.lr))
         self.history.setdefault('iterations', []).append(self.trn_iterations)
 
-        for k, v in logs.items():
+        for k, v in list(logs.items()):
             self.history.setdefault(k, []).append(v)
     
         K.set_value(self.model.optimizer.lr, self.clr())
@@ -170,7 +170,12 @@ class EpochPredict(Callback):
  
     def on_train_end(self, logs={}):
         if self.predictions != []:
-            imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+            if type(self.predictions[0]) is list:
+                for output in range(len(self.predictions[0])):
+                    current_predictions = [item[output] for item in self.predictions]
+                    imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+            else:
+                imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
         return
  
     def on_epoch_end(self, epoch, logs={}):
@@ -182,7 +187,10 @@ class EpochPredict(Callback):
 
         output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size)
 
-        self.predictions += [output_images['prediction'].astype('uint8')]
+        if len(output_images.keys()) > 1:
+            self.predictions += [[output_images['prediction_' + str(idx)].astype('uint8') for idx in range(len(output_images.keys()))]]
+        else:
+            self.predictions += [output_images['prediction'].astype('uint8')]
 
         return
 

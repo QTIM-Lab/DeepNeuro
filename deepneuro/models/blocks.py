@@ -50,7 +50,7 @@ def generator(model, latent_var, depth=1, initial_size=4, reuse=False, transitio
         return convs[-1]
 
 
-def discriminator(model, input_image, reuse=False, name=None, depth=1, transition=False, **kwargs):
+def discriminator(model, input_image, reuse=False, name=None, depth=1, transition=False, alpha_transition=0, **kwargs):
 
     """
     """
@@ -76,6 +76,9 @@ def discriminator(model, input_image, reuse=False, name=None, depth=1, transitio
             convs += [leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(depth - 1 - i), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, name='discriminator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=model.dim))]
             convs[-1] = DnAveragePooling(convs[-1], dim=model.dim)
 
+            if i == 0 and transition:
+                convs[-1] = alpha_transition * convs[-1] + (1 - alpha_transition) * transition_conv
+
         convs += [minibatch_state_concat(convs[-1])]
         convs[-1] = leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(3,) * model.dim, stride_size=(1,) * model.dim, name='discriminator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=model.dim))
 
@@ -92,6 +95,8 @@ def discriminator(model, input_image, reuse=False, name=None, depth=1, transitio
 
 
 def unet(model, input_tensor, backend='tensorflow'):
+
+        from keras.layers.merge import concatenate
 
         left_outputs = []
 

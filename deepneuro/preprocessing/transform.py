@@ -32,7 +32,7 @@ class MergeChannels(Preprocessor):
         else:
             self.output_num = len(self.channels)
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
             data_shape = list(data_group.get_shape())
             if self.channels is None:
                 data_shape[-1] = 1
@@ -89,7 +89,7 @@ class SplitData(Preprocessor):
 
         super(SplitData, self).initialize(data_collection)
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
             data_shape = list(data_group.get_shape())
             data_shape[-1] = len(self.label_splits)
             self.output_shape[label] = data_shape

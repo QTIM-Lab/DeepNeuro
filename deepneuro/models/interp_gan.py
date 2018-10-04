@@ -166,14 +166,14 @@ class InterpGAN(TensorFlowModel):
         # self.find_layers(['sampling'])
 
         self.activated_tensor = self.grab_tensor(self.activated_tensor_name)
-        print self.activated_tensor
+        print(self.activated_tensor)
         self.activated_tensor = tf.stack([self.activated_tensor[..., self.filter_num]], axis=-1)
-        print self.activated_tensor
+        print(self.activated_tensor)
         # self.input_tensor = self.grab_tensor(self.input_tensor_name)
 
         self.activation_loss = -1 * tf.reduce_mean(self.activated_tensor)
         self.activaton_graidents = tf.gradients(self.activation_loss, self.synthetic_images)
-        print self.activaton_graidents
+        print(self.activaton_graidents)
 
         # Hmmm.. better way to do this? Or at least move to function.
         t_vars = tf.trainable_variables()

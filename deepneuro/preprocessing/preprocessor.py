@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize, docker_print
-from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti, save_data
+from deepneuro.utilities.conversion import read_image_files, save_data
 
 
 class Preprocessor(object):
@@ -11,7 +11,7 @@ class Preprocessor(object):
 
         # File-Saving Parameters
         add_parameter(self, kwargs, 'overwrite', True)
-        add_parameter(self, kwargs, 'save_output', True)
+        add_parameter(self, kwargs, 'save_output', False)
         add_parameter(self, kwargs, 'output_folder', None)
         add_parameter(self, kwargs, 'return_array', False)
 
@@ -62,13 +62,17 @@ class Preprocessor(object):
         if self.verbose:
             docker_print('Working on Preprocessor:', self.name)
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
-            # self.generate_output_filenames(data_collection, data_group)
+            self.generate_output_filenames(data_collection, data_group)
 
             if self.array_input and type(data_group.preprocessed_case) is list:
                 data_group.get_data()
+            elif not self.array_input and type(data_group.preprocessed_case) is list:
+                pass
             elif not self.array_input:
+                print(self.array_input, type(data_group.preprocessed_case) is list)
+                self.output_data = data_group.preprocessed_case
                 self.save_to_file(data_group)
                 data_group.preprocessed_case = self.output_filenames
 
@@ -106,9 +110,15 @@ class Preprocessor(object):
 
         self.output_filenames = []
 
-        for file_idx, filename in enumerate(data_group.data[data_collection.current_case]):
+        if data_group.source == 'hdf5':
+            for channel_num in range(data_group.data[data_collection.current_case].shape[-1]):
 
-            self.output_filenames += [self.generate_output_filename(filename, file_extension=file_extension)]
+                self.output_filenames += [self.generate_output_filename('_'.join([data_group.label, str(data_collection.current_case), str(channel_num)]) + file_extension, file_extension=file_extension)]
+
+        else:
+            for file_idx, filename in enumerate(data_group.data[data_collection.current_case]):
+
+                self.output_filenames += [self.generate_output_filename(filename, file_extension=file_extension)]
 
         return
 
@@ -145,7 +155,7 @@ class Preprocessor(object):
         if type(self.output_data) is not list:
             for file_idx, output_filename in enumerate(self.output_filenames):
                 if self.overwrite or not os.path.exists(output_filename):
-                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), output_filename, data_group.preprocessed_affine, )
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
 
         return
 
@@ -166,7 +176,7 @@ class Preprocessor(object):
         if self.data_groups is None:
             self.data_groups = data_collection.data_groups
         else:
-            self.data_groups = {label: data_group for label, data_group in data_collection.data_groups.items() if label in self.data_groups}
+            self.data_groups = {label: data_group for label, data_group in list(data_collection.data_groups.items()) if label in self.data_groups}
 
         return
 
@@ -201,8 +211,8 @@ class DICOMConverter(Preprocessor):
         for file_idx, output_filename in enumerate(self.output_filenames):
             if self.overwrite or not os.path.exists(output_filename):
                 if type(self.output_data) is list:
-                    save_data(self.output_data[file_idx], output_filename, affine=data_group.preprocessed_affine)
+                    save_data(self.output_data[file_idx], output_filename, reference_data=data_group.preprocessed_affine)
                 else:
-                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, affine=data_group.preprocessed_affine)
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
 
         return

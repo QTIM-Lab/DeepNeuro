@@ -206,9 +206,9 @@ class DeepNeuroModel(object):
         if verbose:
             for input_idx, single_input in enumerate(inputs):
                 if headers is None:
-                    print('Logging Output', input_idx, single_input)
+                    print(('Logging Output', input_idx, single_input))
                 else:
-                    print(headers[input_idx], single_input)
+                    print((headers[input_idx], single_input))
 
         return
 

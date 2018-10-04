@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-from deepneuro.models.model import TensorFlowModel
+from deepneuro.models.tensorflow_model import TensorFlowModel
 from deepneuro.utilities.util import add_parameter
 from deepneuro.models.blocks import generator, discriminator
 from deepneuro.models.cost_functions import wasserstein_loss
@@ -130,3 +130,9 @@ class GAN(TensorFlowModel):
             sample_latent = np.random.normal(size=[batch_size, self.latent_size])
 
         return self.sess.run(self.synthetic_images, feed_dict={self.latent: sample_latent})
+
+    def log_variables(self):
+
+        super(GAN, self).log_variables()
+
+        return

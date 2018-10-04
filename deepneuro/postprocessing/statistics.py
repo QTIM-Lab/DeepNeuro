@@ -16,7 +16,7 @@ class ErrorCalculation(Postprocessor):
         # Logging Parameters
         add_parameter(self, kwargs, 'output_log', 'outputs.csv')
         add_parameter(self, kwargs, 'cost_functions', ['dice'])
-        add_parameter(self, kwargs, 'write_mode', 'wb')
+        add_parameter(self, kwargs, 'write_mode', 'w')
         add_parameter(self, kwargs, 'print_output', True)
 
         self.cost_function_dict = {
@@ -43,13 +43,13 @@ class ErrorCalculation(Postprocessor):
 
         for cost_function in self.cost_functions:
 
-            if cost_function not in self.cost_function_dict.keys():
-                print('Error, cost function', cost_function, 'not implemented')
+            if cost_function not in list(self.cost_function_dict.keys()):
+                print(('Error, cost function', cost_function, 'not implemented'))
 
             cost = self.cost_function_dict[cost_function](input_data, ground_truth)
 
             if self.print_output:
-                print(self.cost_function_label_dict[cost_function] + ':', cost)
+                print((self.cost_function_label_dict[cost_function] + ':', cost))
 
             output_row += [str(cost)]
 

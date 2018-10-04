@@ -45,7 +45,7 @@ class DataCollection(object):
         if self.data_sources is not None:
             
             for data_type in self.data_types:
-                if data_type not in self.data_sources.keys():
+                if data_type not in list(self.data_sources.keys()):
                     self.data_sources[data_type] = None
 
             self.fill_data_groups()
@@ -64,7 +64,7 @@ class DataCollection(object):
             if data_type in ['file', 'numpy']:
                 # Create DataGroups for this DataCollection.
                 for data_group_name in self.data_sources[data_type]:
-                    if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
+                    if data_group_name not in list(self.data_groups.keys()) and data_group_name != 'directories':
                         self.data_groups[data_group_name] = DataGroup(data_group_name)
                         self.data_groups[data_group_name].source = data_type
 
@@ -72,7 +72,7 @@ class DataCollection(object):
             elif data_type == 'directories':
                 for directory in self.data_sources[data_type]:
                     for data_group_name in self.data_sources[data_type][directory]:
-                        if data_group_name not in self.data_groups.keys() and data_group_name != 'directories':
+                        if data_group_name not in list(self.data_groups.keys()) and data_group_name != 'directories':
                             self.data_groups[data_group_name] = DataGroup(data_group_name)
                             self.data_groups[data_group_name].source = data_type
 
@@ -90,7 +90,7 @@ class DataCollection(object):
                     csv_reader = csv.reader(infile)
                     for data_group_name in next(csv_reader):
                         if data_group_name != 'casename':
-                            if data_group_name not in self.data_groups.keys():
+                            if data_group_name not in list(self.data_groups.keys()):
                                 self.data_groups[data_group_name] = DataGroup(data_group_name)
                                 self.data_groups[data_group_name].source = data_type
 
@@ -137,7 +137,7 @@ class DataCollection(object):
             print('Found zero cases. Are you sure you have entered your data sources correctly?')
             exit(1)
         else:
-            print('Found', self.total_cases, 'number of cases..')            
+            print(('Found', self.total_cases, 'number of cases..'))            
 
     def add_case(self, case_dict, case_name=None, load_data=False):
 
@@ -151,8 +151,8 @@ class DataCollection(object):
                 self.data_groups[data_group_name].source = 'directory'
 
         # Search for modality files, and skip those missing with files modalities.
-        for data_group_name in self.data_groups.keys():
-            if data_group_name in case_dict.keys():
+        for data_group_name in list(self.data_groups.keys()):
+            if data_group_name in list(case_dict.keys()):
                 self.data_groups[data_group_name].add_case(case_name, list(case_dict[data_group_name]))
             else:
                 self.data_groups[data_group_name].add_case(case_name, None)
@@ -230,7 +230,7 @@ class DataCollection(object):
         data_groups = self.get_data_groups(data_group_labels)
 
         if self.verbose:
-            print('Working on image.. ', case)
+            print(('Working on image.. ', case))
 
         if case != self.current_case:
             self.load_case_data(case)
@@ -254,7 +254,6 @@ class DataCollection(object):
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
-            print preprocessor.name
             preprocessor.execute(self)
 
     # @profile
@@ -273,7 +272,7 @@ class DataCollection(object):
             data_group.base_affine = data_group.get_affine(index=case)
 
             if data_group.source == 'hdf5':
-                data_group.base_casename = data_group.data_casenames[case][0]
+                data_group.base_casename = data_group.data_casenames[case][0].decode("utf-8")
             else:
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
@@ -299,10 +298,11 @@ class DataCollection(object):
 
                 if verbose:
                     if self.source == 'hdf5':
-                        print('Working on image.. ', case_idx, 'at', data_groups[0].data_casenames[case_name][0])
+                        print(('Working on image.. ', case_idx, 'at', data_groups[0].data_casenames[case_name][0].decode("utf-8")))
                     else:
-                        print('Working on image.. ', case_idx, 'at', case_name)
+                        print(('Working on image.. ', case_idx, 'at', case_name))
 
+                # Is error-catching useful here?
                 if True:
                 # try:
                     self.load_case_data(case_name)
@@ -400,7 +400,7 @@ class DataCollection(object):
             # This is terrible code. TODO: rewrite.
             missing_case = False
 
-            for data_label, data_group in self.data_groups.items():
+            for data_label, data_group in list(self.data_groups.items()):
                 if data_label not in data_group_labels:
                     continue
                 if case_name not in data_group.cases:
@@ -444,7 +444,7 @@ class DataCollection(object):
         hdf5_file = tables.open_file(output_filepath, mode='w')
         filters = tables.Filters(complevel=5, complib='blosc')
 
-        for data_label, data_group in self.data_groups.items():
+        for data_label, data_group in list(self.data_groups.items()):
 
             num_cases = self.total_cases * self.multiplier
 

@@ -2,12 +2,10 @@
     See more at https://arxiv.org/abs/1505.04597
 """
 
-from keras.engine import Model
-from keras.layers import Activation, Dropout, BatchNormalization
+from keras.layers import Dropout, BatchNormalization
 from keras.layers.merge import concatenate
 
 from deepneuro.models.keras_model import KerasModel
-from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
 from deepneuro.models.dn_ops import DnConv, DnMaxPooling, DnDeConv, DnUpsampling
 from deepneuro.utilities.util import add_parameter
 

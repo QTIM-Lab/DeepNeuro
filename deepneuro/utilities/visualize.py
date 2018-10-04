@@ -15,10 +15,10 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         output_data = {'output_data': output_data}
 
     if color_range is None:
-        color_range = {label: [np.min(data), np.max(data)] for label, data in output_data.items()}
+        color_range = {label: [np.min(data), np.max(data)] for label, data in list(output_data.items())}
 
     if output_groups is not None:
-        output_data = {label: data for label, data in output_data.items() if label in output_groups}
+        output_data = {label: data for label, data in list(output_data.items()) if label in output_groups}
 
     output_images = {}
 
@@ -28,7 +28,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     viz_rows = min(viz_rows, batch_size)
     viz_columns = int(np.ceil(batch_size / float(viz_rows)))
 
-    for label, data in output_data.items():
+    for label, data in list(output_data.items()):
 
         if data.ndim == 5:
             output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns)
@@ -49,7 +49,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
 
     if show_output:
 
-        plots = len(output_images.keys())
+        plots = len(list(output_images.keys()))
         plot_rows = int(np.ceil(np.sqrt(plots)))
         plot_columns = int(np.ceil(plots / float(plot_rows)))
         fig, axarr = plt.subplots(plot_rows, plot_columns)
@@ -63,7 +63,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         for plot_idx, (label, data) in enumerate(output_images.items()):
 
             image_column = plot_idx % plot_columns
-            image_row = plot_idx / plot_columns
+            image_row = plot_idx // plot_columns
 
             if data.shape[-1] == 3:
 
@@ -85,7 +85,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         plt.show()
 
     output_filepaths = {}
-    for label, data in output_images.items():
+    for label, data in list(output_images.items()):
         output_images[label] = image_preprocess(data)
         if output_filepath is not None:
             output_filepaths[label] = save_data(output_images[label], replace_suffix(output_filepath, '', '_' + label))

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from deepneuro.utilities.conversion import save_numpy_2_nifti, save_data
+from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import add_parameter, replace_suffix, nifti_splitext
 
 
@@ -121,8 +121,8 @@ class Output(object):
         for input_data in self.return_objects:
 
             casename = self.data_collection.data_groups[self.inputs[0]].base_casename
-            input_affine = self.data_collection.data_groups[self.inputs[0]].base_affine
-
+            input_affine = self.data_collection.data_groups[self.inputs[0]].preprocessed_affine
+            
             augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
 
             if self.output_directory is None:
@@ -138,6 +138,7 @@ class Output(object):
             else:
                 output_filename = os.path.abspath(self.output_filename)
 
+            # Naming is unclear.
             if postprocessor is None:
                 output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + self.postprocessor_string))
             else:
@@ -159,7 +160,7 @@ class Output(object):
 
             else:
                 for channel in range(output_shape[-1]):
-                    return_filenames += [save_numpy_2_nifti(input_data[..., channel], output_filepath=replace_suffix(output_filepath, input_suffix='', output_suffix='_channel_' + str(channel)), reference_data=input_affine)]
+                    return_filenames += [save_data(input_data[..., channel], replace_suffix(output_filepath, input_suffix='', output_suffix='_channel_' + str(channel)), reference_data=input_affine)]
                 self.return_filenames += [return_filenames]
 
         return

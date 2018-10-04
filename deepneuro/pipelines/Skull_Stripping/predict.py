@@ -9,7 +9,7 @@ from deepneuro.pipelines.shared import load_data, load_model_with_output
 from deepneuro.utilities.util import docker_print
 
 
-def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, mask_output='skullstrip_mask.nii.gz', input_data=None, verbose=True):
+def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, preprocessed=False, save_preprocess=False, save_all_steps=False, mask_output='skullstrip_mask.nii.gz', input_data=None, verbose=True):
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -56,13 +56,11 @@ def skull_strip(output_folder, T1POST=None, FLAIR=None, ground_truth=None, input
 
     for case in data_collection.cases:
 
-        docker_print('\nStarting New Case...\n')
+        docker_print('Starting New Case...')
         
         docker_print('Skullstripping Prediction')
         docker_print('======================')
         skullstripping_model.generate_outputs(data_collection, case)
-
-        # data_collection.clear_outputs()
 
 
 if __name__ == '__main__':

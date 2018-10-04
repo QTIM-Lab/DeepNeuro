@@ -12,17 +12,17 @@ def parse_directories(data_collection, data_directories, case_list=None):
     """
 
     if data_collection.verbose:
-        print('Gathering image data from...', data_directories, '\n')
+        print(('Gathering image data from...', data_directories, '\n'))
 
     # Iterate through directories.. Always looking for a better way to check optional list typing.
     directory_list = []
     for d in data_directories:
         if not os.path.exists(d):
-            print('WARNING: One of the data directories you have input,', d, 'does not exist!')
+            print(('WARNING: One of the data directories you have input,', d, 'does not exist!'))
         directory_list += glob.glob(os.path.join(d, "*/"))
     directory_list = sorted(directory_list)
 
-    for data_directory, data_groups in data_directories.iteritems():
+    for data_directory, data_groups in data_directories.items():
 
         directory_list = glob.glob(os.path.join(data_directory, '*/'))
 
@@ -30,7 +30,7 @@ def parse_directories(data_collection, data_directories, case_list=None):
 
             case_name = os.path.abspath(directory)
 
-            for data_group, sequence_labels in data_groups.iteritems():
+            for data_group, sequence_labels in data_groups.items():
 
                 data_group_files = []
                 for sequence in sequence_labels:
@@ -46,7 +46,7 @@ def parse_directories(data_collection, data_directories, case_list=None):
                     if len(target_file) == 1:
                         data_group_files.append(target_file[0])
                     else:
-                        print('Error loading', sequence, 'from', os.path.basename(os.path.dirname(case_name)))
+                        print(('Error loading', sequence, 'from', os.path.basename(os.path.dirname(case_name))))
                         if len(target_file) == 0:
                             print('No file found.\n')
                         else:
@@ -78,7 +78,7 @@ def parse_hdf5(data_collection, data_hdf5, case_list=None):
             data_collection.data_groups[data_group.name].data_casenames = getattr(open_hdf5.root, data_group.name + '_casenames')
 
             # There's some double-counting here. TODO: revise, chop down one or the other.
-            data_collection.data_groups[data_group.name].cases = range(data_group.shape[0])
+            data_collection.data_groups[data_group.name].cases = list(range(data_group.shape[0]))
             data_collection.data_groups[data_group.name].case_num = data_group.shape[0]
             data_collection.cases = list(range(data_group.shape[0]))
 
@@ -91,7 +91,7 @@ def parse_filepaths(data_collection, data_group_dict, case_list=None, recursive=
     # Case lists not yet implemented.
 
     # Pulling from multiple directories not yet implemented.
-    lead_group = data_group_dict[data_group_dict.keys()[0]]
+    lead_group = data_group_dict[list(data_group_dict.keys())[0]]
 
     if type(lead_group[0]) is list:
         lead_directory = os.path.abspath(lead_group[0][0])
@@ -118,7 +118,7 @@ def parse_filepaths(data_collection, data_group_dict, case_list=None, recursive=
             base_filepath = os.path.basename(os.path.join(os.path.dirname(base_filepath), os.path.basename(base_filepath)[:file_identifying_chars]))
         
         # Search for sequence files, and skip those missing with files modalities.
-        for data_group, sequence_labels in data_collection.data_group_dict.items():
+        for data_group, sequence_labels in list(data_collection.data_group_dict.items()):
 
             data_group_files = []
 
@@ -129,7 +129,7 @@ def parse_filepaths(data_collection, data_group_dict, case_list=None, recursive=
                 if len(target_file) == 1:
                     data_group_files.append(target_file[0])
                 else:
-                    print('Error loading', sequence, 'from case', lead_filepath)
+                    print(('Error loading', sequence, 'from case', lead_filepath))
                     if len(target_file) == 0:
                         print('No file found.\n')
                     else:
@@ -154,7 +154,7 @@ def parse_csv(data_collection, data_csv, case_list=None):
     if type(data_csv) is str:
         input_csvs = [data_csv]
     else:
-        for data_group_name, csv_file in data_csv.items():
+        for data_group_name, csv_file in list(data_csv.items()):
             input_csvs.update([csv_file])
 
     for input_csv in input_csvs:

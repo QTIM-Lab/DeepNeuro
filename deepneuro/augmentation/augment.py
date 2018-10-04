@@ -41,7 +41,7 @@ class Augmentation(object):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
 
@@ -105,7 +105,7 @@ class Flip_Rotate_2D(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 # Dealing with the time dimension.
                 if len(data_group.get_shape()) < 5:
                     self.flip_axis = 1
@@ -116,7 +116,7 @@ class Flip_Rotate_2D(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
                 data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
@@ -160,7 +160,7 @@ class Shift_Squeeze_Intensities(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
                 data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num] + np.random.uniform(self.shift_amount[0], self.shift_amount[1])
@@ -191,7 +191,7 @@ class Flip_Rotate_3D(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[0])
 
             self.initialization = True
@@ -243,10 +243,10 @@ class Flip_Rotate_3D(Augmentation):
         # Hacky -- the rotation generator is weird here.
         if augmentation_num != self.augmentation_num:
             self.augmentation_num = augmentation_num
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
             self.rotation_generator[label] = self.rotations24(data_group.augmentation_cases[self.augmentation_num])
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             data_group.augmentation_cases[augmentation_num + 1] = next(self.rotation_generator[label])
 
@@ -297,7 +297,7 @@ class ExtractPatches(Augmentation):
                     self.region_list[start_idx:end_idx] = [condition_idx] * (end_idx - start_idx)
                     start_idx = end_idx
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 self.input_shape[label] = data_group.get_shape()
                 if label not in list(self.patch_dimensions.keys()):
                     # If no provided patch dimensions, just presume the format is [batch, patch_dimensions, channel]
@@ -339,7 +339,7 @@ class ExtractPatches(Augmentation):
         if self.patches is None:
             self.generate_patch_corner(augmentation_num)
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             # A bit lengthy. Also unnecessarily rebuffers patches
             data_group.augmentation_cases[augmentation_num + 1] = self.patches[label]
@@ -374,7 +374,7 @@ class ExtractPatches(Augmentation):
         self.patches = {}
 
         # Pad edge patches.
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             # TODO: Some redundancy here
             if corner_idx is None:
@@ -385,7 +385,7 @@ class ExtractPatches(Augmentation):
             patch_slice = [slice(None)] * (len(self.input_shape[label]) + 1)
             # Will run into problems with odd-shaped patches.
             for idx, patch_dim in enumerate(self.patch_dimensions[label]):
-                patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx] / 2), corner[idx] + self.patch_shape[idx] / 2, 1)
+                patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx] // 2), corner[idx] + self.patch_shape[idx] // 2, 1)
 
             input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
 
@@ -395,10 +395,10 @@ class ExtractPatches(Augmentation):
             pad_dims = [(0, 0)] * len(self.patches[label].shape)
             for idx, patch_dim in enumerate(self.patch_dimensions[label]):
                 pad = [0, 0]
-                if corner[idx] > input_shape[patch_dim] - self.patch_shape[idx] / 2:
-                    pad[1] = self.patch_shape[idx] / 2 - (input_shape[patch_dim] - corner[idx])
-                if corner[idx] < self.patch_shape[idx] / 2:
-                    pad[0] = self.patch_shape[idx] / 2 - corner[idx]
+                if corner[idx] > input_shape[patch_dim] - self.patch_shape[idx] // 2:
+                    pad[1] = self.patch_shape[idx] // 2 - (input_shape[patch_dim] - corner[idx])
+                if corner[idx] < self.patch_shape[idx] // 2:
+                    pad[0] = self.patch_shape[idx] // 2 - corner[idx]
                 pad_dims[patch_dim] = tuple(pad)
 
             self.patches[label] = np.lib.pad(self.patches[label], tuple(pad_dims), 'edge')
@@ -442,7 +442,7 @@ class MaskData(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 self.mask_channels[label] = np.array(self.mask_channels[label])
                 # self.input_shape[label] = data_group.get_shape()
                 # if label not in self.mask_channels.keys():
@@ -458,7 +458,7 @@ class MaskData(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             if self.random_sample:
                 channels = np.random.choice(self.mask_channels[label], self.num_masked, replace=False)
@@ -498,7 +498,7 @@ class ChooseData(Augmentation):
 
             self.choices = np.array(self.choices)
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 input_shape = data_group.get_shape()
                 self.output_shape[label] = np.array(input_shape)
                 self.output_shape[label][self.axis[label]] = self.num_chosen
@@ -514,7 +514,7 @@ class ChooseData(Augmentation):
 
         choice = None  # This is messed up
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             # Wrote this function while half-asleep; revisit
             input_data = data_group.augmentation_cases[augmentation_num]
@@ -564,7 +564,7 @@ class Downsample(Augmentation):
 
         if not self.initialization:
 
-            for label, data_group in self.data_groups.items():
+            for label, data_group in list(self.data_groups.items()):
                 self.input_shape[label] = data_group.get_shape()
 
             self.initialization = True
@@ -575,7 +575,7 @@ class Downsample(Augmentation):
 
     def augment(self, augmentation_num=0):
 
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             if self.random_sample:
                 axes = np.random.choice(self.axes[label], self.num_downsampled, replace=False)

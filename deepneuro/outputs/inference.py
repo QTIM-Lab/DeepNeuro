@@ -165,16 +165,16 @@ class ModelPatchesInference(ModelInference):
             new_input_shape = list(input_data.shape)
             for idx, dim in enumerate(self.patch_dimensions):
                 # Might not work for odd-shaped patches; check.
-                input_pad_dimensions[dim] = (int(self.input_patch_shape[dim] / 2), int(self.input_patch_shape[dim] / 2))
+                input_pad_dimensions[dim] = (int(self.input_patch_shape[dim] // 2), int(self.input_patch_shape[dim] // 2))
                 new_input_shape[dim] += self.input_patch_shape[dim]
             for idx, dim in enumerate(self.output_patch_dimensions):
                 repatched_shape[dim] += self.input_patch_shape[dim]
 
             padded_input_data = np.zeros(new_input_shape)
             if self.channels_first:
-                input_slice = [slice(None)] * 2 + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+                input_slice = [slice(None)] * 2 + [slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, None) for dim in self.patch_dimensions]
             else:
-                input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions] + [slice(None)]
+                input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, None) for dim in self.patch_dimensions] + [slice(None)]
             padded_input_data[tuple(input_slice)] = input_data
             input_data = padded_input_data
 
@@ -186,7 +186,7 @@ class ModelPatchesInference(ModelInference):
         all_corners = np.indices(corner_data_dims)
 
         # There must be a better way to round up to an integer..
-        possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
+        possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, None) for dim in self.patch_dimensions]
         all_corners = all_corners[tuple(possible_corners_slice)]
 
         for rep_idx in range(self.patch_overlaps):
@@ -223,7 +223,7 @@ class ModelPatchesInference(ModelInference):
             output_slice = [slice(None)] * output_data.ndim  # Weird
             for idx, dim in enumerate(self.output_patch_dimensions):
                 # Might not work for odd-shaped patches; check.
-                output_slice[dim] = slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, 1)
+                output_slice[dim] = slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, 1)
             output_data = output_data[tuple(output_slice)]
 
         return output_data
@@ -247,7 +247,7 @@ class ModelPatchesInference(ModelInference):
         for corner_idx, corner in enumerate(corners_list):
             output_slice = [slice(None)] * input_data.ndim  # Weird
             for idx, dim in enumerate(self.patch_dimensions):
-                output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] / 2, corner[idx] + self.input_patch_shape[dim] / 2, 1)
+                output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] // 2, corner[idx] + self.input_patch_shape[dim] // 2, 1)
 
             corner_selections += [np.any(input_data[tuple(output_slice)])]
 
@@ -264,7 +264,7 @@ class ModelPatchesInference(ModelInference):
         for corner_idx, corner in enumerate(corner_list):
             output_slice = [slice(None)] * input_data.ndim  # Weird
             for idx, dim in enumerate(self.patch_dimensions):
-                output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] / 2, corner[idx] + self.input_patch_shape[dim] / 2, 1)
+                output_slice[dim] = slice(corner[idx] - self.input_patch_shape[dim] // 2, corner[idx] + self.input_patch_shape[dim] // 2, 1)
 
             output_patches[corner_idx, ...] = input_data[tuple(output_slice)]
 
@@ -278,14 +278,14 @@ class ModelPatchesInference(ModelInference):
             insert_slice = [slice(None)] * input_data.ndim  # Weird
             for idx, dim in enumerate(self.output_patch_dimensions):
                 # Might not work for odd-shaped patches; check.
-                insert_slice[dim] = slice(corner[idx] - self.output_patch_shape[dim] / 2, corner[idx] + self.output_patch_shape[dim] / 2, 1)
+                insert_slice[dim] = slice(corner[idx] - self.output_patch_shape[dim] // 2, corner[idx] + self.output_patch_shape[dim] // 2, 1)
 
             insert_patch = patches[corner_idx, ...]
             if not np.array_equal(np.take(self.output_patch_shape, self.output_patch_dimensions), np.take(self.input_patch_shape, self.patch_dimensions)):  # Necessary if statement?
                 patch_slice = [slice(None)] * insert_patch.ndim  # Weird
                 for idx, dim in enumerate(self.output_patch_dimensions):
                     # Might not work for odd-shaped patches; check.
-                    patch_slice[dim] = slice((self.input_patch_shape[dim] - self.output_patch_shape[dim]) / 2, -(self.input_patch_shape[dim] - self.output_patch_shape[dim]) / 2, 1)
+                    patch_slice[dim] = slice((self.input_patch_shape[dim] - self.output_patch_shape[dim]) // 2, -(self.input_patch_shape[dim] - self.output_patch_shape[dim]) // 2, 1)
 
                 insert_patch = insert_patch[tuple(patch_slice)]
 

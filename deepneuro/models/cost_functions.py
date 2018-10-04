@@ -60,7 +60,7 @@ def wasserstein_loss(model, discriminator, discriminator_fake_logits, discrimina
     _, interpolates_logits = discriminator(model, interpolates, reuse=True, depth=depth, name=name, transition=transition, alpha_transition=alpha_transition)
     gradients = tf.gradients(interpolates_logits, [interpolates])[0]
 
-    slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=range(1, 2 + model.dim)))
+    slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=list(range(1, 2 + model.dim))))
     gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
     tf.summary.scalar("gp_loss", gradient_penalty)
 

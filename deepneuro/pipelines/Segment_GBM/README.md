@@ -30,9 +30,9 @@ A brief explanation of this functions parameters follows:
 | -wholetumor_output, -enhancing_output | Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz"      |
 | -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
 | -debiased | If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step. |
-| -resampled | If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step. |
 | -registered | If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step. |
 | -skullstripped | If flagged, data is assumed to already have been skullstripped, and skips that preprocessing step. |
+| -preprocessed | If flagged, data is assumed to already have been entirely preprocessed by DeepNeuro, including intensity normalization. Only use if data has been passed through DeepNeuro already to ensure proper performance. |
 | -save_all_steps | If flagged, intermediate volumes in between preprocessing steps will be saved in output_folder. |
 | -save_preprocessed | If flagged, the final volumes after bias correction, resampling, and registration. |
 

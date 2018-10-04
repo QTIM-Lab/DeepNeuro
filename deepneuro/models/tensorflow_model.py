@@ -1,4 +1,5 @@
 import os
+import glob
 import tensorflow as tf
 import numpy as np
 
@@ -58,7 +59,7 @@ class TensorFlowModel(DeepNeuroModel):
 
             for epoch in range(self.num_epochs):
 
-                print('Epoch {}/{}'.format(epoch, self.num_epochs))
+                print(('Epoch {}/{}'.format(epoch, self.num_epochs)))
                 self.callback_process('on_epoch_begin', epoch)
 
                 step_counter = tqdm(list(range(self.training_steps_per_epoch)), total=self.training_steps_per_epoch, unit="step", desc="Generator Loss:", miniters=1)
@@ -137,10 +138,22 @@ class TensorFlowModel(DeepNeuroModel):
 
         return save_path
 
+    def log_variables(self):
+        self.summary_op = tf.summary.merge_all()
+        if self.tensorboard_directory is not None:
+            if self.tensorboard_run_directory is None:
+                previous_runs = glob.glob(os.path.join(self.tensorboard_directory, 'tensorboard_run*'))
+                if len(previous_runs) == 0:
+                    run_number = 0
+                else:
+                    run_number = max([int(s.split('tensorboard_run_')[1]) for s in previous_runs]) + 1
+                self.tensorboard_run_directory = os.path.join(self.tensorboard_directory, 'tensorboard_run_%02d' % run_number)
+            self.summary_writer = tf.summary.FileWriter(self.tensorboard_run_directory, self.sess.graph)
+
     def model_summary(self):
 
         for layer in tf.trainable_variables():
-            print layer
+            print(layer)
 
     def callback_process(self, command='', idx=None):
 
@@ -161,6 +174,6 @@ class TensorFlowModel(DeepNeuroModel):
             if any(op_type in layer.name for op_type in contains):
                 try:
                     if self.graph.get_tensor_by_name(layer.name + ':0').get_shape() != ():
-                        print(layer.name, self.graph.get_tensor_by_name(layer.name + ':0').get_shape())
+                        print((layer.name, self.graph.get_tensor_by_name(layer.name + ':0').get_shape()))
                 except:
                     continue
