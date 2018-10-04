@@ -127,7 +127,7 @@ class PatchPrediction(Output):
             possible_corners_slice = [slice(None)] + [slice(self.input_patch_shape[dim] / 2, -self.input_patch_shape[dim] / 2, None) for dim in self.patch_dimensions]
             all_corners = all_corners[tuple(possible_corners_slice)]
 
-            all_corners_list = []
+            # all_corners_list = []
             for rep_idx in range(self.patch_overlaps):
 
                 if self.verbose:
