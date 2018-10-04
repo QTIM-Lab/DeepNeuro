@@ -1,10 +1,8 @@
 import os
 import numpy as np
 
-from collections import defaultdict
-
 from deepneuro.utilities.util import add_parameter, replace_suffix, cli_sanitize, docker_print
-from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti, save_data
+from deepneuro.utilities.conversion import read_image_files, save_data
 
 
 class Preprocessor(object):
@@ -13,7 +11,7 @@ class Preprocessor(object):
 
         # File-Saving Parameters
         add_parameter(self, kwargs, 'overwrite', True)
-        add_parameter(self, kwargs, 'save_output', True)
+        add_parameter(self, kwargs, 'save_output', False)
         add_parameter(self, kwargs, 'output_folder', None)
         add_parameter(self, kwargs, 'return_array', False)
 
@@ -31,7 +29,6 @@ class Preprocessor(object):
         # Derived Parameters
         self.array_input = True
 
-        self.outputs = defaultdict(list)
         self.output_data = None
         self.output_affines = None
         self.output_shape = None
@@ -56,6 +53,7 @@ class Preprocessor(object):
 
         return
 
+    # @profile
     def execute(self, data_collection):
 
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
@@ -64,29 +62,26 @@ class Preprocessor(object):
         if self.verbose:
             docker_print('Working on Preprocessor:', self.name)
 
-        self.initialize(data_collection)  # TODO: make overwrite work with initializations
-
-        for label, data_group in self.data_groups.items():
+        for label, data_group in list(self.data_groups.items()):
 
             self.generate_output_filenames(data_collection, data_group)
+
+            if self.array_input and type(data_group.preprocessed_case) is list:
+                data_group.get_data()
+            elif not self.array_input and type(data_group.preprocessed_case) is list:
+                pass
+            elif not self.array_input:
+                self.output_data = data_group.preprocessed_case
+                self.save_to_file(data_group)
+                data_group.preprocessed_case = self.output_filenames
 
             self.preprocess(data_group)
 
             if self.save_output:
                 self.save_to_file(data_group)
 
-            # Duplicated code here. In general, this is pretty messy.
-            if self.next_prepreprocessor is not None:
-                if self.next_prepreprocessor.array_input:
-                    self.convert_to_array_data(data_group)
-                else:
-                    self.save_to_file(data_group)
-                    data_group.preprocessed_case = self.output_filenames
-
             if self.return_array:
                 self.convert_to_array_data(data_group)
-
-            self.store_outputs(data_collection, data_group)
 
     def convert_to_array_data(self, data_group):
 
@@ -109,16 +104,24 @@ class Preprocessor(object):
 
         data_group.preprocessed_case = self.output_data
 
+    # @profile
     def generate_output_filenames(self, data_collection, data_group, file_extension='.nii.gz'):
 
         self.output_filenames = []
 
-        for file_idx, filename in enumerate(data_group.data[data_collection.current_case]):
+        if data_group.source == 'hdf5':
+            for channel_num in range(data_group.data[data_collection.current_case].shape[-1]):
 
-            self.output_filenames += [self.generate_output_filename(filename, file_extension=file_extension)]
+                self.output_filenames += [self.generate_output_filename('_'.join([data_group.label, str(data_collection.current_case), str(channel_num)]) + file_extension, file_extension=file_extension)]
+
+        else:
+            for file_idx, filename in enumerate(data_group.data[data_collection.current_case]):
+
+                self.output_filenames += [self.generate_output_filename(filename, file_extension=file_extension)]
 
         return
 
+    # @profile
     def generate_output_filename(self, filename, suffix=None, file_extension='.nii.gz'):
 
         if suffix is None:
@@ -151,63 +154,32 @@ class Preprocessor(object):
         if type(self.output_data) is not list:
             for file_idx, output_filename in enumerate(self.output_filenames):
                 if self.overwrite or not os.path.exists(output_filename):
-                    save_numpy_2_nifti(np.squeeze(self.output_data[..., file_idx]), output_filename, data_group.preprocessed_affine, )
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
 
         return
 
     def store_outputs(self, data_collection, data_group):
 
-        self.data_dictionary[data_group.label]['output_filenames'] = self.output_filenames
-
-        if self.output_affines is not None:
-            self.data_dictionary[data_group.label]['output_affine'] = self.output_affines
+        raise NotImplementedError
 
         return
 
     def clear_outputs(self, data_collection, data_group, clear_files_only=False):
 
-        # Really weird.
-        for key in self.data_dictionary[data_group.label]:
-            for item in self.data_dictionary[data_group.label][key]:
-                if type(item) is str:
-                    if os.path.exists(item):
-                        if not self.save_output and all([not (os.path.abspath(item) == os.path.abspath(base_filename)) for base_filename in data_group.data[data_collection.current_case]]):
-                            os.remove(item)
-                elif not clear_files_only:
-                    self.data_dictionary[data_group.label][key] = []
-                    break
+        raise NotImplementedError
 
         return
 
     def initialize(self, data_collection):
 
-        # Absolute madness here. Four nested dicts, sounds like a JSON object.
-
-        if data_collection.preprocessed_cases[data_collection.current_case].get(self.name) is None:
-            data_collection.preprocessed_cases[data_collection.current_case][self.name] = defaultdict(list)
-
-        for label, data_group in data_collection.data_groups.items():
-            if data_collection.preprocessed_cases[data_collection.current_case][self.name].get(label) is None:
-                data_collection.preprocessed_cases[data_collection.current_case][self.name][label] = defaultdict(list)
-
-        self.data_dictionary = data_collection.preprocessed_cases[data_collection.current_case][self.name]
-
-        if self.order_index > 0:
-            self.previous_preprocessor = data_collection.preprocessors[self.order_index - 1]
-
-        if self.order_index != len(data_collection.preprocessors) - 1:
-            self.next_prepreprocessor = data_collection.preprocessors[self.order_index + 1]
-
         if self.data_groups is None:
             self.data_groups = data_collection.data_groups
         else:
-            self.data_groups = {label: data_group for label, data_group in data_collection.data_groups.items() if label in self.data_groups}
+            self.data_groups = {label: data_group for label, data_group in list(data_collection.data_groups.items()) if label in self.data_groups}
 
         return
 
     def reset(self):
-
-        self.outputs = defaultdict(list)
 
         return
 
@@ -238,8 +210,8 @@ class DICOMConverter(Preprocessor):
         for file_idx, output_filename in enumerate(self.output_filenames):
             if self.overwrite or not os.path.exists(output_filename):
                 if type(self.output_data) is list:
-                    save_data(self.output_data[file_idx], output_filename, affine=data_group.preprocessed_affine)
+                    save_data(self.output_data[file_idx], output_filename, reference_data=data_group.preprocessed_affine)
                 else:
-                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, affine=data_group.preprocessed_affine)
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
 
         return

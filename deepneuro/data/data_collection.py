@@ -1,37 +1,31 @@
 
-
-import os
-import glob
+import csv
 import numpy as np
 import tables
 import copy
 
 from tqdm import tqdm
-from collections import defaultdict
 
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
-from deepneuro.data.data_load import parse_modality_directories, parse_subject_directory
+from deepneuro.data.data_load import parse_directories, parse_filepaths, parse_hdf5, parse_csv, parse_numpy
 from deepneuro.utilities.util import add_parameter
 
 
 class DataCollection(object):
 
-    def __init__(self, data_directory=None, data_storage=None, data_group_dict=None, spreadsheet_dict=None, value_dict=None, case_list=None, verbose=False, **kwargs):
+    def __init__(self, case_list=None, verbose=False, **kwargs):
 
-        # Input vars
-        self.data_directory = data_directory
-        self.data_storage = data_storage
-        self.data_group_dict = data_group_dict
-        self.spreadsheet_dict = spreadsheet_dict
-        
+        # Data sources
+        add_parameter(self, kwargs, 'data_sources', None)
+        self.data_types = ['directories', 'filepaths', 'csv', 'numpy', 'hdf5']
+
         # File location variables
         add_parameter(self, kwargs, 'source', 'directories')
         add_parameter(self, kwargs, 'recursive', False)
         add_parameter(self, kwargs, 'file_identifying_chars', None)
 
-        self.value_dict = value_dict
         self.case_list = case_list
         self.verbose = verbose
 
@@ -42,127 +36,132 @@ class DataCollection(object):
 
         # Empty vars
         self.cases = []
-        self.preprocessed_cases = {}
         self.total_cases = 0
         self.current_case = None
 
         # Data group variables
         self.data_groups = {}
 
-        if data_group_dict is not None or data_storage is not None:
+        if self.data_sources is not None:
+            
+            for data_type in self.data_types:
+                if data_type not in list(self.data_sources.keys()):
+                    self.data_sources[data_type] = None
+
             self.fill_data_groups()
-
-    def add_case(self, case_dict, case_name=None):
-
-        # Currently only works for filepaths. Maybe add functionality for python data types, hdf5s?
-
-        # Create DataGroups for this DataCollection.
-        for modality_group in case_dict:
-            if modality_group not in list(self.data_groups.keys()):
-                self.data_groups[modality_group] = DataGroup(modality_group)
-                self.data_groups[modality_group].source = 'directory'
-
-        # Search for modality files, and skip those missing with files modalities.
-        for data_group, modality_group_files in case_dict.items():
-            self.data_groups[data_group].add_case(case_name, list(modality_group_files))
-        
-        self.cases.append(case_name)
-        self.preprocessed_cases[case_name] = {}
-        self.total_cases = len(self.cases)
 
     def fill_data_groups(self):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.
-            Repeated usage may have unexpected results.
         """
 
-        if self.source == 'files':
+        # Create all data groups
+        for data_type in self.data_types:
 
-            # Create DataGroups for this DataCollection.
-            for modality_group in self.data_group_dict:
-                if modality_group not in list(self.data_groups.keys()):
-                    self.data_groups[modality_group] = DataGroup(modality_group)
-                    self.data_groups[modality_group].source = 'file'
+            if self.data_sources[data_type] is None:
+                continue
 
-            parse_modality_directories(self, self.data_group_dict, case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
+            if data_type in ['file', 'numpy']:
+                # Create DataGroups for this DataCollection.
+                for data_group_name in self.data_sources[data_type]:
+                    if data_group_name not in list(self.data_groups.keys()) and data_group_name != 'directories':
+                        self.data_groups[data_group_name] = DataGroup(data_group_name)
+                        self.data_groups[data_group_name].source = data_type
 
-            self.total_cases = len(self.cases)
+            # This is a little fragile
+            elif data_type == 'directories':
+                for directory in self.data_sources[data_type]:
+                    for data_group_name in self.data_sources[data_type][directory]:
+                        if data_group_name not in list(self.data_groups.keys()) and data_group_name != 'directories':
+                            self.data_groups[data_group_name] = DataGroup(data_group_name)
+                            self.data_groups[data_group_name].source = data_type
 
-            if self.total_cases == 0:
-                print('Found zero cases. Are you sure you have the right path for your input directories?')
-                exit(1)
-            else:
-                print('Found', self.total_cases, 'number of cases..')            
+            elif data_type == 'hdf5':
+                open_hdf5 = tables.open_file(self.data_sources[data_type], "r")
+                for data_group in open_hdf5.root._f_iter_nodes():
+                    if '_affines' not in data_group.name and '_casenames' not in data_group.name:
 
-        elif self.data_directory is not None and self.source == 'directories':
+                        self.data_groups[data_group.name] = DataGroup(data_group.name)
+                        self.data_groups[data_group.name].data = data_group
+                        self.data_groups[data_group.name].source = data_type
 
-            if self.verbose:
-                print('Gathering image data from...', self.data_directory, '\n')
+            elif data_type == 'csv':
+                with open(self.data_sources[data_type], 'r') as infile:
+                    csv_reader = csv.reader(infile)
+                    for data_group_name in next(csv_reader):
+                        if data_group_name != 'casename':
+                            if data_group_name not in list(self.data_groups.keys()):
+                                self.data_groups[data_group_name] = DataGroup(data_group_name)
+                                self.data_groups[data_group_name].source = data_type
 
-            # Create DataGroups for this DataCollection.
-            for modality_group in self.data_group_dict:
-                if modality_group not in list(self.data_groups.keys()):
-                    self.data_groups[modality_group] = DataGroup(modality_group)
-                    self.data_groups[modality_group].source = 'directory'
+        # Load data into groups. Replace with dictionary at some point?
+        for data_type in self.data_types:
 
-            # Iterate through directories.. Always looking for a better way to check optional list typing.
-            if isinstance(self.data_directory, str):
-                if not os.path.exists(self.data_directory):
-                    print('The data directory you have input does not exist!')
-                    exit(1)   
-                directory_list = sorted(glob.glob(os.path.join(self.data_directory, "*/")))
-            else:
-                directory_list = []
-                for d in self.data_directory:
-                    if not os.path.exists(d):
-                        print('WARNING: One of the data directories you have input,', d, 'does not exist!')
-                    directory_list += glob.glob(os.path.join(d, "*/"))
-                directory_list = sorted(directory_list)
+            if self.data_sources[data_type] is None:
+                continue
 
-            for subject_dir in directory_list:
+            if data_type == 'file':
 
-                parse_subject_directory(self, subject_dir, case_list=self.case_list)
+                parse_filepaths(self, self.data_sources[data_type], case_list=self.case_list, recursive=self.recursive, file_identifying_chars=self.file_identifying_chars)
+                self.source = 'directories'
 
-            self.total_cases = len(self.cases)
+            if data_type == 'directories':
 
-            if self.total_cases == 0:
-                print('Found zero cases. Are you sure you have the right path for your input directory?')
-                exit(1)
-            else:
-                print('Found', self.total_cases, 'number of cases..')
+                parse_directories(self, self.data_sources[data_type], case_list=self.case_list)
+                self.source = 'directories'
 
-        elif self.data_storage is not None:
+            if data_type == 'numpy':
 
-            if self.verbose:
-                print('Gathering image metadata from...', self.data_storage)
+                raise NotImplementedError
+                parse_numpy(self, self.data_sources[data_type], case_list=self.case_list)
 
-            open_hdf5 = tables.open_file(self.data_storage, "r")
+            if data_type == 'hdf5':
 
-            for data_group in open_hdf5.root._f_iter_nodes():
-                if '_affines' not in data_group.name and '_casenames' not in data_group.name:
+                parse_hdf5(self, self.data_sources[data_type], case_list=self.case_list)
 
-                    self.data_groups[data_group.name] = DataGroup(data_group.name)
-                    self.data_groups[data_group.name].data = data_group
-                    
-                    # Affines and Casenames. Also not great praxis.
-                    self.data_groups[data_group.name].data_affines = getattr(open_hdf5.root, data_group.name + '_affines')
-                    self.data_groups[data_group.name].data_casenames = getattr(open_hdf5.root, data_group.name + '_casenames')
+                """ An existing problem with DeepNeuro is that loading from filepaths and
+                    loading from HDF5s are fundamentally different, but this difference is
+                    encoded in a very slapdash way, like with the "source" parameter below.
+                """
 
-                    # Unsure if .source is needed. Convenient for now.
-                    self.data_groups[data_group.name].source = 'storage'
+                self.source = 'hdf5'
 
-                    # There's some double-counting here. TODO: revise, chop down one or the other.
-                    self.data_groups[data_group.name].cases = range(data_group.shape[0])
-                    self.data_groups[data_group.name].case_num = data_group.shape[0]
-                    self.total_cases = data_group.shape[0]
-                    self.cases = list(range(data_group.shape[0]))
+            if data_type == 'csv':
 
-            if self.total_cases == 0:
-                print('No cases could be extracted from the provided HDF5 file.')
-                exit(1)
+                parse_csv(self, self.data_sources[data_type], case_list=self.case_list)
+                self.source = 'directories'
 
+        self.total_cases = len(self.cases)
+
+        if self.total_cases == 0:
+            print('Found zero cases. Are you sure you have entered your data sources correctly?')
+            exit(1)
         else:
-            print('No directory or data storage file specified. No data groups can be filled.')
+            print(('Found', self.total_cases, 'number of cases..'))            
+
+    def add_case(self, case_dict, case_name=None, load_data=False):
+
+        # add_case currently needs to be refactored to match the new data_load.py data_loading process.
+        # 
+
+        # Create DataGroups for this DataCollection.
+        for data_group_name in case_dict:
+            if data_group_name not in list(self.data_groups.keys()):
+                self.data_groups[data_group_name] = DataGroup(data_group_name)
+                self.data_groups[data_group_name].source = 'directory'
+
+        # Search for modality files, and skip those missing with files modalities.
+        for data_group_name in list(self.data_groups.keys()):
+            if data_group_name in list(case_dict.keys()):
+                self.data_groups[data_group_name].add_case(case_name, list(case_dict[data_group_name]))
+            else:
+                self.data_groups[data_group_name].add_case(case_name, None)
+        
+        self.cases.append(case_name)
+        self.total_cases = len(self.cases)
+
+        if load_data:
+            self.load_case_data(case_name)
 
     def append_augmentation(self, augmentations, multiplier=None):
 
@@ -217,59 +216,12 @@ class DataCollection(object):
         for preprocessor in preprocessors:
             preprocessor.order_index = len(self.preprocessors)
             self.preprocessors.append(preprocessor)
+            preprocessor.initialize(self)
 
-        # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
-        # for preprocessor in preprocessors:
-        #     for data_group_label in preprocessor.data_groups:
-        #         if preprocessor.output_shape is not None:
-        #             self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
-
-        return
-
-    def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
-        
-        # TODO: Add functionality for inserting channel at specific index, multiple channels
-
-        if isinstance(input_data, str):
-            input_data = read_image_files([input_data])
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        for data_group in data_groups:
-
-            if data_group.base_case is None:
-                self.load_case_data(case)
-
-            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
-
-            # # Perhaps should not use tuples for output shape.
-            # This is broken.
-            if data_group.output_shape is not None:
-                output_shape = list(data_group.output_shape)
-                output_shape[channel_dim] = output_shape[channel_dim] + 1
-                data_group.output_shape = tuple(output_shape)
-
-    def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
-
-        # TODO: Add functionality for removing multiple channels
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        for data_group in data_groups:
-
-            data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
-
-            # Perhaps should not use tuples for output shape.
-            if data_group.output_shape is not None:
-                output_shape = list(data_group.output_shape)
-                output_shape[channel_dim] -= 1
-                data_group.output_shape = tuple(output_shape)
+            # This is so bad. TODO: Either put this away in a function, or figure out a more concicse way to do it.
+            for data_group_label in preprocessor.data_groups:
+                if preprocessor.output_shape is not None:
+                    self.data_groups[data_group_label].output_shape = preprocessor.output_shape[data_group_label]
 
         return
 
@@ -278,7 +230,7 @@ class DataCollection(object):
         data_groups = self.get_data_groups(data_group_labels)
 
         if self.verbose:
-            print('Working on image.. ', case)
+            print(('Working on image.. ', case))
 
         if case != self.current_case:
             self.load_case_data(case)
@@ -288,14 +240,13 @@ class DataCollection(object):
                     
         return {data_group.label: data_group.base_case for data_group in data_groups}
 
+    # @profile
     def preprocess(self):
-
-        # print self.preprocessed_cases, self.current_case
-        self.preprocessed_cases[self.current_case] = defaultdict(list)
 
         data_groups = self.get_data_groups()
 
         for data_group in data_groups:
+
             if self.preprocessors != []:
                 data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
             else:
@@ -305,6 +256,7 @@ class DataCollection(object):
             preprocessor.reset()
             preprocessor.execute(self)
 
+    # @profile
     def load_case_data(self, case):
 
         data_groups = self.get_data_groups()
@@ -319,8 +271,8 @@ class DataCollection(object):
             data_group.base_case = data_group.get_data(index=case)
             data_group.base_affine = data_group.get_affine(index=case)
 
-            if data_group.source == 'storage':
-                data_group.base_casename = data_group.data_casenames[case][0]
+            if data_group.source == 'hdf5':
+                data_group.base_casename = data_group.data_casenames[case][0].decode("utf-8")
             else:
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
@@ -345,8 +297,12 @@ class DataCollection(object):
             for case_idx, case_name in enumerate(case_list):
 
                 if verbose:
-                    print('Working on image.. ', case_idx, 'at', case_name)
+                    if self.source == 'hdf5':
+                        print(('Working on image.. ', case_idx, 'at', data_groups[0].data_casenames[case_name][0].decode("utf-8")))
+                    else:
+                        print(('Working on image.. ', case_idx, 'at', case_name))
 
+                # Is error-catching useful here?
                 if True:
                 # try:
                     self.load_case_data(case_name)
@@ -365,8 +321,9 @@ class DataCollection(object):
                         # TODO: This section is terribly complex and repetitive. Revise!
 
                         for data_idx, data_group in enumerate(data_groups):
+                            
                             if len(self.augmentations) == 0:
-                                data_batch[data_group.label].append(data_group.base_case[0])
+                                data_batch[data_group.label].append(data_group.preprocessed_case)
                             else:
                                 data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
 
@@ -427,7 +384,7 @@ class DataCollection(object):
 
     def clear_augmentations(self):
 
-        # This function is basically a memory leak. Good for loading data and then immediately
+        # Good for loading data and then immediately
         # using it to train. Not yet implemented
 
         self.augmentations = []
@@ -442,12 +399,14 @@ class DataCollection(object):
 
             # This is terrible code. TODO: rewrite.
             missing_case = False
-            for data_label, data_group in self.data_groups.items():
+
+            for data_label, data_group in list(self.data_groups.items()):
                 if data_label not in data_group_labels:
                     continue
                 if case_name not in data_group.cases:
                     missing_case = True
                     break
+
             if not missing_case:
                 valid_cases += [case_name]
 
@@ -465,8 +424,9 @@ class DataCollection(object):
             raise ValueError('No output_filepath provided; data cannot be written.')
 
         # Create Data File
+        if True:
         # try:
-        hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
+            hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
         # except Exception as e:
             # os.remove(output_filepath)
             # raise e
@@ -484,18 +444,18 @@ class DataCollection(object):
         hdf5_file = tables.open_file(output_filepath, mode='w')
         filters = tables.Filters(complevel=5, complib='blosc')
 
-        for data_label, data_group in self.data_groups.items():
+        for data_label, data_group in list(self.data_groups.items()):
 
             num_cases = self.total_cases * self.multiplier
 
             if num_cases == 0:
                 raise Exception('WARNING: No cases found. Cannot write to file.')
 
-            output_shape = data_group.get_shape()
+            output_shape = tuple(data_group.get_shape())
 
             # Add batch dimension
             data_shape = (0,) + output_shape
-            
+
             data_group.data_storage = hdf5_file.create_earray(hdf5_file.root, data_label, tables.Float32Atom(), shape=data_shape, filters=filters, expectedrows=num_cases)
 
             # Naming convention is bad here, TODO, think about this.
@@ -509,7 +469,7 @@ class DataCollection(object):
 
         # This is very shady. Currently trying to reconcile between loading data from a
         # directory and loading data from an hdf5.
-        if self.data_directory is not None:
+        if False:
             storage_cases, total_cases = self.return_valid_cases(data_group_labels)
         else:
             storage_cases, total_cases = self.cases, self.total_cases
@@ -536,11 +496,55 @@ class DataCollection(object):
 
         return data_groups
 
-    def clear_outputs(self, clear_files_only=True):
+    def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
+        
+        """ This function and remove_channel are edge cases that might be best dealt with outside of data_collection.
+        """
 
-        for data_group in self.get_data_groups():
-            for preprocessor in self.preprocessors:
-                preprocessor.clear_outputs(self, data_group, clear_files_only)
+        # TODO: Add functionality for inserting channel at specific index, multiple channels
+
+        if isinstance(input_data, str):
+            input_data = read_image_files([input_data])
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            if data_group.base_case is None:
+                self.load_case_data(case)
+
+            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
+
+            # # Perhaps should not use tuples for output shape.
+            # This is broken.
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] = output_shape[channel_dim] + 1
+                data_group.output_shape = tuple(output_shape)
+
+    def remove_channel(self, channel, data_group_labels=None, channel_dim=-1):
+
+        # TODO: Add functionality for removing multiple channels
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        for data_group in data_groups:
+
+            data_group.base_case = np.delete(data_group.base_case, channel, axis=channel_dim)
+
+            # Perhaps should not use tuples for output shape.
+            if data_group.output_shape is not None:
+                output_shape = list(data_group.output_shape)
+                output_shape[channel_dim] -= 1
+                data_group.output_shape = tuple(output_shape)
+
+        return
 
 
 if __name__ == '__main__':

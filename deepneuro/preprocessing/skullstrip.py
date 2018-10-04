@@ -46,7 +46,7 @@ class SkullStrip(Preprocessor):
 
         super(SkullStrip, self).initialize(data_collection)
 
-        for label, data_group in data_collection.data_groups.items():
+        for label, data_group in list(data_collection.data_groups.items()):
             
             reference_filename = data_group.data[data_collection.current_case][self.reference_channel]
 
@@ -74,14 +74,11 @@ class SkullStrip(Preprocessor):
 
         data_group.preprocessed_data = self.output_data
 
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['skullstrip_mask'] = [self.mask_filename]
-
-        return   
-
 
 class SkullStrip_Model(Preprocessor):
+
+    """ Skull-stripping as a pre-processor is slightly broken right now -- only works for single-patient use cases.
+    """
 
     def load(self, kwargs):
 
@@ -107,6 +104,7 @@ class SkullStrip_Model(Preprocessor):
 
         self.mask_string = '_Skullstrip_Mask'
         self.mask_filename = None
+        self.mask_numpy = None
 
         if type(self.reference_channel) is not list:
             self.reference_channel = [self.reference_channel]
@@ -115,21 +113,27 @@ class SkullStrip_Model(Preprocessor):
 
         super(SkullStrip_Model, self).initialize(data_collection)
 
-        for label, data_group in data_collection.data_groups.items():
+    def execute(self, data_collection):
 
-            reference_filename = data_group.data[data_collection.current_case][self.reference_channel[0]]
-            self.mask_filename = self.generate_output_filename(reference_filename, self.mask_string)
+        if self.mask_numpy is None:
 
-            input_data = np.take(data_group.preprocessed_case, self.reference_channel, axis=-1)[np.newaxis, ...]
+            for label, data_group in list(data_collection.data_groups.items()):
 
-            # Also Hacky
-            self.model.outputs[-1].model = self.model
-            self.model.outputs[-1].input_patch_shape = self.model.outputs[-1].model.model.layers[0].input_shape
-            self.model.outputs[-1].process_case(input_data)
-            self.model.outputs[-1].postprocess()
-            save_numpy_2_nifti(np.squeeze(self.model.outputs[-1].return_objects[-1]), self.mask_filename, data_group.preprocessed_affine)  # Hacky
+                input_data = np.take(data_group.preprocessed_case, self.reference_channel, axis=-1)[np.newaxis, ...]
 
-        self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
+                # Hacky -- TODO: Revise.
+                self.model.outputs[-1].model = self.model
+                self.model.outputs[-1].input_patch_shape = self.model.outputs[-1].model.model.layers[0].input_shape
+                self.model.outputs[-1].process_case(input_data)
+                self.model.outputs[-1].postprocess(input_data)
+
+                reference_filename = data_group.data[data_collection.current_case][self.reference_channel[0]]
+                self.mask_filename = self.generate_output_filename(reference_filename, self.mask_string)
+                save_numpy_2_nifti(np.squeeze(self.model.outputs[-1].return_objects[-1]), self.mask_filename, data_group.preprocessed_affine)  # Hacky
+
+            self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
+
+        super(SkullStrip_Model, self).execute(data_collection)
 
     def preprocess(self, data_group):
 
@@ -139,9 +143,3 @@ class SkullStrip_Model(Preprocessor):
         self.output_data[self.mask_numpy[..., 0] == 0] = 0
 
         data_group.preprocessed_data = self.output_data
-
-    def store_outputs(self, data_collection, data_group):
-
-        self.data_dictionary[data_group.label]['skullstrip_mask'] = [self.mask_filename]
-
-        return   

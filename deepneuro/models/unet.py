@@ -2,13 +2,10 @@
     See more at https://arxiv.org/abs/1505.04597
 """
 
-from keras.engine import Model
-from keras.layers import Conv3D, MaxPooling3D, Activation, Dropout, BatchNormalization
-from keras.optimizers import Nadam
+from keras.layers import Dropout, BatchNormalization
 from keras.layers.merge import concatenate
 
-from deepneuro.models.model import KerasModel
-from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
+from deepneuro.models.keras_model import KerasModel
 from deepneuro.models.dn_ops import DnConv, DnMaxPooling, DnDeConv, DnUpsampling
 from deepneuro.utilities.util import add_parameter
 
@@ -31,6 +28,7 @@ class UNet(KerasModel):
         super(UNet, self).load(kwargs)
 
         add_parameter(self, kwargs, 'depth', 4)
+        add_parameter(self, kwargs, 'output_channels', 1)
 
     def build_model(self):
         
@@ -85,35 +83,6 @@ class UNet(KerasModel):
             if self.batch_norm:
                 right_outputs[level] = BatchNormalization()(right_outputs[level])
 
-        self.output_layer = DnConv(right_outputs[level], 1, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
+        self.output_layer = DnConv(right_outputs[level], self.output_channels, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
 
-        # TODO: Brainstorm better way to specify outputs
-        if self.input_tensor is None:
-
-            if self.output_type == 'regression':
-                self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
-
-            if self.output_type == 'dice':
-                act = Activation('sigmoid')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
-
-            if self.output_type == 'binary_label':
-                act = Activation('sigmoid')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
-
-            if self.output_type == 'categorical_label':
-                act = Activation('softmax')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
-                              metrics=['categorical_accuracy'])
-
-            super(UNet, self).build()
-
-            return self.model
-
-        else:
-
-            return
+        super(UNet, self).build_model()

@@ -8,12 +8,11 @@ def parse_template(input_file):
 
     template = yaml.load(open(input_file))
 
-    for key, label in template.items():
-        print key, label
+    for key, label in list(template.items()):
+        print(key, label)
 
     ### Process Inputs ###
-    print template['Inputs']
-
+    print(template['Inputs'])
 
     return
 

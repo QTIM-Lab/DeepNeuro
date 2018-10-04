@@ -23,8 +23,6 @@ class N4BiasCorrection(Preprocessor):
 
     def preprocess(self, data_group):
 
-        # specific_command = self.command + ['-i', self.base_file, '-o', self.output_filename]
-
         for file_idx, filename in enumerate(data_group.preprocessed_case):
             specific_command = self.command + ['N4ITKBiasFieldCorrection', filename, self.output_filenames[file_idx]]
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
@@ -60,15 +58,26 @@ class Normalization(Preprocessor):
         if self.mask is not None:
             mask_numpy = read_image_files(self.mask)[..., 0]
         elif self.mask_preprocessor is not None:
-            mask_numpy = read_image_files(self.mask_preprocessor.data_dictionary[data_group.label][self.mask_name])[..., 0]
+            mask_numpy = read_image_files(self.mask_preprocessor.mask_numpy)[..., 0]
         else:
             mask_numpy = None
 
+        if self.channels is not None:
+            return_data = np.copy(input_data).astype(float)
+            input_data = np.take(input_data, indices=self.channels, axis=-1)
+
         if self.normalize_by_channel:
+            # Make this an optional parameter.
+            data_group.preprocessed_case = data_group.preprocessed_case.astype(float)
             for channel in range(data_group.preprocessed_case.shape[-1]):
                 data_group.preprocessed_case[..., channel] = self.normalize(input_data[..., channel], mask_numpy)
         else:
             data_group.preprocessed_case = self.normalize(input_data, mask_numpy)
+
+        if self.channels is not None:
+            for channel_idx, channel in enumerate(self.channels):
+                return_data[..., channel] = data_group.preprocessed_case[..., channel_idx]
+            data_group.preprocessed_case = return_data
 
         # TODO: Reduce redundancy in naming
         self.output_data = data_group.preprocessed_case
@@ -113,7 +122,7 @@ class RangeNormalization(Normalization):
 
             if input_intensity_range[0] == input_intensity_range[1]:
                 normalize_numpy[:] = self.intensity_range[0]
-                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum.')
+                print('Warning: normalization edge case. All array values are equal. Normalizing to minimum value.')
 
             else:
                 normalize_numpy = ((self.intensity_range[1] - self.intensity_range[0]) * (normalize_numpy - input_intensity_range[0])) / (input_intensity_range[1] - input_intensity_range[0]) + self.intensity_range[0] 

@@ -19,23 +19,27 @@ def generator(model, latent_var, depth=1, initial_size=4, reuse=False, transitio
         convs += [tf.reshape(latent_var, [tf.shape(latent_var)[0]] + [1] * model.dim + [model.latent_size])]
 
         # TODO: refactor the padding on this step. Or replace with a dense layer?
-        convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(4,) * model.dim, stride_size=(1,) * model.dim, padding='Other', name='generator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=model.dim)), model.dim)
+        with tf.variable_scope('generator_n_conv_1_{}'.format(convs[-1].shape[1])):
+            convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(4,) * model.dim, stride_size=(1,) * model.dim, padding='Other', dim=model.dim)), model.dim)
 
         convs += [tf.reshape(convs[-1], [tf.shape(latent_var)[0]] + [initial_size] * model.dim + [model.get_filter_num(0)])]
 
-        convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, name='generator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=model.dim)), dim=model.dim)
+        with tf.variable_scope('generator_n_conv_2_{}'.format(convs[-1].shape[1])):
+            convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, dim=model.dim)), dim=model.dim)
 
         for i in range(depth):
 
             if i == depth - 1 and transition:
                 #To RGB
-                transition_conv = DnConv(convs[-1], output_dim=model.channels, kernel_size=(1,) * model.dim, stride_size=(1,) * model.dim, name='generator_y_rgb_conv_{}'.format(convs[-1].shape[1]), dim=model.dim)
+                transition_conv = DnConv(convs[-1], output_dim=model.channels, kernel_size=(1,) * model.dim, stride_size=(1,) * model.dim, dim=model.dim, name='generator_y_rgb_conv_{}'.format(convs[-1].shape[1]))
                 transition_conv = DnUpsampling(transition_conv, (2,) * model.dim, dim=model.dim)
 
             convs += [DnUpsampling(convs[-1], (2,) * model.dim, dim=model.dim)]
-            convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, name='generator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=model.dim)), dim=model.dim)
+            with tf.variable_scope('generator_n_conv_1_{}'.format(convs[-1].shape[1])):
+                convs[-1] = DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, dim=model.dim)), dim=model.dim)
 
-            convs += [DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, name='generator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=model.dim)), dim=model.dim)]
+            with tf.variable_scope('generator_n_conv_2_{}'.format(convs[-1].shape[1])):
+                convs += [DnPixelNorm(leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(i + 1), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, dim=model.dim)), dim=model.dim)]
 
         #To RGB
         convs += [DnConv(convs[-1], output_dim=model.channels, kernel_size=(1,) * model.dim, stride_size=(1,) * model.dim, name='generator_y_rgb_conv_{}'.format(convs[-1].shape[1]), dim=model.dim)]
@@ -46,7 +50,7 @@ def generator(model, latent_var, depth=1, initial_size=4, reuse=False, transitio
         return convs[-1]
 
 
-def discriminator(model, input_image, reuse=False, name=None, depth=1, transition=False, **kwargs):
+def discriminator(model, input_image, reuse=False, name=None, depth=1, transition=False, alpha_transition=0, **kwargs):
 
     """
     """
@@ -72,6 +76,9 @@ def discriminator(model, input_image, reuse=False, name=None, depth=1, transitio
             convs += [leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(depth - 1 - i), kernel_size=(5,) * model.dim, stride_size=(1,) * model.dim, name='discriminator_n_conv_2_{}'.format(convs[-1].shape[1]), dim=model.dim))]
             convs[-1] = DnAveragePooling(convs[-1], dim=model.dim)
 
+            if i == 0 and transition:
+                convs[-1] = alpha_transition * convs[-1] + (1 - alpha_transition) * transition_conv
+
         convs += [minibatch_state_concat(convs[-1])]
         convs[-1] = leaky_relu(DnConv(convs[-1], output_dim=model.get_filter_num(0), kernel_size=(3,) * model.dim, stride_size=(1,) * model.dim, name='discriminator_n_conv_1_{}'.format(convs[-1].shape[1]), dim=model.dim))
 
@@ -81,13 +88,15 @@ def discriminator(model, input_image, reuse=False, name=None, depth=1, transitio
         # Currently erroring
         # discriminate_output = dense(output, output_size=1, name='discriminator_n_fully')
 
-        discriminate_output = tf.layers.dense(output, model.get_filter_num(0), name='discriminator_n_1_fully')
-        discriminate_output = tf.layers.dense(discriminate_output, 1, name='discriminator_n_2_fully')
+        # discriminate_output = tf.layers.dense(output, model.get_filter_num(0), name='discriminator_n_1_fully')
+        discriminate_output = tf.layers.dense(output, 1, name='discriminator_n_1_fully')
 
         return tf.nn.sigmoid(discriminate_output), discriminate_output
 
 
 def unet(model, input_tensor, backend='tensorflow'):
+
+        from keras.layers.merge import concatenate
 
         left_outputs = []
 

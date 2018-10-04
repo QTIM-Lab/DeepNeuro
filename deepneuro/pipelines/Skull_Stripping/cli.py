@@ -56,7 +56,7 @@ class Skull_Stripping_cli(object):
         parser.add_argument('-debiased', action='store_true')  
         parser.add_argument('-resampled', action='store_true')
         parser.add_argument('-registered', action='store_true')
-        parser.add_argument('-normalized', action='store_true') 
+        parser.add_argument('-preprocessed', action='store_true') 
         parser.add_argument('-save_preprocess', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
         parser.add_argument('-output_probabilities', action='store_true')
@@ -73,7 +73,7 @@ class Skull_Stripping_cli(object):
 
         from deepneuro.pipelines.Skull_Stripping.predict import skull_strip
 
-        skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, normalized=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
+        skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
 
     def docker_pipeline(self):
 

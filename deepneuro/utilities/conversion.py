@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import nibabel as nib
@@ -18,6 +17,7 @@ def _modify_dims(input_data, channels=False, batch=False, dim=None):
     return
 
 
+# @profile
 def read_image_files(image_files, return_affine=False, channels=True, batch=False):
 
     # Rename this function to something more descriptive?
@@ -74,7 +74,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
     found_files = grab_files_recursive(input_folder)
 
     if verbose:
-        print('Found', len(found_files), 'in directory. \n')
+        print(('Found', len(found_files), 'in directory. \n'))
         print('Checking DICOM compatability...')
 
     dicom_files = []
@@ -86,7 +86,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
             continue
 
     if verbose:
-        print('Found', len(dicom_files), 'DICOM files in directory. \n')
+        print(('Found', len(dicom_files), 'DICOM files in directory. \n'))
         print('Counting volumes..')
 
     unique_dicoms = defaultdict(list)
@@ -95,7 +95,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
         unique_dicoms[UID] += [dicom_file[0]]
 
     if verbose:
-        print('Found', len(list(unique_dicoms.keys())), 'unique volumes \n')
+        print(('Found', len(list(unique_dicoms.keys())), 'unique volumes \n'))
         print('Saving out files from these volumes.')
 
     for UID in list(unique_dicoms.keys()):
@@ -117,7 +117,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
             first_dicom, last_dicom = current_dicoms[0], current_dicoms[-1]
 
             if verbose:
-                print('Loading...', input_folder)
+                print(('Loading...', input_folder))
 
         # except:
         #     print 'Could not read DICOM volume SeriesDescription. Skipping UID...', str(UID)
@@ -151,7 +151,7 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
                 try:
                     output_numpy += [get_dicom_pixel_array(current_dicoms[i], current_files[i])]
                 except:
-                    print('Warning, error at slice', i, 'in folder', input_folder)
+                    print(('Warning, error at slice', i, 'in folder', input_folder))
             output_numpy = np.stack(output_numpy, -1)
 
             # If preferred, harden to identity matrix space (LPS, maybe?)
@@ -349,7 +349,7 @@ FORMAT_LIST = {'dicom': ('.dcm', '.ima'),
                 'nifti': ('.nii', '.nii.gz'), 
                 'nrrd': ('.nrrd', '.nhdr'), 
                 'image_jpg_png': ('.jpg', '.png'),
-                'image_other': ('.tif', 'gif'), 
+                'image_other': ('.tif', '.gif', '.bmp'), 
                 'itk_transform': ('.txt', '.tfm')}
 
 NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
@@ -408,6 +408,7 @@ def convert_input_2_numpy(input_data, input_format=None, return_all=False):
     """
 
     if isinstance(input_data, str):
+
         if input_format is None:
             input_format = check_format(input_data)
 
@@ -482,7 +483,7 @@ def save_input_2_dso(input_data, reference_dicom_filepath, dso_metadata, referen
 
     base_command += [input_data_string]
 
-    print(' '.join(base_command))
+    print((' '.join(base_command)))
     subprocess.call(' '.join(base_command), shell=True)
 
     return output_filepath

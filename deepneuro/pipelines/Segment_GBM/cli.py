@@ -43,6 +43,8 @@ class Segment_GBM_cli(object):
             -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.
             -resampled: If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step.
             -registered: If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step.
+            -skullstripped: If flagged, data is assumed to have been already skull-stripped.
+            -preprocessed: If flagged, data is assumed to have been preprocessed with with zero mean and unit variance with respect to a brain mask.
             -save_all_steps: If flagged, intermediate volumes in between preprocessing steps will be saved in output_folder.
             -save_preprocessed: If flagged, the final volume after all preprocessing steps will be saved in output_folder
                 ''')
@@ -59,7 +61,7 @@ class Segment_GBM_cli(object):
         parser.add_argument('-resampled', action='store_true')
         parser.add_argument('-registered', action='store_true')
         parser.add_argument('-skullstripped', action='store_true') 
-        parser.add_argument('-normalized', action='store_true') 
+        parser.add_argument('-preprocessed', action='store_true') 
         parser.add_argument('-save_preprocess', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
         parser.add_argument('-output_probabilities', action='store_true')
@@ -76,7 +78,7 @@ class Segment_GBM_cli(object):
 
         from deepneuro.pipelines.Segment_GBM.predict import predict_GBM
 
-        predict_GBM(args.output_folder, FLAIR=args.FLAIR, T1POST=args.T1POST, T1PRE=args.T1, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.normalized, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
+        predict_GBM(args.output_folder, FLAIR=args.FLAIR, T1POST=args.T1POST, T1PRE=args.T1, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_wholetumor_filename=args.wholetumor_output, output_enhancing_filename=args.enhancing_output)
 
     def docker_pipeline(self):
 
