@@ -8,17 +8,6 @@ class ModelInference(Output):
 
     def load(self, kwargs):
 
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
-
         # Evaluation Params
         add_parameter(self, kwargs, 'ground_truth', None)
 

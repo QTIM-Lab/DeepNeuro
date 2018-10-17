@@ -240,6 +240,23 @@ class DataCollection(object):
                     
         return {data_group.label: data_group.base_case for data_group in data_groups}
 
+    def get_current_casename(self):
+
+        if self.source == 'hdf5':
+            data_groups = self.get_data_groups()
+            return data_groups[0].data_casenames[self.current_case][0].decode("utf-8")
+        else:
+            return self.current_case
+
+    def get_data_groups(self, data_group_labels=None):
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        return data_groups
+
     # @profile
     def preprocess(self):
 
@@ -486,15 +503,6 @@ class DataCollection(object):
                         self.data_groups[data_group_label].write_to_storage()
 
         return
-
-    def get_data_groups(self, data_group_labels=None):
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        return data_groups
 
     def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
         

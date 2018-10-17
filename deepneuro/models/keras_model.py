@@ -1,10 +1,12 @@
 from keras.engine import Input, Model
 from keras.layers import Activation
-from keras.optimizers import Nadam
+from keras.optimizers import Nadam, SGD, Adam
+from keras import backend as K
 
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
 from deepneuro.models.model import DeepNeuroModel
 from deepneuro.utilities.visualize import check_data
+from deepneuro.utilities.util import add_parameter
 from deepneuro.models.callbacks import get_callbacks
 
 
@@ -13,6 +15,10 @@ class KerasModel(DeepNeuroModel):
     def load(self, kwargs):
 
         super(KerasModel, self).load(kwargs)
+
+        add_parameter(self, kwargs, 'output_activation', True)
+
+        self.keras_optimizer_dict = {'Nadam': Nadam, 'Adam': Adam, 'SGD': SGD}
 
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
@@ -93,6 +99,17 @@ class KerasModel(DeepNeuroModel):
 
         return
 
+    def get_layer_output_shape(self, layer_num):
+
+        return self.model.layers[layer_num].output_shape
+
+    def get_layer_output_function(self, layer_num):
+
+        """ Only works for the sequential model.
+        """
+
+        return K.function([self.model.layers[0].input], [self.model.layers[layer_num].output])
+
     def predict(self, input_data):
 
         return self.model.predict(input_data)
@@ -104,27 +121,35 @@ class KerasModel(DeepNeuroModel):
 
             if self.output_type == 'msq':
                 self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
             if self.output_type == 'dice':
-                act = Activation('sigmoid')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+                if self.output_activation:
+                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                else:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
             if self.output_type == 'multi_dice':
-                act = Activation('sigmoid')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+                if self.output_activation:
+                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                else:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
             if self.output_type == 'binary_crossentropy':
-                act = Activation('sigmoid')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
+                if self.output_activation:
+                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                else:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
 
             if self.output_type == 'categorical_crossentropy':
-                act = Activation('softmax')(self.output_layer)
-                self.model = Model(inputs=self.inputs, outputs=act)
-                self.model.compile(optimizer=Nadam(lr=self.initial_learning_rate), loss='categorical_crossentropy',
+                if self.output_activation:
+                    self.model = Model(inputs=self.inputs, outputs=Activation('softmax')(self.output_layer))
+                else:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
                               metrics=['categorical_accuracy'])
 
             self.model_input_shape = self.model.layers[0].input_shape
