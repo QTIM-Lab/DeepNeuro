@@ -1,0 +1,683 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.outputs.patch_interpretability &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.outputs.patch_interpretability</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.outputs.patch_interpretability</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tables</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">umap</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">scipy.ndimage</span> <span class="k">as</span> <span class="nn">ndimage</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="k">import</span> <span class="n">KMeans</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.outputs.output</span> <span class="k">import</span> <span class="n">Output</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span><span class="p">,</span> <span class="n">docker_print</span><span class="p">,</span> <span class="n">replace_suffix</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.conversion</span> <span class="k">import</span> <span class="n">save_data</span>
+
+
+<div class="viewcode-block" id="PatchInterpretability"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability">[docs]</a><span class="k">class</span> <span class="nc">PatchInterpretability</span><span class="p">(</span><span class="n">Output</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PatchInterpretability.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">PatchInterpretability</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Model Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;input_channels&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;channels_dim&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_channels&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_layers&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">])</span>
+
+        <span class="c1"># Patching Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;patch_method&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;patch_num&#39;</span><span class="p">,</span> <span class="mi">50000</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;mask_condition&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;patch_overlaps&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_patch_shape&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;check_empty_patch&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;pad_borders&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;patch_dimensions&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_patch_dimensions&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">)</span>
+
+        <span class="c1"># Aggregation Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;aggregation_method&#39;</span><span class="p">,</span> <span class="s1">&#39;flatten&#39;</span><span class="p">)</span>
+        <span class="c1"># add_parameter(self, kwargs, &#39;iterative_aggregation&#39;, True)</span>
+
+        <span class="c1"># Umap Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;umap_components&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Clustering Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;cluster_individual_case&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;cluster_num&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="c1"># Output Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;generate_patches&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;aggregate_patches&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;umap_patches&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;cluster_patches&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;show_umap_plot&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;save_projected_output&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Output Naming Paramters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;patch_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;aggregate_patch_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;features_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;clusters_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;umap_plot_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;data_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;label_filename&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Overwrite Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_patches&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_aggregate&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_features&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_clusters&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_plot&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;overwrite_outputs&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Experimental Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;baseline_mean_intensity&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="c1"># @profile</span>
+<div class="viewcode-block" id="PatchInterpretability.process_case"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.process_case">[docs]</a>    <span class="k">def</span> <span class="nf">process_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># A little bit strange to access casename this way. Maybe make it an optional</span>
+        <span class="c1"># return of the generator.</span>
+
+        <span class="c1"># Note that input_modalities as the first input is hard-coded here. Very fragile.</span>
+
+        <span class="c1"># If an image is being repatched, its output shape is not certain. We attempt to infer it from</span>
+        <span class="c1"># the input data. This is wonky. Move this to PatchInference, maybe.</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels_first</span><span class="p">:</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels_dim</span><span class="p">)</span>
+
+        <span class="c1"># Determine patch shape. Currently only extends to spatial patching.</span>
+        <span class="c1"># This leading dims business has got to have a better solution..</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_input_shape</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_output_shape</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels_first</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">+</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">+</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">)]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_output_shape</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># Weird</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_layers</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="o">=</span> <span class="n">layer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_output_filenames</span><span class="p">()</span>
+
+            <span class="n">save_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_data_filename</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_patch_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_patch_filename</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_patches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">create_patch_hdf5_file</span><span class="p">()</span>
+                    <span class="n">patch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_patch_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_individual_case</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cluster_patch_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.create_output_filenames"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.create_output_filenames">[docs]</a>    <span class="k">def</span> <span class="nf">create_output_filenames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;_prediction&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">get_current_casename</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_patch_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_aggregate_patch_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregate_patch_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_umap_feature_output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_umap_cluster_output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_umap_plot_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">umap_plot_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_data_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_label_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.cluster_patch_data"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.cluster_patch_data">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_patch_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+        <span class="n">open_hdf5</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_patch_filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">output_npy_file</span> <span class="o">=</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_aggregate_patch_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_method</span><span class="p">)</span>
+
+        <span class="c1"># Load and aggregate data for analysis.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_npy_file</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_aggregate</span><span class="p">:</span>
+            <span class="n">patch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregate_patch_data</span><span class="p">(</span><span class="n">open_hdf5</span><span class="p">,</span> <span class="n">output_npy_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">patch_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">output_npy_file</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">patch_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># Calculate Features and Clusters</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_mean_intensity</span><span class="p">:</span>
+            <span class="n">umap_features</span> <span class="o">=</span> <span class="n">patch_data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_feature_output</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_features</span><span class="p">:</span>
+                <span class="n">umap_features</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">min_dist</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">patch_data</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_feature_output</span><span class="p">,</span> <span class="n">umap_features</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">umap_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_feature_output</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_cluster_output</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_clusters</span><span class="p">:</span>
+            <span class="n">k_clusters</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_num</span><span class="p">)</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">umap_features</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_cluster_output</span><span class="p">,</span> <span class="n">k_clusters</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_cluster_output</span><span class="p">)</span>
+
+        <span class="c1"># Plot UMAP and Save Output</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_mean_intensity</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_plot_filename</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_plot</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="n">umap_features</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="n">k_clusters</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_umap_plot</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_plot_filename</span><span class="p">)</span>
+
+        <span class="c1"># Map Back to Original Data</span>
+        <span class="n">corners</span> <span class="o">=</span> <span class="n">open_hdf5</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">corners</span>
+        <span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">output_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">output_array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">corners</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">coordinate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corners</span><span class="p">):</span>
+            <span class="c1"># print(coordinate)</span>
+            <span class="n">output_array</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">coordinate</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">coordinate</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">coordinate</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span> <span class="o">=</span> <span class="n">k_clusters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">padded_points</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">maximum_filter</span><span class="p">(</span><span class="n">output_array</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">padded_points</span><span class="p">[</span><span class="n">output_array</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_array</span><span class="p">[</span><span class="n">output_array</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">save_data</span><span class="p">(</span><span class="n">padded_points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_label_filename</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.plot_umap"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.plot_umap">[docs]</a>    <span class="k">def</span> <span class="nf">plot_umap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;UMAP Clustering&#39;</span><span class="p">):</span>
+
+        <span class="n">slicer_cmap</span> <span class="o">=</span> <span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">([</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;cyan&#39;</span><span class="p">])</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">clusters</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">slicer_cmap</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_umap_plot_filename</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.aggregate_patch_data"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.aggregate_patch_data">[docs]</a>    <span class="k">def</span> <span class="nf">aggregate_patch_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdf5</span><span class="p">,</span> <span class="n">output_npy_file</span><span class="p">):</span>
+
+        <span class="n">patch_data</span> <span class="o">=</span> <span class="n">hdf5</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">patches</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_method</span> <span class="o">==</span> <span class="s1">&#39;flatten&#39;</span><span class="p">:</span>
+            <span class="n">patch_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">patch_data</span><span class="p">,</span> <span class="p">(</span><span class="n">patch_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_method</span> <span class="o">==</span> <span class="s1">&#39;average&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterative_aggregation</span><span class="p">:</span>
+                <span class="n">new_patch_data</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">patch_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">patch_data_slice</span> <span class="o">=</span> <span class="n">patch_data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+                    <span class="n">mean_slice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">patch_data_slice</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">patch_data_slice</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">mean_slice</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">new_patch_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">new_patch_data</span> <span class="o">=</span> <span class="n">mean_slice</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">new_patch_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">new_patch_data</span><span class="p">,</span> <span class="n">mean_slice</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">patch_data</span> <span class="o">=</span> <span class="n">new_patch_data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">patch_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">patch_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">patch_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_npy_file</span><span class="p">,</span> <span class="n">patch_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">patch_data</span></div>
+
+    <span class="c1"># @profile</span>
+<div class="viewcode-block" id="PatchInterpretability.generate_patch_data"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.generate_patch_data">[docs]</a>    <span class="k">def</span> <span class="nf">generate_patch_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_borders</span><span class="p">:</span>
+            <span class="c1"># TODO -- Clean up this border-padding code and make it more readable.</span>
+            <span class="n">input_pad_dimensions</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">*</span> <span class="n">input_data</span><span class="o">.</span><span class="n">ndim</span>
+            <span class="n">repatched_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_shape</span>
+            <span class="n">new_input_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">):</span>
+                <span class="c1"># Might not work for odd-shaped patches; check.</span>
+                <span class="n">input_pad_dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="n">new_input_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span><span class="p">):</span>
+                <span class="n">repatched_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+
+            <span class="n">padded_input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_input_shape</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels_first</span><span class="p">:</span>
+                <span class="n">input_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">input_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
+            <span class="n">padded_input_data</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">input_slice</span><span class="p">)]</span> <span class="o">=</span> <span class="n">input_data</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">padded_input_data</span>
+
+        <span class="n">corner_data_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_method</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_empty_patch</span><span class="p">:</span>
+                <span class="n">all_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">input_data</span><span class="p">))[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">all_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">corner_data_dims</span><span class="p">)</span>
+                <span class="c1"># There must be a better way to round up to an integer..</span>
+                <span class="n">possible_corners_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span>
+                <span class="n">all_corners</span> <span class="o">=</span> <span class="n">all_corners</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">possible_corners_slice</span><span class="p">)]</span>
+
+            <span class="n">all_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">all_corners</span><span class="p">,</span> <span class="p">(</span><span class="n">all_corners</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">corner_selection</span> <span class="o">=</span> <span class="n">all_corners</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">all_corners</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_num</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="p">:]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">output_operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_layer_output_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">corner_list_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">corner_selection</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="n">corner_list_idx</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">corner_selection</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="n">corner_batch</span> <span class="o">=</span> <span class="n">corner_selection</span><span class="p">[</span><span class="n">corner_list_idx</span><span class="p">:</span><span class="n">corner_list_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+                <span class="n">input_patches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grab_patch</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">corner_batch</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_mean_intensity</span><span class="p">:</span>
+                    <span class="n">prediction</span> <span class="o">=</span> <span class="n">input_patches</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">prediction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">input_patches</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">prediction</span> <span class="o">=</span> <span class="n">output_operation</span><span class="p">([</span><span class="n">input_patches</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="n">depadded_corner_batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">corner_batch</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">corner_idx</span><span class="p">,</span> <span class="n">corner</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corner_batch</span><span class="p">):</span>
+                    <span class="n">depadded_corner_batch</span><span class="p">[</span><span class="n">corner_idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">corner</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">corner_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+                <span class="c1"># prediction = self.model.predict(input_patches)</span>
+                    
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_patches_to_hdf5</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">depadded_corner_batch</span><span class="p">)</span>
+
+            <span class="k">pass</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_method</span> <span class="o">==</span> <span class="s1">&#39;grid&#39;</span><span class="p">:</span>
+
+            <span class="n">repetition_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_overlaps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span>
+            <span class="n">repatched_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">repatched_shape</span><span class="p">)</span>
+
+            <span class="n">corner_patch_dims</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">rep_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_overlaps</span><span class="p">):</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">docker_print</span><span class="p">(</span><span class="s1">&#39;Predicting patch set&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">rep_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_overlaps</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;...&#39;</span><span class="p">)</span>
+
+                <span class="n">corners_grid_shape</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">all_corners</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">corners_grid_shape</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">repetition_offsets</span><span class="p">[</span><span class="n">dim</span><span class="p">][</span><span class="n">rep_idx</span><span class="p">],</span> <span class="n">corner_data_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">corner_patch_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">])]</span>
+
+                <span class="n">corners_list</span> <span class="o">=</span> <span class="n">all_corners</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">corners_grid_shape</span><span class="p">)]</span>
+                <span class="n">corners_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">corners_list</span><span class="p">,</span> <span class="p">(</span><span class="n">corners_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_empty_patch</span><span class="p">:</span>
+                    <span class="n">corners_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_empty_patches</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">corners_list</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">corner_list_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">corners_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+
+                    <span class="n">corner_batch</span> <span class="o">=</span> <span class="n">corners_list</span><span class="p">[</span><span class="n">corner_list_idx</span><span class="p">:</span><span class="n">corner_list_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+                    <span class="n">input_patches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grab_patch</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">corner_batch</span><span class="p">)</span>
+                    
+                    <span class="n">prediction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">input_patches</span><span class="p">)</span>
+                    
+                    <span class="nb">print</span><span class="p">(</span><span class="n">prediction</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">corner_batch</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">rep_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">output_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">repatched_image</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output_data</span> <span class="o">=</span> <span class="n">output_data</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">rep_idx</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">repatched_image</span> <span class="o">-</span> <span class="n">output_data</span><span class="p">)</span>  <span class="c1"># Running Average</span>
+
+        <span class="c1"># if self.pad_borders:</span>
+
+        <span class="c1">#     output_slice = [slice(None)] * output_data.ndim  # Weird</span>
+        <span class="c1">#     for idx, dim in enumerate(self.output_patch_dimensions):</span>
+        <span class="c1">#         # Might not work for odd-shaped patches; check.</span>
+        <span class="c1">#         output_slice[dim] = slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, 1)</span>
+        <span class="c1">#     output_data = output_data[tuple(output_slice)]</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.pad_image"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.pad_image">[docs]</a>    <span class="k">def</span> <span class="nf">pad_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.get_output_shape"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.get_output_shape">[docs]</a>    <span class="k">def</span> <span class="nf">get_output_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.create_patch_hdf5_file"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.create_patch_hdf5_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_patch_hdf5_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_patch_filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="n">tables</span><span class="o">.</span><span class="n">Filters</span><span class="p">(</span><span class="n">complevel</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s1">&#39;blosc&#39;</span><span class="p">)</span>
+
+        <span class="n">num_cases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_num</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">total_cases</span>
+
+        <span class="k">if</span> <span class="n">num_cases</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;WARNING: No cases found. Cannot write to file.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_layer_output_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="p">))</span>
+        <span class="n">data_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">data_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span>
+
+        <span class="c1"># for output_name, output_shape in self.output_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">create_earray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;patches&#39;</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="n">data_shape</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="n">num_cases</span><span class="p">)</span>
+
+        <span class="c1"># Naming convention is bad here, TODO, think about this.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">casename_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">create_earray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;casenames&#39;</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">StringAtom</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="n">num_cases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corner_storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">create_earray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;corners&#39;</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float32Atom</span><span class="p">(),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">expectedrows</span><span class="o">=</span><span class="n">num_cases</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_hdf5_file</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.write_patches_to_hdf5"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.write_patches_to_hdf5">[docs]</a>    <span class="k">def</span> <span class="nf">write_patches_to_hdf5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">corners</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_storage</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corner_storage</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">corners</span><span class="p">)</span>
+
+        <span class="c1"># if self.data_collection.source == &#39;hdf5&#39;:</span>
+        <span class="c1">#     self.casename_storage.append(np.array(self.data_collection.data_groups[self.inputs[0].data_casenames[case_name][0])[np.newaxis][np.newaxis])</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     self.casename_storage.append(np.array(bytes(self.data_collection.current_case, &#39;utf-8&#39;))[np.newaxis][np.newaxis])</span>
+
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.pad_data"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.pad_data">[docs]</a>    <span class="k">def</span> <span class="nf">pad_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pad_dimensions</span><span class="p">):</span>
+
+        <span class="c1"># Maybe more effecient than np.pad? Created for testing a different purpose.</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">width</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pad_dimensions</span><span class="p">):</span>
+            <span class="n">pad_block_1</span><span class="p">,</span> <span class="n">pad_block_2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">pad_block_1</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">width</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pad_block_2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">width</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pad_block_1</span><span class="p">),</span> <span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pad_block_2</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.remove_empty_patches"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.remove_empty_patches">[docs]</a>    <span class="k">def</span> <span class="nf">remove_empty_patches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">corners_list</span><span class="p">):</span>
+
+        <span class="n">corner_selections</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">corner_idx</span><span class="p">,</span> <span class="n">corner</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corners_list</span><span class="p">):</span>
+            <span class="n">output_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">input_data</span><span class="o">.</span><span class="n">ndim</span>  <span class="c1"># Weird</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">):</span>
+                <span class="n">output_slice</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">corner_selections</span> <span class="o">+=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">output_slice</span><span class="p">)])]</span>
+
+        <span class="k">return</span> <span class="n">corners_list</span><span class="p">[</span><span class="n">corner_selections</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.grab_patch"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.grab_patch">[docs]</a>    <span class="k">def</span> <span class="nf">grab_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">corner_list</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Given a corner coordinate, a patch_shape, and some input_data, returns a patch or array of patches.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">output_patches_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">corner_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">output_patches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_patches_shape</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">corner_idx</span><span class="p">,</span> <span class="n">corner</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corner_list</span><span class="p">):</span>
+            <span class="n">output_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">input_data</span><span class="o">.</span><span class="n">ndim</span>  <span class="c1"># Weird</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">):</span>
+                <span class="n">output_slice</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">output_patches</span><span class="p">[</span><span class="n">corner_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">output_slice</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">output_patches</span></div>
+
+<div class="viewcode-block" id="PatchInterpretability.insert_patch"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.PatchInterpretability.insert_patch">[docs]</a>    <span class="k">def</span> <span class="nf">insert_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">corner_list</span><span class="p">):</span>
+
+        <span class="c1"># Some ineffeciencies in the function. TODO: come back and rewrite.</span>
+
+        <span class="k">for</span> <span class="n">corner_idx</span><span class="p">,</span> <span class="n">corner</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">corner_list</span><span class="p">):</span>
+            <span class="n">insert_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">input_data</span><span class="o">.</span><span class="n">ndim</span>  <span class="c1"># Weird</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span><span class="p">):</span>
+                <span class="c1"># Might not work for odd-shaped patches; check.</span>
+                <span class="n">insert_slice</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">corner</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">insert_patch</span> <span class="o">=</span> <span class="n">patches</span><span class="p">[</span><span class="n">corner_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_dimensions</span><span class="p">)):</span>  <span class="c1"># Necessary if statement?</span>
+                <span class="n">patch_slice</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">insert_patch</span><span class="o">.</span><span class="n">ndim</span>  <span class="c1"># Weird</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_patch_dimensions</span><span class="p">):</span>
+                    <span class="c1"># Might not work for odd-shaped patches; check.</span>
+                    <span class="n">patch_slice</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_patch_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+                <span class="n">insert_patch</span> <span class="o">=</span> <span class="n">insert_patch</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">patch_slice</span><span class="p">)]</span>
+
+            <span class="n">input_data</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">insert_slice</span><span class="p">)]</span> <span class="o">=</span> <span class="n">insert_patch</span>
+
+        <span class="k">return</span> <span class="n">input_data</span></div></div>
+
+
+<div class="viewcode-block" id="AggregatePatchInterpretability"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.AggregatePatchInterpretability">[docs]</a><span class="k">class</span> <span class="nc">AggregatePatchInterpretability</span><span class="p">(</span><span class="n">PatchInterpretability</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AggregatePatchInterpretability.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.patch_interpretability.AggregatePatchInterpretability.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">AggregatePatchInterpretability</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

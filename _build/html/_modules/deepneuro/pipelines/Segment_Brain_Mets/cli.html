@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.pipelines.Segment_Brain_Mets.cli &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.pipelines.Segment_Brain_Mets.cli</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.pipelines.Segment_Brain_Mets.cli</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.docker.docker_cli</span> <span class="k">import</span> <span class="n">nvidia_docker_wrapper</span>
+
+
+<div class="viewcode-block" id="Segment_Mets_cli"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.cli.Segment_Mets_cli">[docs]</a><span class="k">class</span> <span class="nc">Segment_Mets_cli</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center&#39;</span><span class="p">,</span>
+            <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;segment_gbm &lt;command&gt; [&lt;args&gt;]</span>
+
+<span class="s1">                    The following commands are available:</span>
+<span class="s1">                       pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.</span>
+<span class="s1">                       docker_pipeline        Run the previous command via a Docker container via nvidia-docker.</span>
+<span class="s1">                &#39;&#39;&#39;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;command&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Subcommand to run&#39;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">command</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sorry, that</span><span class="se">\&#39;</span><span class="s1">s not one of the commands.&#39;</span><span class="p">)</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># use dispatch pattern to invoke method with same name</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">command</span><span class="p">)()</span>
+
+<div class="viewcode-block" id="Segment_Mets_cli.parse_args"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.cli.Segment_Mets_cli.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;segment_gbm pipeline</span>
+
+<span class="s1">            Segment an image from DICOMs with all preprocessing steps included.</span>
+
+<span class="s1">            -output_folder: A filepath to your output folder. Two nifti files will be generated &quot;enhancingtumor.nii.gz&quot; and &quot;wholetumor.nii.gz&quot;</span>
+<span class="s1">            -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.</span>
+<span class="s1">            -segmentation_output: Name of output for enhancing tumor segmentations. Should not be a filepath, like &#39;/home/user/enhancing.nii.gz&#39;, but just a name, like &quot;segmentation&quot;</span>
+<span class="s1">            -gpu_num: Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.</span>
+<span class="s1">            -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.</span>
+<span class="s1">            -resampled: If flagged, data is assumed to already have been isotropically resampled, and skips that preprocessing step.</span>
+<span class="s1">            -registered: If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step.</span>
+<span class="s1">            -skullstripped: If flagged, data is assumed to have been already skull-stripped.</span>
+<span class="s1">            -preprocessed: If flagged, data is assumed to have been preprocessed with with zero mean and unit variance with respect to a brain mask.</span>
+<span class="s1">            -save_all_steps: If flagged, intermediate volumes in between preprocessing steps will be saved in output_folder.</span>
+<span class="s1">            -save_preprocessed: If flagged, the final volume after all preprocessing steps will be saved in output_folder</span>
+<span class="s1">                &#39;&#39;&#39;</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-output_folder&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-T1&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-T1POST&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-FLAIR&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-input_directory&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-segmentation_output&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="s1">&#39;segmentation.nii.gz&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;segmentation.nii.gz&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-gpu_num&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-debiased&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>  
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-resampled&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-registered&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-skullstripped&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span> 
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-preprocessed&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span> 
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-save_preprocess&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-save_all_steps&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-output_probabilities&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+
+        <span class="k">return</span> <span class="n">args</span></div>
+
+<div class="viewcode-block" id="Segment_Mets_cli.pipeline"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.cli.Segment_Mets_cli.pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_DEVICE_ORDER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;PCI_BUS_ID&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">gpu_num</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">deepneuro.pipelines.Segment_GBM.predict</span> <span class="k">import</span> <span class="n">predict_GBM</span>
+
+        <span class="n">predict_GBM</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">T1POST</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">T1POST</span><span class="p">,</span> <span class="n">T1PRE</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">T1</span><span class="p">,</span> <span class="n">FLAIR</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">FLAIR</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_directory</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">input_directory</span><span class="p">,</span> <span class="n">bias_corrected</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">debiased</span><span class="p">,</span> <span class="n">resampled</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">resampled</span><span class="p">,</span> <span class="n">registered</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">registered</span><span class="p">,</span> <span class="n">skullstripped</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">skullstripped</span><span class="p">,</span> <span class="n">preprocessed</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">preprocessed</span><span class="p">,</span> <span class="n">save_preprocess</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">save_preprocess</span><span class="p">,</span> <span class="n">save_all_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">output_segmentation_filename</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">segmentation_output</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Segment_Mets_cli.docker_pipeline"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.cli.Segment_Mets_cli.docker_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">docker_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+        <span class="n">nvidia_docker_wrapper</span><span class="p">([</span><span class="s1">&#39;segment_mets&#39;</span><span class="p">,</span> <span class="s1">&#39;pipeline&#39;</span><span class="p">],</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="p">[</span><span class="s1">&#39;output_folder&#39;</span><span class="p">,</span> <span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="s1">&#39;T1POST&#39;</span><span class="p">,</span> <span class="s1">&#39;FLAIR&#39;</span><span class="p">,</span> <span class="s1">&#39;input_directory&#39;</span><span class="p">],</span> <span class="n">docker_container</span><span class="o">=</span><span class="s1">&#39;qtimlab/deepneuro_segment_mets:latest&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.cli.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">Segment_Mets_cli</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

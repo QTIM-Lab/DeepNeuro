@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.postprocessing.label &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.postprocessing.label</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.postprocessing.label</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">skimage.measure</span> <span class="k">import</span> <span class="n">label</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage.morphology</span> <span class="k">import</span> <span class="n">binary_fill_holes</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.postprocessing.postprocessor</span> <span class="k">import</span> <span class="n">Postprocessor</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span>
+
+
+<div class="viewcode-block" id="BinarizeLabel"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.BinarizeLabel">[docs]</a><span class="k">class</span> <span class="nc">BinarizeLabel</span><span class="p">(</span><span class="n">Postprocessor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BinarizeLabel.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.BinarizeLabel.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># Naming parameter</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Binarization&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;postprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_binarized&#39;</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;binarization_threshold&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BinarizeLabel.postprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.BinarizeLabel.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">raw_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">casename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">input_data</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">binarization_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Rescale"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.Rescale">[docs]</a><span class="k">class</span> <span class="nc">Rescale</span><span class="p">(</span><span class="n">Postprocessor</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; TODO: Merge with Normalization Preprocessor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Rescale.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.Rescale.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># Naming parameter</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Rescale&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;postprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_rescaled&#39;</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;input_intensity_range&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_intensity_range&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Rescale.postprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.Rescale.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">raw_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">casename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">normalize_numpy</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_intensity_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">input_intensity_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">normalize_numpy</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">normalize_numpy</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">input_intensity_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_intensity_range</span>
+
+        <span class="k">if</span> <span class="n">input_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">input_intensity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">normalize_numpy</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: normalization edge case. All array values are equal. Normalizing to minimum value.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">normalize_numpy</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">normalize_numpy</span> <span class="o">-</span> <span class="n">input_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="n">input_intensity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">input_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_intensity_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">normalize_numpy</span><span class="p">[</span><span class="n">normalize_numpy</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">normalize_numpy</span><span class="p">[</span><span class="n">normalize_numpy</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_intensity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">normalize_numpy</span></div></div>
+       
+
+<div class="viewcode-block" id="LargestComponents"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.LargestComponents">[docs]</a><span class="k">class</span> <span class="nc">LargestComponents</span><span class="p">(</span><span class="n">Postprocessor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LargestComponents.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.LargestComponents.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># Naming parameter</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Binarization&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;postprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_largest_components&#39;</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;component_number&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;connectivity&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LargestComponents.postprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.LargestComponents.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">raw_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">casename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; I rewrote Ken&#39;s script, but I think I made it worse... TODO: Rewrite again? For clarity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">input_data</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">largest_components</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">channel</span><span class="p">],</span> <span class="n">component_number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connectivity</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">input_data</span></div></div>
+
+
+<div class="viewcode-block" id="largest_components"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.largest_components">[docs]</a><span class="k">def</span> <span class="nf">largest_components</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">component_number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+    <span class="n">connected_components</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><span class="n">connectivity</span><span class="p">)</span>
+    <span class="n">total_components</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">connected_components</span><span class="p">)</span>
+
+    <span class="n">component_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_components</span><span class="p">):</span>
+        <span class="n">component_sizes</span> <span class="o">+=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">connected_components</span> <span class="o">==</span> <span class="n">i</span><span class="p">)]</span>
+
+    <span class="n">component_rankings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">component_sizes</span><span class="p">))</span>
+    <span class="n">component_rankings</span> <span class="o">=</span> <span class="n">component_rankings</span><span class="p">[:</span><span class="o">-</span><span class="n">component_number</span><span class="p">]</span>
+
+    <span class="c1"># I think this would be slower than doing it with one fell swoop,</span>
+    <span class="c1"># Perhaps with many or statements. Consider doing that.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">component_rankings</span><span class="p">:</span>
+        <span class="n">input_data</span><span class="p">[</span><span class="n">connected_components</span> <span class="o">==</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">input_data</span></div>
+
+
+<div class="viewcode-block" id="FillHoles"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.FillHoles">[docs]</a><span class="k">class</span> <span class="nc">FillHoles</span><span class="p">(</span><span class="n">Postprocessor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FillHoles.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.FillHoles.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># Naming parameter</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;FillHoles&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;postprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_holes_filled&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Hole-Filling Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;slice_dimension&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Currently not operational</span></div>
+
+<div class="viewcode-block" id="FillHoles.postprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.postprocessing.html#deepneuro.postprocessing.label.FillHoles.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">raw_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">casename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Although I don&#39;t know, this seems a bit ineffecient. See if there&#39;s a better 3D hole-filler out there</span>
+<span class="sd">            Or better yet, arbitrary dimension hole_filler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">slice_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">slice_dimension</span><span class="p">]):</span>
+                        <span class="n">input_data</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">binary_fill_holes</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="n">channel</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">input_data</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

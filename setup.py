@@ -23,7 +23,8 @@ setup(
   packages = find_packages(),
   entry_points =  {
                   "console_scripts": ['segment_gbm = deepneuro.pipelines.Segment_GBM.cli:main',
-                                      'skull_stripping = deepneuro.pipelines.Skull_Stripping.cli:main'], 
+                                      'skull_stripping = deepneuro.pipelines.Skull_Stripping.cli:main',
+                                      'segment_mets = deepneuro.pipelines.Segment_Brain_Mets.cli:main'], 
                   },
   author = 'Andrew Beers',
   author_email = 'abeers@mgh.harvard.edu',

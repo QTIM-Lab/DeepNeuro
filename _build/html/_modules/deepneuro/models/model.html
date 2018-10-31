@@ -1,0 +1,460 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.models.model &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.models.model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.models.model</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; model.py specified the basic DeepNeuroModel class, as well as some model utilites and</span>
+<span class="sd">    pre-built model chunks that may be useful across all models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">csv</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.models.cost_functions</span> <span class="k">import</span> <span class="n">cost_function_dict</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span>
+
+
+<div class="viewcode-block" id="DeepNeuroModel"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel">[docs]</a><span class="k">class</span> <span class="nc">DeepNeuroModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_type</span><span class="o">=</span><span class="s1">&#39;regression&#39;</span><span class="p">,</span> <span class="n">num_outputs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;A model object with some basic parameters that can be added to in the load() method. Each child of</span>
+<span class="sd">        this class should be able to build and store a model composed of tensors, as well as convert an input</span>
+<span class="sd">        tensor into an output tensor according to a model&#39;s schema. </span>
+<span class="sd">        </span>
+<span class="sd">        TODO: Add a parameter for optimizer type.</span>
+<span class="sd">        TODO: Add option for outputting multiple labels.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_shape : tuple, optional</span>
+<span class="sd">            Input dimensions of first layer. Not counting batch-size.</span>
+<span class="sd">        input_tensor : tensor, optional</span>
+<span class="sd">            If input_tensor is specified, will output a tensor</span>
+<span class="sd">            created from input_tensor.</span>
+<span class="sd">        downsize_filters_factor : int, optional</span>
+<span class="sd">            If specified, the number of filters at each applicable layer in a model</span>
+<span class="sd">            will be divided by downsize_filters_factor (with rounding if necessary).</span>
+<span class="sd">            Different models may specify different implementations of the downsizing</span>
+<span class="sd">            process.</span>
+<span class="sd">        pool_size : tuple, optional</span>
+<span class="sd">            Pool size for convolutional layers.</span>
+<span class="sd">        filter_shape : tuple, optional</span>
+<span class="sd">            Filter size for convolutional layers.</span>
+<span class="sd">        dropout : float, optional</span>
+<span class="sd">            Dropout percentage for children models. Each model&#39;s implementation of</span>
+<span class="sd">            dropout will differ.</span>
+<span class="sd">        batch_norm : bool, optional</span>
+<span class="sd">            Whether layers are batch-normed in children models. Each model&#39;s implementation</span>
+<span class="sd">            of which layers will be batch-normed is different.</span>
+<span class="sd">        initial_learning_rate : float, optional</span>
+<span class="sd">            Initial learning rate for the chosen optimizer type, if necessary.</span>
+<span class="sd">        output_type : str, optional</span>
+<span class="sd">            Currently can choose from &#39;regression&#39;, which is an output the same size as input,</span>
+<span class="sd">            &#39;binary_label&#39; which is a binary probability map, or &#39;categorical_label&#39;</span>
+<span class="sd">        num_outputs : int, optional</span>
+<span class="sd">            If output_type is &#39;categorical_label&#39;, this specified how many outputs.</span>
+<span class="sd">        activation : str, optional</span>
+<span class="sd">            What type of activation to use at each layer. May be implemented differently in</span>
+<span class="sd">            each model.</span>
+<span class="sd">        padding : str, optional</span>
+<span class="sd">            Padding for convolutional layers.</span>
+<span class="sd">        implementation : str, optional</span>
+<span class="sd">            Determines whether this is a &#39;tensorflow&#39; or &#39;keras&#39; model at present. [PROVISIONAL]</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Addtional variables that may be needed in children classes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Inputs</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;input_shape&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;input_tensor&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;dim&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;channels&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Generic Model Parameters -- Optional</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;pool_size&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;filter_shape&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;padding&#39;</span><span class="p">,</span> <span class="s1">&#39;same&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;downsize_filters_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;max_filter&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;kernel_size&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;stride_size&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;activation&#39;</span><span class="p">,</span> <span class="s1">&#39;relu&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span> <span class="s1">&#39;Nadam&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;cost_function&#39;</span><span class="p">,</span> <span class="s1">&#39;mean_squared_error&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;dropout&#39;</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;batch_norm&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;initial_learning_rate&#39;</span><span class="p">,</span> <span class="o">.</span><span class="mi">00001</span><span class="p">)</span>
+
+        <span class="c1"># Logging Parameters - Temporary</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_log_file&#39;</span><span class="p">,</span> <span class="s1">&#39;deepneuro_log.csv&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;tensorboard_directory&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;tensorboard_run_directory&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># DeepNeuro Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;targets&#39;</span><span class="p">,</span> <span class="s1">&#39;ground_truth&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Misc</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;hyperverbose&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Callbacks -- Refactor later.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Derived Parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">csv_writer</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_outputs</span> <span class="o">=</span> <span class="n">num_outputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="n">output_type</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">implementation</span> <span class="o">=</span> <span class="n">implementation</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="DeepNeuroModel.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; This method is used by children classes to load additional attributes from kwargs. These</span>
+<span class="sd">            may be parameters specific to a certain model type, for example.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.build_model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.build_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; This method is inherited by child classes to specify the classes model attribute. If input_tensor</span>
+<span class="sd">            is specified, build_model returns a tensor output. If not, it return a Keras model output.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.model">[docs]</a>    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Access this class&#39;s model attribute. TODO: investigate overloading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.train"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.append_output"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.append_output">[docs]</a>    <span class="k">def</span> <span class="nf">append_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">output</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.clear_outputs"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.clear_outputs">[docs]</a>    <span class="k">def</span> <span class="nf">clear_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.generate_outputs"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.generate_outputs">[docs]</a>    <span class="k">def</span> <span class="nf">generate_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_collection</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">return_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">:</span>
+            <span class="c1"># A little odd.</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">data_collection</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="p">,</span> <span class="n">data_collection</span><span class="p">,</span> <span class="n">case</span>
+            <span class="n">return_outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">output</span><span class="o">.</span><span class="n">generate</span><span class="p">()]</span>
+
+        <span class="k">return</span> <span class="n">return_outputs</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.create_data_generators"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.create_data_generators">[docs]</a>    <span class="k">def</span> <span class="nf">create_data_generators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_data_collection</span><span class="p">,</span> <span class="n">validation_data_collection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">training_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">validation_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">training_steps_per_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validation_steps_per_epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">training_steps_per_epoch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_steps_per_epoch</span> <span class="o">=</span> <span class="n">training_data_collection</span><span class="o">.</span><span class="n">total_cases</span> <span class="o">//</span> <span class="n">training_batch_size</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_steps_per_epoch</span> <span class="o">=</span> <span class="n">training_steps_per_epoch</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_data_generator</span> <span class="o">=</span> <span class="n">training_data_collection</span><span class="o">.</span><span class="n">data_generator</span><span class="p">(</span><span class="n">perpetual</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data_group_labels</span><span class="o">=</span><span class="n">input_groups</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">training_batch_size</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">validation_data_collection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">validation_steps_per_epoch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">validation_steps_per_epoch</span> <span class="o">=</span> <span class="n">validation_data_collection</span><span class="o">.</span><span class="n">total_cases</span> <span class="o">//</span> <span class="n">validation_batch_size</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">validation_steps_per_epoch</span> <span class="o">=</span> <span class="n">validation_steps_per_epoch</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_data_generator</span> <span class="o">=</span> <span class="n">validation_data_collection</span><span class="o">.</span><span class="n">data_generator</span><span class="p">(</span><span class="n">perpetual</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data_group_labels</span><span class="o">=</span><span class="n">input_groups</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">validation_batch_size</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_data_generator</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.predict"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">):</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.log"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_log_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">csv_writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">write_file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">csv_writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">inputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">csv_writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">input_idx</span><span class="p">,</span> <span class="n">single_input</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Logging Output&#39;</span><span class="p">,</span> <span class="n">input_idx</span><span class="p">,</span> <span class="n">single_input</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">((</span><span class="n">headers</span><span class="p">[</span><span class="n">input_idx</span><span class="p">],</span> <span class="n">single_input</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.close_model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.close_model">[docs]</a>    <span class="k">def</span> <span class="nf">close_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span><span class="o">.</span><span class="n">open</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DeepNeuroModel.fit_one_batch"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.DeepNeuroModel.fit_one_batch">[docs]</a>    <span class="k">def</span> <span class="nf">fit_one_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_data_collection</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">):</span>
+
+        <span class="k">return</span></div></div>
+
+
+<div class="viewcode-block" id="load_old_model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.model.load_old_model">[docs]</a><span class="k">def</span> <span class="nf">load_old_model</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Loading an old keras model file. A thing wrapper around load_model</span>
+<span class="sd">        that uses DeepNeuro&#39;s custom cost functions.</span>
+<span class="sd">    </span>
+<span class="sd">        TODO: Investigate application in Tensorflow.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_file : str</span>
+<span class="sd">            At present, a filepath to a &quot;.h5&quot; keras file.</span>
+<span class="sd">        implementation : str, optional</span>
+<span class="sd">            Specify &#39;keras&#39; or &#39;tensorflow&#39; implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Keras model</span>
+<span class="sd">            A Keras model object stored in the given filepath.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s1">&#39;keras&#39;</span><span class="p">:</span>
+
+        <span class="kn">from</span> <span class="nn">keras.models</span> <span class="k">import</span> <span class="n">load_model</span>
+        <span class="kn">from</span> <span class="nn">deepneuro.models.keras_model</span> <span class="k">import</span> <span class="n">KerasModel</span>
+
+        <span class="n">custom_objects</span> <span class="o">=</span> <span class="n">cost_function_dict</span><span class="p">()</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">KerasModel</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="n">custom_objects</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">model</span>
+
+    <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s1">&#39;tf&#39;</span><span class="p">:</span>
+
+        <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+        <span class="n">sess</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>    
+        <span class="c1"># First let&#39;s load meta graph and restore weights</span>
+        <span class="n">saver</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">import_meta_graph</span><span class="p">(</span><span class="n">model_file</span><span class="p">)</span>
+        <span class="n">saver</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">latest_checkpoint</span><span class="p">(</span><span class="s1">&#39;./&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">sess</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

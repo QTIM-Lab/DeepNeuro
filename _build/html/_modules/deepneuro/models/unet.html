@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.models.unet &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.models.unet</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.models.unet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; unet.py includes different implementations of the popular U-Net model.</span>
+<span class="sd">    See more at https://arxiv.org/abs/1505.04597</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">keras.layers</span> <span class="k">import</span> <span class="n">Dropout</span><span class="p">,</span> <span class="n">BatchNormalization</span>
+<span class="kn">from</span> <span class="nn">keras.layers.merge</span> <span class="k">import</span> <span class="n">concatenate</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.models.keras_model</span> <span class="k">import</span> <span class="n">KerasModel</span>
+<span class="kn">from</span> <span class="nn">deepneuro.models.dn_ops</span> <span class="k">import</span> <span class="n">DnConv</span><span class="p">,</span> <span class="n">DnMaxPooling</span><span class="p">,</span> <span class="n">DnDeConv</span><span class="p">,</span> <span class="n">DnUpsampling</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span>
+
+
+<div class="viewcode-block" id="UNet"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.unet.UNet">[docs]</a><span class="k">class</span> <span class="nc">UNet</span><span class="p">(</span><span class="n">KerasModel</span><span class="p">):</span>
+    
+<div class="viewcode-block" id="UNet.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.unet.UNet.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            depth : int, optional</span>
+<span class="sd">                Specified the layers deep the proposed U-Net should go.</span>
+<span class="sd">                Layer depth is symmetric on both upsampling and downsampling</span>
+<span class="sd">                arms.</span>
+<span class="sd">            max_filter: int, optional</span>
+<span class="sd">                Specifies the number of filters at the bottom level of the U-Net.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">UNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;depth&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_channels&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UNet.build_model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.models.html#deepneuro.models.unet.UNet.build_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="sd">&quot;&quot;&quot; A basic implementation of the U-Net proposed in https://arxiv.org/abs/1505.04597</span>
+<span class="sd">        </span>
+<span class="sd">            TODO: specify optimizer</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            Keras model or tensor</span>
+<span class="sd">                If input_tensor is provided, this will return a tensor. Otherwise,</span>
+<span class="sd">                this will return a Keras model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">left_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">):</span>
+
+            <span class="n">filter_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_filter</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">-</span> <span class="n">level</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsize_filters_factor</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">left_outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">DnConv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">filter_num</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;downsampling_conv_</span><span class="si">{}</span><span class="s1">_1&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)]</span>
+                <span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">filter_num</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;downsampling_conv_</span><span class="si">{}</span><span class="s1">_2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">left_outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">DnMaxPooling</span><span class="p">(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">pool_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)]</span>
+                <span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="n">filter_num</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;downsampling_conv_</span><span class="si">{}</span><span class="s1">_1&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span>
+                <span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">filter_num</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;downsampling_conv_</span><span class="si">{}</span><span class="s1">_2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">)(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm</span><span class="p">:</span>
+                <span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">left_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+        <span class="n">right_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_outputs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">):</span>
+
+            <span class="n">filter_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_filter</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">level</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsize_filters_factor</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">right_outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">DnUpsampling</span><span class="p">(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">pool_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)]</span>
+                <span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">([</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="n">left_outputs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">-</span> <span class="n">level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="n">filter_num</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;upsampling_conv_</span><span class="si">{}</span><span class="s1">_1&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span>
+                <span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">filter_num</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;upsampling_conv_</span><span class="si">{}</span><span class="s1">_2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">)(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm</span><span class="p">:</span>
+                <span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_layer</span> <span class="o">=</span> <span class="n">DnConv</span><span class="p">(</span><span class="n">right_outputs</span><span class="p">[</span><span class="n">level</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_channels</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">stride_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;end_conv&#39;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;keras&#39;</span><span class="p">)</span> 
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">UNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">build_model</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

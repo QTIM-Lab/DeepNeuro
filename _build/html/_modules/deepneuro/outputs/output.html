@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.outputs.output &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.outputs.output</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.outputs.output</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.conversion</span> <span class="k">import</span> <span class="n">save_data</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">,</span> <span class="n">nifti_splitext</span>
+
+
+<div class="viewcode-block" id="Output"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output">[docs]</a><span class="k">class</span> <span class="nc">Output</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># Data Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;data_collection&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;inputs&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;ground_truth&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ground_truth&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Saving Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;save_to_file&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;save_initial&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;save_all_steps&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_directory&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;output_filename&#39;</span><span class="p">,</span> <span class="s1">&#39;prediction.nii.gz&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;stack_outputs&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Implementation Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;channels_first&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;batch_size&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+
+        <span class="c1"># Internal Parameters</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;replace_existing&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;case&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Derived Parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_objects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="Output.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; This method is used by children classes to load additional attributes from kwargs. These</span>
+<span class="sd">            may be parameters specific to a certain model type, for example.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="Output.execute"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Output.append_postprocessor"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.append_postprocessor">[docs]</a>    <span class="k">def</span> <span class="nf">append_postprocessor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">postprocessors</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">postprocessors</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">postprocessors</span> <span class="o">=</span> <span class="p">[</span><span class="n">postprocessors</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">postprocessor</span> <span class="ow">in</span> <span class="n">postprocessors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span> <span class="o">+=</span> <span class="p">[</span><span class="n">postprocessor</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Output.generate"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># Very ambiguous naming scheme here.</span>
+        <span class="c1"># The conditionals are a little cagey here.</span>
+        <span class="c1"># Also the duplicated code.</span>
+
+        <span class="c1"># Create output directory. If not provided, output into original patient folder.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># At present, this only works for one input, one output patch networks.</span>
+            <span class="n">data_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_generator</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">input_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">data_generator</span><span class="p">)</span>
+            
+            <span class="k">while</span> <span class="n">input_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">return_objects</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">process_case</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">postprocess</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+                <span class="n">input_data</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">data_generator</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">return_objects</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">case</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process_case</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postprocess</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>         
+
+        <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_objects</span><span class="p">,</span> <span class="s1">&#39;filenames&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">return_dict</span></div>
+
+<div class="viewcode-block" id="Output.postprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.postprocess">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_to_file</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_initial</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span> <span class="o">==</span> <span class="p">[]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_output</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">p_idx</span><span class="p">,</span> <span class="n">postprocessor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span><span class="p">):</span>
+            <span class="n">postprocessor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_all_steps</span> <span class="ow">and</span> <span class="n">p_idx</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_output</span><span class="p">(</span><span class="n">postprocessor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_to_file</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Output.save_output"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.outputs.html#deepneuro.outputs.output.Output.save_output">[docs]</a>    <span class="k">def</span> <span class="nf">save_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">postprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># Currently assumes Nifti output. TODO: Make automatically detect output or determine with a class variable.</span>
+        <span class="c1"># Ideally, split also this out into a saving.py function in utils.</span>
+        <span class="c1"># Case naming is a little wild here, TODO: make more simple.</span>
+        <span class="c1"># Some bad practice with abspath here. TODO: abspath all files on input</span>
+
+        <span class="k">for</span> <span class="n">input_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_objects</span><span class="p">:</span>
+
+            <span class="n">casename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_groups</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">base_casename</span>
+            <span class="n">input_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_groups</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">preprocessed_affine</span>
+            
+            <span class="n">augmentation_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_groups</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">augmentation_strings</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">output_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">casename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">)</span>
+
+            <span class="c1"># This is very messed up, revise. Unclear what these conditions are conditioning for.</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">casename</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">casename</span><span class="p">):</span>
+                <span class="n">output_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">nifti_splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">casename</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_filename</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">output_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">nifti_splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">casename</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_filename</span><span class="p">)</span>
+
+            <span class="c1"># Naming is unclear.</span>
+            <span class="k">if</span> <span class="n">postprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">output_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">augmentation_string</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessor_string</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">augmentation_string</span> <span class="o">+</span> <span class="n">postprocessor</span><span class="o">.</span><span class="n">postprocessor_string</span><span class="p">))</span>
+
+            <span class="c1"># If prediction already exists, skip it. Useful if process is interrupted.</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_filepath</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">replace_existing</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="c1"># Squeezing is a little cagey. Maybe explicitly remove batch dimension instead.</span>
+            <span class="n">output_shape</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+
+            <span class="n">return_filenames</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># If there is only one channel, only save one file.</span>
+            <span class="k">if</span> <span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack_outputs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span> <span class="o">+=</span> <span class="p">[</span><span class="n">save_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">output_filepath</span><span class="p">,</span> <span class="n">reference_data</span><span class="o">=</span><span class="n">input_affine</span><span class="p">)]</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">return_filenames</span> <span class="o">+=</span> <span class="p">[</span><span class="n">save_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">channel</span><span class="p">],</span> <span class="n">replace_suffix</span><span class="p">(</span><span class="n">output_filepath</span><span class="p">,</span> <span class="n">input_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">output_suffix</span><span class="o">=</span><span class="s1">&#39;_channel_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">)),</span> <span class="n">reference_data</span><span class="o">=</span><span class="n">input_affine</span><span class="p">)]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">return_filenames</span> <span class="o">+=</span> <span class="p">[</span><span class="n">return_filenames</span><span class="p">]</span>
+
+        <span class="k">return</span></div></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

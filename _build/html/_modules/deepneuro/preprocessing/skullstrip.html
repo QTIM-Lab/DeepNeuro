@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.preprocessing.skullstrip &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.preprocessing.skullstrip</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.preprocessing.skullstrip</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.preprocessing.preprocessor</span> <span class="k">import</span> <span class="n">Preprocessor</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.conversion</span> <span class="k">import</span> <span class="n">read_image_files</span><span class="p">,</span> <span class="n">save_numpy_2_nifti</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">add_parameter</span><span class="p">,</span> <span class="n">quotes</span>
+
+<span class="n">FNULL</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SkullStrip"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip">[docs]</a><span class="k">class</span> <span class="nc">SkullStrip</span><span class="p">(</span><span class="n">Preprocessor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SkullStrip.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            depth : int, optional</span>
+<span class="sd">                Specified the layers deep the proposed U-Net should go.</span>
+<span class="sd">                Layer depth is symmetric on both upsampling and downsampling</span>
+<span class="sd">                arms.</span>
+<span class="sd">            max_filter: int, optional</span>
+<span class="sd">                Specifies the number of filters at the bottom level of the U-Net.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;command&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fsl4.1-bet2&#39;</span><span class="p">])</span>
+        <span class="c1"># add_parameter(self, kwargs, &#39;command&#39;, [&#39;bet2&#39;])</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;same_mask&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;reference_channel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;bet2_f&#39;</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;bet2_g&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;SkullStrip&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;preprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_SkullStripped&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">array_input</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_string</span> <span class="o">=</span> <span class="s1">&#39;_Skullstrip_Mask&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SkullStrip.initialize"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_collection</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">SkullStrip</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">data_collection</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">data_group</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_groups</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            
+            <span class="n">reference_filename</span> <span class="o">=</span> <span class="n">data_group</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">data_collection</span><span class="o">.</span><span class="n">current_case</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">reference_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_string</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="n">input_file</span> <span class="o">=</span> <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># What to do about affines here... Also, reroute this file to a temporary directory.</span>
+                <span class="n">input_file</span> <span class="o">=</span> <span class="n">save_numpy_2_nifti</span><span class="p">(</span><span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">],</span> <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">reference_filename</span><span class="p">))</span>
+
+            <span class="n">specific_command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">+</span> <span class="p">[</span><span class="n">quotes</span><span class="p">(</span><span class="n">input_file</span><span class="p">),</span> <span class="n">quotes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span><span class="p">),</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bet2_f</span><span class="p">),</span> <span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bet2_g</span><span class="p">),</span> <span class="s1">&#39;-m&#39;</span><span class="p">]</span>
+
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">specific_command</span><span class="p">),</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span> <span class="o">+</span> <span class="s1">&#39;_mask.nii.gz&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span> <span class="o">=</span> <span class="n">read_image_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span><span class="p">,</span> <span class="n">return_affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SkullStrip.preprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_group</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span> <span class="o">=</span> <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span>
+
+        <span class="c1"># Ineffective numpy broadcasting happening here..</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span></div></div>
+
+
+<div class="viewcode-block" id="SkullStrip_Model"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip_Model">[docs]</a><span class="k">class</span> <span class="nc">SkullStrip_Model</span><span class="p">(</span><span class="n">Preprocessor</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Skull-stripping as a pre-processor is slightly broken right now -- only works for single-patient use cases.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SkullStrip_Model.load"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip_Model.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            depth : int, optional</span>
+<span class="sd">                Specified the layers deep the proposed U-Net should go.</span>
+<span class="sd">                Layer depth is symmetric on both upsampling and downsampling</span>
+<span class="sd">                arms.</span>
+<span class="sd">            max_filter: int, optional</span>
+<span class="sd">                Specifies the number of filters at the bottom level of the U-Net.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;same_mask&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;reference_channel&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># TODO: Replace with load(skull_strip_model)</span>
+
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;SkullStrip_Model&#39;</span><span class="p">)</span>
+        <span class="n">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;preprocessor_string&#39;</span><span class="p">,</span> <span class="s1">&#39;_SkullStripped&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">array_input</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_string</span> <span class="o">=</span> <span class="s1">&#39;_Skullstrip_Mask&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SkullStrip_Model.initialize"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip_Model.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_collection</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">SkullStrip_Model</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">data_collection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SkullStrip_Model.execute"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip_Model.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_collection</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">data_group</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_collection</span><span class="o">.</span><span class="n">data_groups</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+
+                <span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+                <span class="c1"># Hacky -- TODO: Revise.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">input_patch_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input_shape</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">process_case</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">postprocess</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+
+                <span class="n">reference_filename</span> <span class="o">=</span> <span class="n">data_group</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">data_collection</span><span class="o">.</span><span class="n">current_case</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_channel</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">reference_filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_string</span><span class="p">)</span>
+                <span class="n">save_numpy_2_nifti</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">return_objects</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span><span class="p">,</span> <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_affine</span><span class="p">)</span>  <span class="c1"># Hacky</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span> <span class="o">=</span> <span class="n">read_image_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_filename</span><span class="p">,</span> <span class="n">return_affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">SkullStrip_Model</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">data_collection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SkullStrip_Model.preprocess"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.preprocessing.html#deepneuro.preprocessing.skullstrip.SkullStrip_Model.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_group</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span> <span class="o">=</span> <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_case</span>
+
+        <span class="c1"># Ineffective numpy broadcasting happening here..</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_numpy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">data_group</span><span class="o">.</span><span class="n">preprocessed_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_data</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

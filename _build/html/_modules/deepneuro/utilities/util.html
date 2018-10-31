@@ -1,0 +1,424 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.utilities.util &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.utilities.util</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.utilities.util</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="round_up"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.round_up">[docs]</a><span class="k">def</span> <span class="nf">round_up</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="add_parameter"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.add_parameter">[docs]</a><span class="k">def</span> <span class="nf">add_parameter</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parameter</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rot90"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.rot90">[docs]</a><span class="k">def</span> <span class="nf">rot90</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Rotate an array by 90 degrees in the counter-clockwise direction around the given axis</span>
+<span class="sd">        Nabbed from https://stackoverflow.com/questions/33190042/how-to-calculate-all-24-rotations-of-3d-array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">array</span></div>
+
+
+<div class="viewcode-block" id="grab_files_recursive"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.grab_files_recursive">[docs]</a><span class="k">def</span> <span class="nf">grab_files_recursive</span><span class="p">(</span><span class="n">input_directory</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">return_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Returns all files recursively in a directory. Essentially a convenience wrapper </span>
+<span class="sd">        around os.walk.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        input_directory: str</span>
+<span class="sd">            The folder to search.</span>
+<span class="sd">        regex: str</span>
+<span class="sd">            A linux-style pattern to match.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        output_list: list</span>
+<span class="sd">            A list of found files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">output_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">subFolders</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">input_directory</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">return_dir</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">subFolder</span> <span class="ow">in</span> <span class="n">subFolders</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">subFolder</span><span class="p">,</span> <span class="n">regex</span><span class="p">):</span>
+                        <span class="n">output_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">subFolder</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">return_file</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">regex</span><span class="p">):</span>
+                        <span class="n">output_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">file</span><span class="p">)]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="n">output_list</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_directory</span><span class="p">,</span> <span class="n">regex</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">output_list</span></div>
+
+
+<div class="viewcode-block" id="nifti_splitext"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.nifti_splitext">[docs]</a><span class="k">def</span> <span class="nf">nifti_splitext</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; os.path.splitext splits a filename into the part before the LAST</span>
+<span class="sd">        period and the part after the LAST period. This will screw one up</span>
+<span class="sd">        if working with, say, .nii.gz files, which should be split at the</span>
+<span class="sd">        FIRST period. This function performs an alternate version of splitext</span>
+<span class="sd">        which does just that.</span>
+
+<span class="sd">        TODO: Make work if someone includes a period in a folder name (ugh).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_filepath: str</span>
+<span class="sd">            The filepath to split.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        split_filepath: list of str</span>
+<span class="sd">            A two-item list, split at the first period in the filepath.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">input_filepath</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span>
+    <span class="n">path_split</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
+    <span class="n">basename</span> <span class="o">=</span> <span class="n">path_split</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">split_filepath</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_filepath</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">split_filepath</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_split</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">split_filepath</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">split_filepath</span><span class="p">[</span><span class="mi">1</span><span class="p">:])]</span></div>
+
+
+<div class="viewcode-block" id="replace_extension"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.replace_extension">[docs]</a><span class="k">def</span> <span class="nf">replace_extension</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="n">extension</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Convenience function to safely switch out an extension.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_filepath : str</span>
+<span class="sd">        Description</span>
+<span class="sd">    extension : str</span>
+<span class="sd">        Description</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TYPE</span>
+<span class="sd">        Description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">input_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span>
+    <span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span>
+    <span class="n">pre_extension</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">),</span> <span class="n">pre_extension</span> <span class="o">+</span> <span class="n">extension</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="replace_suffix"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.replace_suffix">[docs]</a><span class="k">def</span> <span class="nf">replace_suffix</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="n">input_suffix</span><span class="p">,</span> <span class="n">output_suffix</span><span class="p">,</span> <span class="n">suffix_delimiter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_extension</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Replaces an input_suffix in a filename with an output_suffix. Can be used</span>
+<span class="sd">        to generate or remove suffixes by leaving one or the other option blank.</span>
+
+<span class="sd">        TODO: Make suffixes accept regexes. Can likely replace suffix_delimiter after this.</span>
+<span class="sd">        TODO: Decide whether suffixes should extend across multiple directory levels.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_filepath: str</span>
+<span class="sd">            The filename to be transformed.</span>
+<span class="sd">        input_suffix: str</span>
+<span class="sd">            The suffix to be replaced</span>
+<span class="sd">        output_suffix: str</span>
+<span class="sd">            The suffix to replace with.</span>
+<span class="sd">        suffix_delimiter: str</span>
+<span class="sd">            Optional, overrides input_suffix. Replaces whatever </span>
+<span class="sd">            comes after suffix_delimiter with output_suffix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        output_filepath: str</span>
+<span class="sd">            The transformed filename</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Temp code to deal with directories, TODO</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">):</span>
+        <span class="n">output_filepath</span> <span class="o">=</span> <span class="n">input_filepath</span> <span class="o">+</span> <span class="n">output_suffix</span> <span class="o">+</span> <span class="n">file_extension</span>
+        <span class="k">return</span> <span class="n">output_filepath</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">split_filename</span> <span class="o">=</span> <span class="n">nifti_splitext</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">suffix_delimiter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">input_suffix</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_filename</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">suffix_delimiter</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">input_suffix</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;ERROR!&#39;</span><span class="p">,</span> <span class="n">input_suffix</span><span class="p">,</span> <span class="s1">&#39;not in input_filepath.&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">input_suffix</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="n">split_filename</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="n">input_suffix</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_filename</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">input_suffix</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">output_suffix</span>
+            <span class="n">output_filepath</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">split_filename</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">file_extension</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">replace_extension</span><span class="p">(</span><span class="n">output_filepath</span><span class="p">,</span> <span class="n">file_extension</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">output_filepath</span></div>
+
+
+<div class="viewcode-block" id="make_dir"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.make_dir">[docs]</a><span class="k">def</span> <span class="nf">make_dir</span><span class="p">(</span><span class="n">input_directory</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Convenience function that adds os.path.exists to os.makedirs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">input_directory</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">input_directory</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="quotes"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.quotes">[docs]</a><span class="k">def</span> <span class="nf">quotes</span><span class="p">(</span><span class="n">input_string</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Some command line function require filepaths with spaces in them to be in quotes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="s1">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">input_string</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span></div>
+
+
+<div class="viewcode-block" id="cli_sanitize"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.cli_sanitize">[docs]</a><span class="k">def</span> <span class="nf">cli_sanitize</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Copies out a filename without spaces, or deletes that file.</span>
+<span class="sd">        Filename invertibility is not </span>
+<span class="sd">        Will not work for directories with spaces in their names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">input_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span>
+    <span class="n">new_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">delete</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">new_filepath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="n">new_filepath</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_filepath</span></div>
+
+
+<div class="viewcode-block" id="docker_print"><a class="viewcode-back" href="../../../doc/_modules/deepneuro.utilities.html#deepneuro.utilities.util.docker_print">[docs]</a><span class="k">def</span> <span class="nf">docker_print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Docker doesn&#39;t flush stdout in some circumstances, so one needs to do so manually.</span>
+
+<span class="sd">    Have not checked behavior after 2to3.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args</span>
+<span class="sd">        Print parameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -120,6 +120,7 @@ class RangeNormalization(Normalization):
             else:
                 input_intensity_range = self.input_intensity_range
 
+            # Edge Case -- Minimum and Maximum
             if input_intensity_range[0] == input_intensity_range[1]:
                 normalize_numpy[:] = self.intensity_range[0]
                 print('Warning: normalization edge case. All array values are equal. Normalizing to minimum value.')
@@ -144,8 +145,6 @@ class BinaryNormalization(Normalization):
         super(BinaryNormalization, self).load(kwargs)
 
         add_parameter(self, kwargs, 'intensity_range', [-1, 1])
-        
-        # Not Implemented
         add_parameter(self, kwargs, 'threshold', 0)
         add_parameter(self, kwargs, 'single_value', None)
 

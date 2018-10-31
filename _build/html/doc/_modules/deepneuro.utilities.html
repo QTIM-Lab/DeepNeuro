@@ -1,0 +1,641 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.utilities package &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">deepneuro.utilities package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-deepneuro.utilities.conversion">deepneuro.utilities.conversion module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.utilities.util">deepneuro.utilities.util module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.utilities.visualize">deepneuro.utilities.visualize module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.utilities">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>deepneuro.utilities package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/doc/_modules/deepneuro.utilities.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="deepneuro-utilities-package">
+<h1>deepneuro.utilities package<a class="headerlink" href="#deepneuro-utilities-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-deepneuro.utilities.conversion">
+<span id="deepneuro-utilities-conversion-module"></span><h2>deepneuro.utilities.conversion module<a class="headerlink" href="#module-deepneuro.utilities.conversion" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.check_format">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">check_format</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#check_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.check_format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.convert_input_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">convert_input_2_numpy</code><span class="sig-paren">(</span><em>input_data</em>, <em>input_format=None</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#convert_input_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.convert_input_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a file somewhere else. Effectively only used for compressing nifti files.</p>
+<p>Note: Some say it is bad practice to have varying amounts of objects returned. On
+the other hand, I find it easier to use this way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_filepath: str</strong></dt>
+<dd><p class="first last">Input filepath.</p>
+</dd>
+<dt><strong>return_header: bool</strong></dt>
+<dd><p class="first last">If true, returns header information in nibabel format.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>img: Numpy array</strong></dt>
+<dd><p class="first last">Untransformed image data.</p>
+</dd>
+<dt><strong>header: list</strong></dt>
+<dd><p class="first last">Varies from format to format.</p>
+</dd>
+<dt><strong>type: str</strong></dt>
+<dd><p class="first last">Internal code for image type.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.dcm_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">dcm_2_numpy</code><span class="sig-paren">(</span><em>input_folder</em>, <em>verbose=False</em>, <em>harden_orientation=False</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#dcm_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.dcm_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses pydicom to stack an alphabetical list of DICOM files. TODO: Make it
+take slice_order into account.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.execute">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">execute</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.get_dicom_pixel_array">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">get_dicom_pixel_array</code><span class="sig-paren">(</span><em>dicom</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#get_dicom_pixel_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.get_dicom_pixel_array" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.image_jpg_png_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">image_jpg_png_2_numpy</code><span class="sig-paren">(</span><em>input_image</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#image_jpg_png_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.image_jpg_png_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads image data and returns a numpy array. There
+will likely be many parameters to specify because
+of the strange quantization issues seemingly inherent
+in loading images.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.image_other_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">image_other_2_numpy</code><span class="sig-paren">(</span><em>input_image</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#image_other_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.image_other_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads image data and returns a numpy array. There
+will likely be many parameters to specify because
+of the strange quantization issues seemingly inherent
+in loading images.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.itk_transform_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">itk_transform_2_numpy</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#itk_transform_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.itk_transform_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes in an itk transform text file and converts into a 4x4
+array.</p>
+<p>TODO: Ensure this correctly rotates.
+TODO: Make work for more than just .txt files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>filepath: str</strong></dt>
+<dd><p class="first last">The filepath to be converted</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>output_array: numpy array</strong></dt>
+<dd><p class="first last">A 4x4 float matrix containing the affine transform.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.nifti_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">nifti_2_numpy</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#nifti_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.nifti_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a file somewhere else. Effectively only used for compressing nifti files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_filepath: str</strong></dt>
+<dd><p class="first last">Input filepath.</p>
+</dd>
+<dt><strong>return_header: bool</strong></dt>
+<dd><p class="first last">If true, returns header information in nibabel format.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>img: Numpy array</strong></dt>
+<dd><p class="first last">Untransformed image data.</p>
+</dd>
+<dt><strong>header: list</strong></dt>
+<dd><p class="first last">A two item list. The first is the affine matrix in array format, the
+second is</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.nifti_resave">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">nifti_resave</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>output_filepath</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#nifti_resave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.nifti_resave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a file somewhere else. Effectively only used for compressing nifti files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>input_filepath: str</strong></dt>
+<dd><p class="first last">Input filepath.</p>
+</dd>
+<dt><strong>output_filepath: str</strong></dt>
+<dd><p class="first last">Output filepath to be copied to.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.nrrd_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">nrrd_2_numpy</code><span class="sig-paren">(</span><em>input_nrrd</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#nrrd_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.nrrd_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads nrrd data and optionally return a nrrd header
+in pynrrd’s format. If array is 4D, swaps axes so
+that time dimension is last to match nifti standard.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.numpy_2_numpy">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">numpy_2_numpy</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>return_all=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#numpy_2_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.numpy_2_numpy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.read_image_files">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">read_image_files</code><span class="sig-paren">(</span><em>image_files</em>, <em>return_affine=False</em>, <em>channels=True</em>, <em>batch=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#read_image_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.read_image_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.save_data">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">save_data</code><span class="sig-paren">(</span><em>input_data</em>, <em>output_filename</em>, <em>reference_data=None</em>, <em>metadata=None</em>, <em>affine=None</em>, <em>output_format=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#save_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.save_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.save_input_2_dso">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">save_input_2_dso</code><span class="sig-paren">(</span><em>input_data</em>, <em>reference_dicom_filepath</em>, <em>dso_metadata</em>, <em>reference_nifti_filepath=None</em>, <em>output_filepath=None</em>, <em>command='/home/abeers/Software/dcmqi-1.0.9-linux/bin/itkimage2segimage'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#save_input_2_dso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.save_input_2_dso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an DICOM directory to reference and a list of files (and in the future Nifti files), save these files
+to a DSO object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.save_numpy_2_image_jpg_png">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">save_numpy_2_image_jpg_png</code><span class="sig-paren">(</span><em>input_numpy</em>, <em>output_filepath</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#save_numpy_2_image_jpg_png"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.save_numpy_2_image_jpg_png" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.save_numpy_2_image_other">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">save_numpy_2_image_other</code><span class="sig-paren">(</span><em>input_numpy</em>, <em>output_filepath</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#save_numpy_2_image_other"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.save_numpy_2_image_other" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.conversion.save_numpy_2_nifti">
+<code class="descclassname">deepneuro.utilities.conversion.</code><code class="descname">save_numpy_2_nifti</code><span class="sig-paren">(</span><em>image_numpy</em>, <em>output_filepath=None</em>, <em>reference_data=None</em>, <em>metadata=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/conversion.html#save_numpy_2_nifti"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.conversion.save_numpy_2_nifti" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a bit convoluted.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.utilities.util">
+<span id="deepneuro-utilities-util-module"></span><h2>deepneuro.utilities.util module<a class="headerlink" href="#module-deepneuro.utilities.util" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.utilities.util.add_parameter">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">add_parameter</code><span class="sig-paren">(</span><em>class_object</em>, <em>kwargs</em>, <em>parameter</em>, <em>default=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#add_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.add_parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.cli_sanitize">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">cli_sanitize</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>save=False</em>, <em>delete=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#cli_sanitize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.cli_sanitize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies out a filename without spaces, or deletes that file.
+Filename invertibility is not 
+Will not work for directories with spaces in their names.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.docker_print">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">docker_print</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#docker_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.docker_print" title="Permalink to this definition">¶</a></dt>
+<dd><p>Docker doesn’t flush stdout in some circumstances, so one needs to do so manually.</p>
+<p>Have not checked behavior after 2to3.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>*args</strong></dt>
+<dd><p class="first last">Print parameters</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.grab_files_recursive">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">grab_files_recursive</code><span class="sig-paren">(</span><em>input_directory</em>, <em>regex='*'</em>, <em>return_dir=False</em>, <em>return_file=True</em>, <em>recursive=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#grab_files_recursive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.grab_files_recursive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all files recursively in a directory. Essentially a convenience wrapper 
+around os.walk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_directory: str</strong></dt>
+<dd><p class="first last">The folder to search.</p>
+</dd>
+<dt><strong>regex: str</strong></dt>
+<dd><p class="first last">A linux-style pattern to match.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>output_list: list</strong></dt>
+<dd><p class="first last">A list of found files.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.make_dir">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">make_dir</code><span class="sig-paren">(</span><em>input_directory</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#make_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.make_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function that adds os.path.exists to os.makedirs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.nifti_splitext">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">nifti_splitext</code><span class="sig-paren">(</span><em>input_filepath</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#nifti_splitext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.nifti_splitext" title="Permalink to this definition">¶</a></dt>
+<dd><p>os.path.splitext splits a filename into the part before the LAST
+period and the part after the LAST period. This will screw one up
+if working with, say, .nii.gz files, which should be split at the
+FIRST period. This function performs an alternate version of splitext
+which does just that.</p>
+<p>TODO: Make work if someone includes a period in a folder name (ugh).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_filepath: str</strong></dt>
+<dd><p class="first last">The filepath to split.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>split_filepath: list of str</strong></dt>
+<dd><p class="first last">A two-item list, split at the first period in the filepath.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.quotes">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">quotes</code><span class="sig-paren">(</span><em>input_string</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#quotes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.quotes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Some command line function require filepaths with spaces in them to be in quotes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.replace_extension">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">replace_extension</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>extension</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#replace_extension"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.replace_extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to safely switch out an extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_filepath</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Description</p>
+</dd>
+<dt><strong>extension</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Description</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>TYPE</strong></dt>
+<dd><p class="first last">Description</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.replace_suffix">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">replace_suffix</code><span class="sig-paren">(</span><em>input_filepath</em>, <em>input_suffix</em>, <em>output_suffix</em>, <em>suffix_delimiter=None</em>, <em>file_extension=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#replace_suffix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.replace_suffix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces an input_suffix in a filename with an output_suffix. Can be used
+to generate or remove suffixes by leaving one or the other option blank.</p>
+<p>TODO: Make suffixes accept regexes. Can likely replace suffix_delimiter after this.
+TODO: Decide whether suffixes should extend across multiple directory levels.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>input_filepath: str</strong></dt>
+<dd><p class="first last">The filename to be transformed.</p>
+</dd>
+<dt><strong>input_suffix: str</strong></dt>
+<dd><p class="first last">The suffix to be replaced</p>
+</dd>
+<dt><strong>output_suffix: str</strong></dt>
+<dd><p class="first last">The suffix to replace with.</p>
+</dd>
+<dt><strong>suffix_delimiter: str</strong></dt>
+<dd><p class="first last">Optional, overrides input_suffix. Replaces whatever 
+comes after suffix_delimiter with output_suffix.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>output_filepath: str</strong></dt>
+<dd><p class="first last">The transformed filename</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.rot90">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">rot90</code><span class="sig-paren">(</span><em>array</em>, <em>n=1</em>, <em>axis=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#rot90"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.rot90" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate an array by 90 degrees in the counter-clockwise direction around the given axis
+Nabbed from <a class="reference external" href="https://stackoverflow.com/questions/33190042/how-to-calculate-all-24-rotations-of-3d-array">https://stackoverflow.com/questions/33190042/how-to-calculate-all-24-rotations-of-3d-array</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.util.round_up">
+<code class="descclassname">deepneuro.utilities.util.</code><code class="descname">round_up</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/util.html#round_up"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.util.round_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.utilities.visualize">
+<span id="deepneuro-utilities-visualize-module"></span><h2>deepneuro.utilities.visualize module<a class="headerlink" href="#module-deepneuro.utilities.visualize" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.utilities.visualize.check_data">
+<code class="descclassname">deepneuro.utilities.visualize.</code><code class="descname">check_data</code><span class="sig-paren">(</span><em>output_data=None</em>, <em>data_collection=None</em>, <em>batch_size=4</em>, <em>merge_batch=True</em>, <em>show_output=True</em>, <em>output_filepath=None</em>, <em>viz_rows=None</em>, <em>viz_mode_2d=None</em>, <em>viz_mode_3d='2d_center'</em>, <em>color_range=None</em>, <em>output_groups=None</em>, <em>combine_outputs=False</em>, <em>rgb_output=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/visualize.html#check_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.visualize.check_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.visualize.combine_outputs">
+<code class="descclassname">deepneuro.utilities.visualize.</code><code class="descname">combine_outputs</code><span class="sig-paren">(</span><em>input_data_list</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/visualize.html#combine_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.visualize.combine_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merges images rows</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.visualize.display_3d_data">
+<code class="descclassname">deepneuro.utilities.visualize.</code><code class="descname">display_3d_data</code><span class="sig-paren">(</span><em>input_data</em>, <em>color_range</em>, <em>viz_mode_3d='2d_center'</em>, <em>label=None</em>, <em>input_dict=None</em>, <em>viz_rows=2</em>, <em>viz_columns=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/visualize.html#display_3d_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.visualize.display_3d_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.visualize.image_preprocess">
+<code class="descclassname">deepneuro.utilities.visualize.</code><code class="descname">image_preprocess</code><span class="sig-paren">(</span><em>input_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/visualize.html#image_preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.visualize.image_preprocess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.utilities.visualize.merge_data">
+<code class="descclassname">deepneuro.utilities.visualize.</code><code class="descname">merge_data</code><span class="sig-paren">(</span><em>images</em>, <em>size</em>, <em>channels=3</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/utilities/visualize.html#merge_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.utilities.visualize.merge_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.utilities">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-deepneuro.utilities" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

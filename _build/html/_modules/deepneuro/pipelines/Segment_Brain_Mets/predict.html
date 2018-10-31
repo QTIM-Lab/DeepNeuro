@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.pipelines.Segment_Brain_Mets.predict &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>deepneuro.pipelines.Segment_Brain_Mets.predict</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for deepneuro.pipelines.Segment_Brain_Mets.predict</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">deepneuro.outputs.inference</span> <span class="k">import</span> <span class="n">ModelPatchesInference</span>
+<span class="kn">from</span> <span class="nn">deepneuro.preprocessing.preprocessor</span> <span class="k">import</span> <span class="n">DICOMConverter</span>
+<span class="kn">from</span> <span class="nn">deepneuro.preprocessing.signal</span> <span class="k">import</span> <span class="n">N4BiasCorrection</span><span class="p">,</span> <span class="n">ZeroMeanNormalization</span>
+<span class="kn">from</span> <span class="nn">deepneuro.preprocessing.transform</span> <span class="k">import</span> <span class="n">Coregister</span>
+<span class="kn">from</span> <span class="nn">deepneuro.preprocessing.skullstrip</span> <span class="k">import</span> <span class="n">SkullStrip_Model</span>
+<span class="kn">from</span> <span class="nn">deepneuro.postprocessing.label</span> <span class="k">import</span> <span class="n">BinarizeLabel</span><span class="p">,</span> <span class="n">LargestComponents</span><span class="p">,</span> <span class="n">FillHoles</span>
+<span class="kn">from</span> <span class="nn">deepneuro.pipelines.shared</span> <span class="k">import</span> <span class="n">load_data</span><span class="p">,</span> <span class="n">load_model_with_output</span>
+<span class="kn">from</span> <span class="nn">deepneuro.utilities.util</span> <span class="k">import</span> <span class="n">docker_print</span>
+
+
+<div class="viewcode-block" id="predict_brain_mets"><a class="viewcode-back" href="../../../../doc/_modules/deepneuro.pipelines.Segment_Brain_Mets.html#deepneuro.pipelines.Segment_Brain_Mets.predict.predict_brain_mets">[docs]</a><span class="k">def</span> <span class="nf">predict_brain_mets</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">T1POST</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">T1PRE</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">FLAIR</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bias_corrected</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resampled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">registered</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skullstripped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">preprocessed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save_preprocess</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save_all_steps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_segmentation_filename</span><span class="o">=</span><span class="s1">&#39;segmentation.nii.gz&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">input_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">registration_reference</span><span class="o">=</span><span class="s1">&#39;FLAIR&#39;</span><span class="p">):</span>
+
+    <span class="n">registration_reference_channel</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1">#--------------------------------------------------------------------#</span>
+    <span class="c1"># Step 1, Load Data</span>
+    <span class="c1">#--------------------------------------------------------------------#</span>
+
+    <span class="n">data_collection</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">FLAIR</span><span class="p">,</span> <span class="n">T1POST</span><span class="p">,</span> <span class="n">T1PRE</span><span class="p">],</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">input_directory</span><span class="o">=</span><span class="n">input_directory</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="n">ground_truth</span><span class="p">,</span> <span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1">#--------------------------------------------------------------------#</span>
+    <span class="c1"># Step 2, Load Models</span>
+    <span class="c1">#--------------------------------------------------------------------#</span>
+
+    <span class="n">mets_prediction_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> 
+                        <span class="s1">&#39;output_filename&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">output_segmentation_filename</span><span class="p">),</span>
+                        <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                        <span class="s1">&#39;patch_overlaps&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                        <span class="s1">&#39;output_patch_shape&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                        <span class="s1">&#39;input_channels&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]}</span>
+
+    <span class="n">mets_model</span> <span class="o">=</span> <span class="n">load_model_with_output</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;mets_enhancing&#39;</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">ModelPatchesInference</span><span class="p">(</span><span class="o">**</span><span class="n">mets_prediction_parameters</span><span class="p">)],</span> <span class="n">postprocessors</span><span class="o">=</span><span class="p">[</span><span class="n">BinarizeLabel</span><span class="p">(</span><span class="n">postprocessor_string</span><span class="o">=</span><span class="s1">&#39;_label&#39;</span><span class="p">)])</span>
+
+    <span class="c1">#--------------------------------------------------------------------#</span>
+    <span class="c1"># Step 3, Add Data Preprocessors</span>
+    <span class="c1">#--------------------------------------------------------------------#</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">preprocessed</span><span class="p">:</span>
+
+        <span class="c1"># Random hack to save DICOMs to niftis for further processing.</span>
+        <span class="n">preprocessing_steps</span> <span class="o">=</span> <span class="p">[</span><span class="n">DICOMConverter</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skullstripped</span><span class="p">:</span>
+            <span class="n">skullstripping_prediction_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> 
+                <span class="s1">&#39;output_filename&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="s1">&#39;skullstrip_mask.nii.gz&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                <span class="s1">&#39;patch_overlaps&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="s1">&#39;output_patch_shape&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">56</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;save_to_file&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;data_collection&#39;</span><span class="p">:</span> <span class="n">data_collection</span><span class="p">}</span>
+
+            <span class="n">skullstripping_model</span> <span class="o">=</span> <span class="n">load_model_with_output</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;skullstrip_mri&#39;</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">ModelPatchesInference</span><span class="p">(</span><span class="o">**</span><span class="n">skullstripping_prediction_parameters</span><span class="p">)],</span> <span class="n">postprocessors</span><span class="o">=</span><span class="p">[</span><span class="n">BinarizeLabel</span><span class="p">(),</span> <span class="n">FillHoles</span><span class="p">(),</span> <span class="n">LargestComponents</span><span class="p">()])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bias_corrected</span><span class="p">:</span>
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">N4BiasCorrection</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">registered</span><span class="p">:</span>
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">Coregister</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="p">(</span><span class="n">save_preprocess</span> <span class="ow">or</span> <span class="n">save_all_steps</span><span class="p">),</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">reference_channel</span><span class="o">=</span><span class="n">registration_reference_channel</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skullstripped</span><span class="p">:</span>
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ZeroMeanNormalization</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">)]</span>
+
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">SkullStrip_Model</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">model</span><span class="o">=</span><span class="n">skullstripping_model</span><span class="p">,</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">reference_channel</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])]</span>
+
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ZeroMeanNormalization</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">mask_preprocessor</span><span class="o">=</span><span class="n">preprocessing_steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">preprocessor_string</span><span class="o">=</span><span class="s1">&#39;_preprocessed&#39;</span><span class="p">)]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">preprocessing_steps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ZeroMeanNormalization</span><span class="p">(</span><span class="n">data_groups</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">save_output</span><span class="o">=</span><span class="n">save_all_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">mask_zeros</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preprocessor_string</span><span class="o">=</span><span class="s1">&#39;_preprocessed&#39;</span><span class="p">)]</span>
+
+        <span class="n">data_collection</span><span class="o">.</span><span class="n">append_preprocessor</span><span class="p">(</span><span class="n">preprocessing_steps</span><span class="p">)</span>
+
+    <span class="c1">#--------------------------------------------------------------------#</span>
+    <span class="c1"># Step 4, Run Inference</span>
+    <span class="c1">#--------------------------------------------------------------------#</span>
+
+    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">data_collection</span><span class="o">.</span><span class="n">cases</span><span class="p">:</span>
+
+        <span class="n">docker_print</span><span class="p">(</span><span class="s1">&#39;Starting New Case...&#39;</span><span class="p">)</span>
+        
+        <span class="n">docker_print</span><span class="p">(</span><span class="s1">&#39;Enhancing Mets Prediction&#39;</span><span class="p">)</span>
+        <span class="n">docker_print</span><span class="p">(</span><span class="s1">&#39;======================&#39;</span><span class="p">)</span>
+        <span class="n">mets_model</span><span class="o">.</span><span class="n">generate_outputs</span><span class="p">(</span><span class="n">data_collection</span><span class="p">,</span> <span class="n">case</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;filenames&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

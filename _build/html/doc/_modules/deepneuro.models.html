@@ -1,0 +1,1985 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>deepneuro.models package &mdash; DeepNeuro 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> DeepNeuro
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">deepneuro.models package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.blocks">deepneuro.models.blocks module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.callbacks">deepneuro.models.callbacks module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.cost_functions">deepneuro.models.cost_functions module</a></li>
+<li><a class="reference internal" href="#deepneuro-models-cyclegan-module">deepneuro.models.cyclegan module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.dn_ops">deepneuro.models.dn_ops module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.gan">deepneuro.models.gan module</a></li>
+<li><a class="reference internal" href="#deepneuro-models-interp-gan-module">deepneuro.models.interp_gan module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.keras_model">deepneuro.models.keras_model module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.keras_pretrained">deepneuro.models.keras_pretrained module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.minimal">deepneuro.models.minimal module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.model">deepneuro.models.model module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.ops">deepneuro.models.ops module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.progressive_growing_gan">deepneuro.models.progressive_growing_gan module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-deepneuro.models.tensorflow_model">deepneuro.models.tensorflow_model module</a></li>
+<li><a class="reference internal" href="#deepneuro-models-timenet-module">deepneuro.models.timenet module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models.unet">deepneuro.models.unet module</a></li>
+<li><a class="reference internal" href="#module-deepneuro.models">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DeepNeuro</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>deepneuro.models package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/doc/_modules/deepneuro.models.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="deepneuro-models-package">
+<h1>deepneuro.models package<a class="headerlink" href="#deepneuro-models-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-deepneuro.models.blocks">
+<span id="deepneuro-models-blocks-module"></span><h2>deepneuro.models.blocks module<a class="headerlink" href="#module-deepneuro.models.blocks" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.models.blocks.discriminator">
+<code class="descclassname">deepneuro.models.blocks.</code><code class="descname">discriminator</code><span class="sig-paren">(</span><em>model</em>, <em>input_image</em>, <em>reuse=False</em>, <em>initial_size=(4</em>, <em>4)</em>, <em>max_size=None</em>, <em>name=None</em>, <em>depth=1</em>, <em>transition=False</em>, <em>alpha_transition=0</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/blocks.html#discriminator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.blocks.discriminator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.blocks.generator">
+<code class="descclassname">deepneuro.models.blocks.</code><code class="descname">generator</code><span class="sig-paren">(</span><em>model</em>, <em>latent_var</em>, <em>depth=1</em>, <em>initial_size=(4</em>, <em>4)</em>, <em>max_size=None</em>, <em>reuse=False</em>, <em>transition=False</em>, <em>alpha_transition=0</em>, <em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/blocks.html#generator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.blocks.generator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.blocks.unet">
+<code class="descclassname">deepneuro.models.blocks.</code><code class="descname">unet</code><span class="sig-paren">(</span><em>model</em>, <em>input_tensor</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/blocks.html#unet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.blocks.unet" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.callbacks">
+<span id="deepneuro-models-callbacks-module"></span><h2>deepneuro.models.callbacks module<a class="headerlink" href="#module-deepneuro.models.callbacks" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="deepneuro.models.callbacks.CyclicLR">
+<em class="property">class </em><code class="descclassname">deepneuro.models.callbacks.</code><code class="descname">CyclicLR</code><span class="sig-paren">(</span><em>base_lr=0.001</em>, <em>max_lr=0.006</em>, <em>step_size=2000.0</em>, <em>mode='triangular'</em>, <em>gamma=1.0</em>, <em>scale_fn=None</em>, <em>scale_mode='cycle'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#CyclicLR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.CyclicLR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.callbacks.Callback</span></code></p>
+<p>The following callback class has been lifted from Brad Kenstler at <a class="reference external" href="https://github.com/bckenstler/CLR">https://github.com/bckenstler/CLR</a>.
+Reproduced under MIT License.</p>
+<p>This callback implements a cyclical learning rate policy (CLR).
+The method cycles the learning rate between two boundaries with
+some constant frequency, as detailed in this paper (<a class="reference external" href="https://arxiv.org/abs/1506.01186">https://arxiv.org/abs/1506.01186</a>).
+The amplitude of the cycle can be scaled on a per-iteration or 
+per-cycle basis.
+This class has three built-in policies, as put forth in the paper.
+“triangular”:</p>
+<blockquote>
+<div>A basic triangular cycle w/ no amplitude scaling.</div></blockquote>
+<dl class="docutils">
+<dt>“triangular2”:</dt>
+<dd>A basic triangular cycle that scales initial amplitude by half each cycle.</dd>
+<dt>“exp_range”:</dt>
+<dd>A cycle that scales initial amplitude by gamma**(cycle iterations) at each 
+cycle iteration.</dd>
+</dl>
+<p>For more detail, please see paper.</p>
+<dl class="docutils">
+<dt># Example</dt>
+<dd><dl class="first docutils">
+<dt><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python</dt>
+<dd><dl class="first docutils">
+<dt>clr = CyclicLR(base_lr=0.001, max_lr=0.006,</dt>
+<dd>step_size=2000., mode=’triangular’)</dd>
+</dl>
+<p class="last">model.fit(X_train, Y_train, callbacks=[clr])</p>
+</dd>
+</dl>
+<p class="last"><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+</dd>
+<dt>Class also supports custom scaling functions:</dt>
+<dd><dl class="first docutils">
+<dt><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python</dt>
+<dd><p class="first">clr_fn = lambda x: 0.5*(1+np.sin(x*np.pi/2.))
+clr = CyclicLR(base_lr=0.001, max_lr=0.006,</p>
+<blockquote>
+<div>step_size=2000., scale_fn=clr_fn,
+scale_mode=’cycle’)</div></blockquote>
+<p class="last">model.fit(X_train, Y_train, callbacks=[clr])</p>
+</dd>
+</dl>
+<p class="last"><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+</dd>
+<dt># Arguments</dt>
+<dd><dl class="first last docutils">
+<dt>base_lr: initial learning rate which is the</dt>
+<dd>lower boundary in the cycle.</dd>
+<dt>max_lr: upper boundary in the cycle. Functionally,</dt>
+<dd>it defines the cycle amplitude (max_lr - base_lr).
+The lr at any cycle is the sum of base_lr
+and some scaling of the amplitude; therefore 
+max_lr may not actually be reached depending on
+scaling function.</dd>
+<dt>step_size: number of training iterations per</dt>
+<dd>half cycle. Authors suggest setting step_size
+2-8 x training iterations in epoch.</dd>
+<dt>mode: one of {triangular, triangular2, exp_range}.</dt>
+<dd>Default ‘triangular’.
+Values correspond to policies detailed above.
+If scale_fn is not None, this argument is ignored.</dd>
+<dt>gamma: constant in ‘exp_range’ scaling function:</dt>
+<dd>gamma**(cycle iterations)</dd>
+<dt>scale_fn: Custom scaling policy defined by a single</dt>
+<dd>argument lambda function, where 
+0 &lt;= scale_fn(x) &lt;= 1 for all x &gt;= 0.
+mode paramater is ignored</dd>
+<dt>scale_mode: {‘cycle’, ‘iterations’}.</dt>
+<dd>Defines whether scale_fn is evaluated on 
+cycle number or cycle iterations (training
+iterations since start of cycle). Default is ‘cycle’.</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="64%" />
+<col width="36%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>clr</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_batch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_batch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_epoch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_epoch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_train_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_train_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>set_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>set_params</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.callbacks.CyclicLR.clr">
+<code class="descname">clr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#CyclicLR.clr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.CyclicLR.clr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.CyclicLR.on_batch_end">
+<code class="descname">on_batch_end</code><span class="sig-paren">(</span><em>epoch</em>, <em>logs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#CyclicLR.on_batch_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.CyclicLR.on_batch_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.CyclicLR.on_train_begin">
+<code class="descname">on_train_begin</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#CyclicLR.on_train_begin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.CyclicLR.on_train_begin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.callbacks.EpochPredict">
+<em class="property">class </em><code class="descclassname">deepneuro.models.callbacks.</code><code class="descname">EpochPredict</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#EpochPredict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.EpochPredict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.callbacks.Callback</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="64%" />
+<col width="36%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>on_batch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_batch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_epoch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_epoch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_train_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_train_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>set_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>set_params</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.callbacks.EpochPredict.on_epoch_end">
+<code class="descname">on_epoch_end</code><span class="sig-paren">(</span><em>epoch</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#EpochPredict.on_epoch_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.EpochPredict.on_epoch_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.EpochPredict.on_train_end">
+<code class="descname">on_train_end</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#EpochPredict.on_train_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.EpochPredict.on_train_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.callbacks.GANPredict">
+<em class="property">class </em><code class="descclassname">deepneuro.models.callbacks.</code><code class="descname">GANPredict</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#GANPredict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.GANPredict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.callbacks.Callback</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="64%" />
+<col width="36%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>on_batch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_batch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_epoch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_epoch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_train_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_train_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>set_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>set_params</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.callbacks.GANPredict.on_epoch_end">
+<code class="descname">on_epoch_end</code><span class="sig-paren">(</span><em>epoch</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#GANPredict.on_epoch_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.GANPredict.on_epoch_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.GANPredict.on_train_end">
+<code class="descname">on_train_end</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#GANPredict.on_train_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.GANPredict.on_train_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.callbacks.SaveModel">
+<em class="property">class </em><code class="descclassname">deepneuro.models.callbacks.</code><code class="descname">SaveModel</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#SaveModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.SaveModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.callbacks.Callback</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="64%" />
+<col width="36%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>on_batch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_batch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_epoch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_epoch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_train_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_train_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>set_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>set_params</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.callbacks.SaveModel.on_epoch_end">
+<code class="descname">on_epoch_end</code><span class="sig-paren">(</span><em>epoch</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#SaveModel.on_epoch_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.SaveModel.on_epoch_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.SaveModel.on_train_begin">
+<code class="descname">on_train_begin</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#SaveModel.on_train_begin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.SaveModel.on_train_begin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.callbacks.SaveModel.on_train_end">
+<code class="descname">on_train_end</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#SaveModel.on_train_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.SaveModel.on_train_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.callbacks.get_callbacks">
+<code class="descclassname">deepneuro.models.callbacks.</code><code class="descname">get_callbacks</code><span class="sig-paren">(</span><em>callbacks=['save_model', 'early_stopping', 'log'], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', base_learning_rate=0.0001, max_learning_rate=0.0006, learning_rate_cycle=2000, **kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/callbacks.html#get_callbacks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.callbacks.get_callbacks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Very disorganized currently. Replace with dictionary? Also address never-ending parameters</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.cost_functions">
+<span id="deepneuro-models-cost-functions-module"></span><h2>deepneuro.models.cost_functions module<a class="headerlink" href="#module-deepneuro.models.cost_functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.cost_function_dict">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">cost_function_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#cost_function_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.cost_function_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.dice_coef">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">dice_coef</code><span class="sig-paren">(</span><em>y_true</em>, <em>y_pred</em>, <em>smooth=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#dice_coef"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.dice_coef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.dice_coef_loss">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">dice_coef_loss</code><span class="sig-paren">(</span><em>y_true</em>, <em>y_pred</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#dice_coef_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.dice_coef_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.focal_loss">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">focal_loss</code><span class="sig-paren">(</span><em>y_true</em>, <em>y_pred</em>, <em>gamma=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#focal_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.focal_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.multi_dice_coef">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">multi_dice_coef</code><span class="sig-paren">(</span><em>y_true</em>, <em>y_pred</em>, <em>channels</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#multi_dice_coef"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.multi_dice_coef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.multi_dice_loss">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">multi_dice_loss</code><span class="sig-paren">(</span><em>y_true</em>, <em>y_pred</em>, <em>channels</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#multi_dice_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.multi_dice_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.cost_functions.wasserstein_loss">
+<code class="descclassname">deepneuro.models.cost_functions.</code><code class="descname">wasserstein_loss</code><span class="sig-paren">(</span><em>model</em>, <em>discriminator</em>, <em>discriminator_fake_logits</em>, <em>discriminator_real_logits</em>, <em>synthetic_images</em>, <em>reference_images</em>, <em>gradient_penalty_weight=10</em>, <em>name='discriminator'</em>, <em>dim=2</em>, <em>depth=None</em>, <em>transition=False</em>, <em>alpha_transition=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/cost_functions.html#wasserstein_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.cost_functions.wasserstein_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="deepneuro-models-cyclegan-module">
+<h2>deepneuro.models.cyclegan module<a class="headerlink" href="#deepneuro-models-cyclegan-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-deepneuro.models.dn_ops">
+<span id="deepneuro-models-dn-ops-module"></span><h2>deepneuro.models.dn_ops module<a class="headerlink" href="#module-deepneuro.models.dn_ops" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnAveragePooling">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnAveragePooling</code><span class="sig-paren">(</span><em>input_</em>, <em>pool_size=(2</em>, <em>2)</em>, <em>dim=2</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnAveragePooling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnAveragePooling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnBatchNormalization">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnBatchNormalization</code><span class="sig-paren">(</span><em>input_</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnBatchNormalization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnBatchNormalization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnConv">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnConv</code><span class="sig-paren">(</span><em>input_</em>, <em>output_dim</em>, <em>kernel_size=(5</em>, <em>5</em>, <em>5)</em>, <em>stride_size=(2</em>, <em>2</em>, <em>2)</em>, <em>dim=3</em>, <em>padding='SAME'</em>, <em>initializer_std=0.02</em>, <em>activation=None</em>, <em>name=None</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnConv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnConv" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Provide different options for intializers, and resolve inconsistencies bewteen 2D and 3D.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnDeConv">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnDeConv</code><span class="sig-paren">(</span><em>input_</em>, <em>output_dim</em>, <em>kernel_size=(5</em>, <em>5</em>, <em>5)</em>, <em>stride_size=(2</em>, <em>2</em>, <em>2)</em>, <em>dim=3</em>, <em>padding='SAME'</em>, <em>initializer_std=0.02</em>, <em>activation=None</em>, <em>name=None</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnDeConv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnDeConv" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Provide different options for intializers, and resolve inconsistencies bewteen 2D and 3D.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnDropout">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnDropout</code><span class="sig-paren">(</span><em>input_</em>, <em>ratio=0.5</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnDropout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnDropout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnMaxPooling">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnMaxPooling</code><span class="sig-paren">(</span><em>input_</em>, <em>pool_size=(2</em>, <em>2)</em>, <em>dim=2</em>, <em>padding='SAME'</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnMaxPooling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnMaxPooling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.dn_ops.DnOp">
+<em class="property">class </em><code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnOp</code><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnOp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnPixelNorm">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnPixelNorm</code><span class="sig-paren">(</span><em>input_</em>, <em>dim=3</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnPixelNorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnPixelNorm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.dn_ops.DnUpsampling">
+<code class="descclassname">deepneuro.models.dn_ops.</code><code class="descname">DnUpsampling</code><span class="sig-paren">(</span><em>input_</em>, <em>pool_size=(2</em>, <em>2</em>, <em>2)</em>, <em>dim=3</em>, <em>backend='tensorflow'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/dn_ops.html#DnUpsampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.dn_ops.DnUpsampling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.gan">
+<span id="deepneuro-models-gan-module"></span><h2>deepneuro.models.gan module<a class="headerlink" href="#module-deepneuro.models.gan" title="Permalink to this headline">¶</a></h2>
+<p>This is a vanilla implementation of a generative adversarial network. It includes
+the Wasserstein Gradient-Penalty by default.</p>
+<dl class="class">
+<dt id="deepneuro.models.gan.GAN">
+<em class="property">class </em><code class="descclassname">deepneuro.models.gan.</code><code class="descname">GAN</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.tensorflow_model.TensorFlowModel" title="deepneuro.models.tensorflow_model.TensorFlowModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.tensorflow_model.TensorFlowModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_model</span></code>()</td>
+<td>This method is inherited by child classes to specify the classes model attribute.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.gan.GAN.build_tensorflow_model" title="deepneuro.models.gan.GAN.build_tensorflow_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_tensorflow_model</span></code></a>(batch_size)</td>
+<td>Break it out into functions?</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.gan.GAN.load" title="deepneuro.models.gan.GAN.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>calculate_losses</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>callback_process</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>find_layers</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_filter_num</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>grab_tensor</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>init_sess</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>init_training</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>load_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>log_variables</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>model_summary</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>process_step</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>save_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>train</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.build_tensorflow_model">
+<code class="descname">build_tensorflow_model</code><span class="sig-paren">(</span><em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.build_tensorflow_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.build_tensorflow_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Break it out into functions?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.calculate_losses">
+<code class="descname">calculate_losses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.calculate_losses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.calculate_losses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.get_filter_num">
+<code class="descname">get_filter_num</code><span class="sig-paren">(</span><em>depth</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.get_filter_num"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.get_filter_num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>depth</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">Specified the layers deep the proposed U-Net should go.
+Layer depth is symmetric on both upsampling and downsampling
+arms.</p>
+</dd>
+<dt><strong>max_filter: int, optional</strong></dt>
+<dd><p class="first last">Specifies the number of filters at the bottom level of the U-Net.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>input_model_path</em>, <em>batch_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.load_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.log_variables">
+<code class="descname">log_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.log_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.log_variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>sample_latent=None</em>, <em>batch_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.gan.GAN.process_step">
+<code class="descname">process_step</code><span class="sig-paren">(</span><em>step_counter</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/gan.html#GAN.process_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.gan.GAN.process_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="deepneuro-models-interp-gan-module">
+<h2>deepneuro.models.interp_gan module<a class="headerlink" href="#deepneuro-models-interp-gan-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-deepneuro.models.keras_model">
+<span id="deepneuro-models-keras-model-module"></span><h2>deepneuro.models.keras_model module<a class="headerlink" href="#module-deepneuro.models.keras_model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="deepneuro.models.keras_model.KerasModel">
+<em class="property">class </em><code class="descclassname">deepneuro.models.keras_model.</code><code class="descname">KerasModel</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.model.DeepNeuroModel" title="deepneuro.models.model.DeepNeuroModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.model.DeepNeuroModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.keras_model.KerasModel.get_layer_output_function" title="deepneuro.models.keras_model.KerasModel.get_layer_output_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer_output_function</span></code></a>(layer_num)</td>
+<td>Only works for the sequential model.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.keras_model.KerasModel.train" title="deepneuro.models.keras_model.KerasModel.train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code></a>(training_data_collection[,&nbsp;…])</td>
+<td>input_groups : list of strings, optional</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>build_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_layer_output_shape</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>keras_generator</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>load</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.build_model">
+<code class="descname">build_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is inherited by child classes to specify the classes model attribute. If input_tensor
+is specified, build_model returns a tensor output. If not, it return a Keras model output.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.create_data_generators">
+<code class="descname">create_data_generators</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>validation_data_collection=None</em>, <em>input_groups=None</em>, <em>training_batch_size=32</em>, <em>validation_batch_size=32</em>, <em>training_steps_per_epoch=None</em>, <em>validation_steps_per_epoch=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.create_data_generators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.create_data_generators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.fit_one_batch">
+<code class="descname">fit_one_batch</code><span class="sig-paren">(</span><em>training_data_collection, output_model_filepath=None, input_groups=None, output_directory=None, callbacks=['save_model', 'log'], training_batch_size=16, training_steps_per_epoch=None, num_epochs=None, show_results=True, **kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.fit_one_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.fit_one_batch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.get_layer_output_function">
+<code class="descname">get_layer_output_function</code><span class="sig-paren">(</span><em>layer_num</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.get_layer_output_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.get_layer_output_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only works for the sequential model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.get_layer_output_shape">
+<code class="descname">get_layer_output_shape</code><span class="sig-paren">(</span><em>layer_num</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.get_layer_output_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.get_layer_output_shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.keras_generator">
+<code class="descname">keras_generator</code><span class="sig-paren">(</span><em>data_generator</em>, <em>input_data='input_data'</em>, <em>targets='ground_truth'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.keras_generator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.keras_generator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used by children classes to load additional attributes from kwargs. These
+may be parameters specific to a certain model type, for example.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>input_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_model.KerasModel.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>training_data_collection, validation_data_collection=None, output_model_filepath=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, initial_learning_rate=0.0001, learning_rate_drop=None, learning_rate_epochs=None, num_epochs=None, callbacks=['save_model', 'log'], **kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_model.html#KerasModel.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_model.KerasModel.train" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>input_groups <span class="classifier-delimiter">:</span> <span class="classifier">list of strings, optional</span></dt>
+<dd>Specifies which named data groups (e.g. “ground_truth”) enter which input
+data slot in your model.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.keras_pretrained">
+<span id="deepneuro-models-keras-pretrained-module"></span><h2>deepneuro.models.keras_pretrained module<a class="headerlink" href="#module-deepneuro.models.keras_pretrained" title="Permalink to this headline">¶</a></h2>
+<p>Pretrained neural networks implemented by Keras.
+Implementation borrows heavily from: 
+<a class="reference external" href="https://www.pyimagesearch.com/2017/03/20/imagenet-vggnet-resnet-inception-xception-keras/">https://www.pyimagesearch.com/2017/03/20/imagenet-vggnet-resnet-inception-xception-keras/</a>
+<a class="reference external" href="https://flyyufelix.github.io/2016/10/08/fine-tuning-in-keras-part2.html">https://flyyufelix.github.io/2016/10/08/fine-tuning-in-keras-part2.html</a>
+written by Adrian Rosebrock and Felix Yu, respectively</p>
+<dl class="class">
+<dt id="deepneuro.models.keras_pretrained.KerasPreTrainedModel">
+<em class="property">class </em><code class="descclassname">deepneuro.models.keras_pretrained.</code><code class="descname">KerasPreTrainedModel</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_pretrained.html#KerasPreTrainedModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_pretrained.KerasPreTrainedModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.keras_model.KerasModel" title="deepneuro.models.keras_model.KerasModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.keras_model.KerasModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer_output_function</span></code>(layer_num)</td>
+<td>Only works for the sequential model.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.keras_pretrained.KerasPreTrainedModel.load" title="deepneuro.models.keras_pretrained.KerasPreTrainedModel.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code>(training_data_collection[,&nbsp;…])</td>
+<td>input_groups : list of strings, optional</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>build_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_layer_output_shape</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>keras_generator</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.keras_pretrained.KerasPreTrainedModel.build_model">
+<code class="descname">build_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_pretrained.html#KerasPreTrainedModel.build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_pretrained.KerasPreTrainedModel.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is inherited by child classes to specify the classes model attribute. If input_tensor
+is specified, build_model returns a tensor output. If not, it return a Keras model output.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.keras_pretrained.KerasPreTrainedModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/keras_pretrained.html#KerasPreTrainedModel.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.keras_pretrained.KerasPreTrainedModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>model_version</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.minimal">
+<span id="deepneuro-models-minimal-module"></span><h2>deepneuro.models.minimal module<a class="headerlink" href="#module-deepneuro.models.minimal" title="Permalink to this headline">¶</a></h2>
+<p>unet.py includes different implementations of the popular U-Net model.
+See more at <a class="reference external" href="https://arxiv.org/abs/1505.04597">https://arxiv.org/abs/1505.04597</a></p>
+<dl class="class">
+<dt id="deepneuro.models.minimal.MinimalKerasCNN">
+<em class="property">class </em><code class="descclassname">deepneuro.models.minimal.</code><code class="descname">MinimalKerasCNN</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/minimal.html#MinimalKerasCNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.minimal.MinimalKerasCNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.keras_model.KerasModel" title="deepneuro.models.keras_model.KerasModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.keras_model.KerasModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer_output_function</span></code>(layer_num)</td>
+<td>Only works for the sequential model.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.minimal.MinimalKerasCNN.load" title="deepneuro.models.minimal.MinimalKerasCNN.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code>(training_data_collection[,&nbsp;…])</td>
+<td>input_groups : list of strings, optional</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>build_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_layer_output_shape</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>keras_generator</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.minimal.MinimalKerasCNN.build_model">
+<code class="descname">build_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/minimal.html#MinimalKerasCNN.build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.minimal.MinimalKerasCNN.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is inherited by child classes to specify the classes model attribute. If input_tensor
+is specified, build_model returns a tensor output. If not, it return a Keras model output.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.minimal.MinimalKerasCNN.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/minimal.html#MinimalKerasCNN.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.minimal.MinimalKerasCNN.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>depth</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">Specified the layers deep the proposed U-Net should go.
+Layer depth is symmetric on both upsampling and downsampling
+arms.</p>
+</dd>
+<dt><strong>max_filter: int, optional</strong></dt>
+<dd><p class="first last">Specifies the number of filters at the bottom level of the U-Net.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.model">
+<span id="deepneuro-models-model-module"></span><h2>deepneuro.models.model module<a class="headerlink" href="#module-deepneuro.models.model" title="Permalink to this headline">¶</a></h2>
+<p>model.py specified the basic DeepNeuroModel class, as well as some model utilites and
+pre-built model chunks that may be useful across all models.</p>
+<dl class="class">
+<dt id="deepneuro.models.model.DeepNeuroModel">
+<em class="property">class </em><code class="descclassname">deepneuro.models.model.</code><code class="descname">DeepNeuroModel</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.model.DeepNeuroModel.build_model" title="deepneuro.models.model.DeepNeuroModel.build_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_model</span></code></a>()</td>
+<td>This method is inherited by child classes to specify the classes model attribute.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.model.DeepNeuroModel.load" title="deepneuro.models.model.DeepNeuroModel.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td>This method is used by children classes to load additional attributes from kwargs.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.model.DeepNeuroModel.model" title="deepneuro.models.model.DeepNeuroModel.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>train</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.append_output">
+<code class="descname">append_output</code><span class="sig-paren">(</span><em>outputs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.append_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.append_output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.build_model">
+<code class="descname">build_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is inherited by child classes to specify the classes model attribute. If input_tensor
+is specified, build_model returns a tensor output. If not, it return a Keras model output.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.clear_outputs">
+<code class="descname">clear_outputs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.clear_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.clear_outputs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.close_model">
+<code class="descname">close_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.close_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.close_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.create_data_generators">
+<code class="descname">create_data_generators</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>validation_data_collection=None</em>, <em>input_groups=None</em>, <em>training_batch_size=32</em>, <em>validation_batch_size=32</em>, <em>training_steps_per_epoch=None</em>, <em>validation_steps_per_epoch=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.create_data_generators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.create_data_generators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.fit_one_batch">
+<code class="descname">fit_one_batch</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>output</em>, <em>output_directory</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.fit_one_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.fit_one_batch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.generate_outputs">
+<code class="descname">generate_outputs</code><span class="sig-paren">(</span><em>data_collection</em>, <em>case=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.generate_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.generate_outputs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used by children classes to load additional attributes from kwargs. These
+may be parameters specific to a certain model type, for example.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.log">
+<code class="descname">log</code><span class="sig-paren">(</span><em>inputs=None</em>, <em>headers=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.model">
+<code class="descname">model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access this class’s model attribute. TODO: investigate overloading.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>input_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.model.DeepNeuroModel.train">
+<code class="descname">train</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#DeepNeuroModel.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.DeepNeuroModel.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.model.load_old_model">
+<code class="descclassname">deepneuro.models.model.</code><code class="descname">load_old_model</code><span class="sig-paren">(</span><em>model_file</em>, <em>backend='keras'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/model.html#load_old_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.model.load_old_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loading an old keras model file. A thing wrapper around load_model
+that uses DeepNeuro’s custom cost functions.</p>
+<p>TODO: Investigate application in Tensorflow.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>model_file</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">At present, a filepath to a “.h5” keras file.</p>
+</dd>
+<dt><strong>implementation</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">Specify ‘keras’ or ‘tensorflow’ implementation.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>Keras model</strong></dt>
+<dd><p class="first last">A Keras model object stored in the given filepath.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.ops">
+<span id="deepneuro-models-ops-module"></span><h2>deepneuro.models.ops module<a class="headerlink" href="#module-deepneuro.models.ops" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="deepneuro.models.ops.adjusted_std">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">adjusted_std</code><span class="sig-paren">(</span><em>x</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#adjusted_std"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.adjusted_std" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.ops.batch_norm">
+<em class="property">class </em><code class="descclassname">deepneuro.models.ops.</code><code class="descname">batch_norm</code><span class="sig-paren">(</span><em>epsilon=1e-05</em>, <em>momentum=0.9</em>, <em>name='batch_norm'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#batch_norm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.batch_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="45%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>__call__</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.conv2d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">conv2d</code><span class="sig-paren">(</span><em>input_</em>, <em>output_dim</em>, <em>kernel_size=(3</em>, <em>3)</em>, <em>stride_size=(2</em>, <em>2)</em>, <em>initializer_std=0.02</em>, <em>padding='SAME'</em>, <em>name='conv2d'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#conv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.conv2d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.conv3d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">conv3d</code><span class="sig-paren">(</span><em>input_</em>, <em>output_dim</em>, <em>kernel_size=(3</em>, <em>3</em>, <em>3)</em>, <em>stride_size=(2</em>, <em>2</em>, <em>2)</em>, <em>initializer_std=0.02</em>, <em>name='conv3d'</em>, <em>backend='tf'</em>, <em>padding='SAME'</em>, <em>with_w=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#conv3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.conv3d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.deconv2d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">deconv2d</code><span class="sig-paren">(</span><em>input_</em>, <em>output_dim</em>, <em>kernel_size=(3</em>, <em>3)</em>, <em>stride_size=(2</em>, <em>2)</em>, <em>stddev=0.02</em>, <em>name='deconv2d'</em>, <em>with_w=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#deconv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.deconv2d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.deconv3d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">deconv3d</code><span class="sig-paren">(</span><em>input_</em>, <em>output_shape</em>, <em>kernel_size=(5</em>, <em>5</em>, <em>5)</em>, <em>stride_size=(2</em>, <em>2</em>, <em>2)</em>, <em>stddev=0.02</em>, <em>name='deconv3d'</em>, <em>with_w=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#deconv3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.deconv3d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.dense">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">dense</code><span class="sig-paren">(</span><em>tensor</em>, <em>output_size</em>, <em>stddev=0.02</em>, <em>bias_start=0.0</em>, <em>with_w=False</em>, <em>backend='tensorflow'</em>, <em>name='dense'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#dense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.dense" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.downscale2d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">downscale2d</code><span class="sig-paren">(</span><em>x</em>, <em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#downscale2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.downscale2d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.get_conv_shape">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">get_conv_shape</code><span class="sig-paren">(</span><em>tensor</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#get_conv_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.get_conv_shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.int_shape">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">int_shape</code><span class="sig-paren">(</span><em>tensor</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#int_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.int_shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.leaky_relu">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">leaky_relu</code><span class="sig-paren">(</span><em>x</em>, <em>leak=0.2</em>, <em>backend='tf'</em>, <em>name='lrelu'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#leaky_relu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.leaky_relu" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.minibatch_state_concat">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">minibatch_state_concat</code><span class="sig-paren">(</span><em>input_</em>, <em>averaging='all'</em>, <em>dim=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#minibatch_state_concat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.minibatch_state_concat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.pixel_norm_2d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">pixel_norm_2d</code><span class="sig-paren">(</span><em>input_</em>, <em>eps=1e-08</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#pixel_norm_2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.pixel_norm_2d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.pixel_norm_3d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">pixel_norm_3d</code><span class="sig-paren">(</span><em>input_</em>, <em>eps=1e-08</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#pixel_norm_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.pixel_norm_3d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.relu">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">relu</code><span class="sig-paren">(</span><em>backend='tf'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#relu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.relu" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.reshape">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">reshape</code><span class="sig-paren">(</span><em>backend='tf'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#reshape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.reshape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.resize_nearest_neighbor">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">resize_nearest_neighbor</code><span class="sig-paren">(</span><em>x</em>, <em>new_size</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#resize_nearest_neighbor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.resize_nearest_neighbor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.sigmoid">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">sigmoid</code><span class="sig-paren">(</span><em>backend='tf'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#sigmoid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.sigmoid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.tanh">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">tanh</code><span class="sig-paren">(</span><em>backend='tf'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#tanh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.tanh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="deepneuro.models.ops.upscale2d">
+<code class="descclassname">deepneuro.models.ops.</code><code class="descname">upscale2d</code><span class="sig-paren">(</span><em>x</em>, <em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/ops.html#upscale2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.ops.upscale2d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.progressive_growing_gan">
+<span id="deepneuro-models-progressive-growing-gan-module"></span><h2>deepneuro.models.progressive_growing_gan module<a class="headerlink" href="#module-deepneuro.models.progressive_growing_gan" title="Permalink to this headline">¶</a></h2>
+<p>This is a vanilla implementation of a generative adversarial network. It includes
+the Wasserstein Gradient-Penalty by default.</p>
+<dl class="class">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN">
+<em class="property">class </em><code class="descclassname">deepneuro.models.progressive_growing_gan.</code><code class="descname">PGGAN</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.gan.GAN" title="deepneuro.models.gan.GAN"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.gan.GAN</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_model</span></code>()</td>
+<td>This method is inherited by child classes to specify the classes model attribute.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGAN.build_tensorflow_model" title="deepneuro.models.progressive_growing_gan.PGGAN.build_tensorflow_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_tensorflow_model</span></code></a>(batch_size)</td>
+<td>TODO: Break out into functions? TODO: Create progressive growing for non-square and non-2-power resolutions.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGAN.get_callbacks" title="deepneuro.models.progressive_growing_gan.PGGAN.get_callbacks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_callbacks</span></code></a>([callbacks,&nbsp;…])</td>
+<td>Very disorganized currently.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGAN.load" title="deepneuro.models.progressive_growing_gan.PGGAN.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGAN.process_step" title="deepneuro.models.progressive_growing_gan.PGGAN.process_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_step</span></code></a>(step_counter,&nbsp;step,&nbsp;epoch)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGAN.train" title="deepneuro.models.progressive_growing_gan.PGGAN.train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code></a>(training_data_collection[,&nbsp;…])</td>
+<td>TODO: Make the model naming structure more explicit.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>calculate_losses</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>callback_process</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>find_layers</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_filter_num</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>grab_tensor</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>init_sess</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>init_training</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>load_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>log_variables</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>model_summary</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>save_model</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.build_tensorflow_model">
+<code class="descname">build_tensorflow_model</code><span class="sig-paren">(</span><em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.build_tensorflow_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.build_tensorflow_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Break out into functions?
+TODO: Create progressive growing for non-square and non-2-power resolutions.
+TODO: Investigate cause of loss jumps at transitions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.calculate_losses">
+<code class="descname">calculate_losses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.calculate_losses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.calculate_losses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.get_callbacks">
+<code class="descname">get_callbacks</code><span class="sig-paren">(</span><em>callbacks=[]</em>, <em>output_model_filepath=None</em>, <em>monitor='val_loss'</em>, <em>model=None</em>, <em>data_collection=None</em>, <em>save_best_only=False</em>, <em>epoch_prediction_dir=None</em>, <em>batch_size=1</em>, <em>epoch_prediction_object=None</em>, <em>epoch_prediction_data_collection=None</em>, <em>epoch_prediction_batch_size=None</em>, <em>latent_size=128</em>, <em>backend='tensorflow'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.get_callbacks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.get_callbacks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Very disorganized currently. Replace with dictionary? Also address never-ending parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.get_filter_num">
+<code class="descname">get_filter_num</code><span class="sig-paren">(</span><em>depth</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.get_filter_num"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.get_filter_num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.init_training">
+<code class="descname">init_training</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.init_training"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.init_training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>depth</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">Specified the layers deep the proposed U-Net should go.
+Layer depth is symmetric on both upsampling and downsampling
+arms.</p>
+</dd>
+<dt><strong>max_filter: int, optional</strong></dt>
+<dd><p class="first last">Specifies the number of filters at the bottom level of the U-Net.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>input_model_path</em>, <em>batch_size=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.load_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.log_variables">
+<code class="descname">log_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.log_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.log_variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.process_step">
+<code class="descname">process_step</code><span class="sig-paren">(</span><em>step_counter</em>, <em>step</em>, <em>epoch</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.process_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.process_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGAN.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>validation_data_collection=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGAN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGAN.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Make the model naming structure more explicit.
+TODO: Create more explicit documentation for callbacks.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="deepneuro.models.progressive_growing_gan.PGGANPredict">
+<em class="property">class </em><code class="descclassname">deepneuro.models.progressive_growing_gan.</code><code class="descname">PGGANPredict</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGANPredict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGANPredict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.callbacks.Callback</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.progressive_growing_gan.PGGANPredict.on_train_end" title="deepneuro.models.progressive_growing_gan.PGGANPredict.on_train_end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">on_train_end</span></code></a>([logs])</td>
+<td>Very confusing, make more explicit</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="64%" />
+<col width="36%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>on_batch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_batch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_depth_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_depth_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_epoch_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>on_epoch_end</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>on_train_begin</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>set_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>set_params</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGANPredict.on_depth_begin">
+<code class="descname">on_depth_begin</code><span class="sig-paren">(</span><em>depth_transition</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGANPredict.on_depth_begin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGANPredict.on_depth_begin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGANPredict.on_depth_end">
+<code class="descname">on_depth_end</code><span class="sig-paren">(</span><em>depth_transition</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGANPredict.on_depth_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGANPredict.on_depth_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGANPredict.on_epoch_end">
+<code class="descname">on_epoch_end</code><span class="sig-paren">(</span><em>data</em>, <em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGANPredict.on_epoch_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGANPredict.on_epoch_end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.progressive_growing_gan.PGGANPredict.on_train_end">
+<code class="descname">on_train_end</code><span class="sig-paren">(</span><em>logs={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/progressive_growing_gan.html#PGGANPredict.on_train_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.progressive_growing_gan.PGGANPredict.on_train_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Very confusing, make more explicit</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models.tensorflow_model">
+<span id="deepneuro-models-tensorflow-model-module"></span><h2>deepneuro.models.tensorflow_model module<a class="headerlink" href="#module-deepneuro.models.tensorflow_model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel">
+<em class="property">class </em><code class="descclassname">deepneuro.models.tensorflow_model.</code><code class="descname">TensorFlowModel</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.model.DeepNeuroModel" title="deepneuro.models.model.DeepNeuroModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.model.DeepNeuroModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_model</span></code>()</td>
+<td>This method is inherited by child classes to specify the classes model attribute.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#deepneuro.models.tensorflow_model.TensorFlowModel.load" title="deepneuro.models.tensorflow_model.TensorFlowModel.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>callback_process</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>find_layers</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>grab_tensor</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>init_sess</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>init_training</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log_variables</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>model_summary</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>process_step</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>save_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>train</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.callback_process">
+<code class="descname">callback_process</code><span class="sig-paren">(</span><em>command=''</em>, <em>idx=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.callback_process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.callback_process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.find_layers">
+<code class="descname">find_layers</code><span class="sig-paren">(</span><em>contains=['discriminator/']</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.find_layers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.find_layers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.grab_tensor">
+<code class="descname">grab_tensor</code><span class="sig-paren">(</span><em>layer</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.grab_tensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.grab_tensor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.init_sess">
+<code class="descname">init_sess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.init_sess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.init_sess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.init_training">
+<code class="descname">init_training</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.init_training"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.init_training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>depth</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">Specified the layers deep the proposed U-Net should go.
+Layer depth is symmetric on both upsampling and downsampling
+arms.</p>
+</dd>
+<dt><strong>max_filter: int, optional</strong></dt>
+<dd><p class="first last">Specifies the number of filters at the bottom level of the U-Net.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.log_variables">
+<code class="descname">log_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.log_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.log_variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.model_summary">
+<code class="descname">model_summary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.model_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.model_summary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.process_step">
+<code class="descname">process_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.process_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.process_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.save_model">
+<code class="descname">save_model</code><span class="sig-paren">(</span><em>output_model_filepath</em>, <em>overwrite=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.save_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.save_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.tensorflow_model.TensorFlowModel.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>training_data_collection</em>, <em>validation_data_collection=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/tensorflow_model.html#TensorFlowModel.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.tensorflow_model.TensorFlowModel.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="deepneuro-models-timenet-module">
+<h2>deepneuro.models.timenet module<a class="headerlink" href="#deepneuro-models-timenet-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-deepneuro.models.unet">
+<span id="deepneuro-models-unet-module"></span><h2>deepneuro.models.unet module<a class="headerlink" href="#module-deepneuro.models.unet" title="Permalink to this headline">¶</a></h2>
+<p>unet.py includes different implementations of the popular U-Net model.
+See more at <a class="reference external" href="https://arxiv.org/abs/1505.04597">https://arxiv.org/abs/1505.04597</a></p>
+<dl class="class">
+<dt id="deepneuro.models.unet.UNet">
+<em class="property">class </em><code class="descclassname">deepneuro.models.unet.</code><code class="descname">UNet</code><span class="sig-paren">(</span><em>model=None</em>, <em>output_type='regression'</em>, <em>num_outputs=1</em>, <em>padding='same'</em>, <em>implementation='keras'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/unet.html#UNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.unet.UNet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#deepneuro.models.keras_model.KerasModel" title="deepneuro.models.keras_model.KerasModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">deepneuro.models.keras_model.KerasModel</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.unet.UNet.build_model" title="deepneuro.models.unet.UNet.build_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_model</span></code></a>()</td>
+<td>A basic implementation of the U-Net proposed in <a class="reference external" href="https://arxiv.org/abs/1505.04597">https://arxiv.org/abs/1505.04597</a></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer_output_function</span></code>(layer_num)</td>
+<td>Only works for the sequential model.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#deepneuro.models.unet.UNet.load" title="deepneuro.models.unet.UNet.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a>(kwargs)</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>()</td>
+<td>Access this class’s model attribute.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code>(training_data_collection[,&nbsp;…])</td>
+<td>input_groups : list of strings, optional</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="72%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>append_output</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>clear_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>close_model</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>create_data_generators</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>fit_one_batch</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>generate_outputs</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>get_layer_output_shape</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>keras_generator</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>log</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>predict</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="deepneuro.models.unet.UNet.build_model">
+<code class="descname">build_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/unet.html#UNet.build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.unet.UNet.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>A basic implementation of the U-Net proposed in <a class="reference external" href="https://arxiv.org/abs/1505.04597">https://arxiv.org/abs/1505.04597</a></p>
+<p>TODO: specify optimizer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>Keras model or tensor</strong></dt>
+<dd><p class="first last">If input_tensor is provided, this will return a tensor. Otherwise,
+this will return a Keras model.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="deepneuro.models.unet.UNet.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/deepneuro/models/unet.html#UNet.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#deepneuro.models.unet.UNet.load" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>depth</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">Specified the layers deep the proposed U-Net should go.
+Layer depth is symmetric on both upsampling and downsampling
+arms.</p>
+</dd>
+<dt><strong>max_filter: int, optional</strong></dt>
+<dd><p class="first last">Specifies the number of filters at the bottom level of the U-Net.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-deepneuro.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-deepneuro.models" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Andrew Beers, the Quantiative Tumor Imaging Lab @ The Martinos Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

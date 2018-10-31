@@ -130,7 +130,10 @@ class KerasModel(DeepNeuroModel):
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
                 self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
+            # Not Implemented
             if self.output_type == 'multi_dice':
+                raise NotImplementedError
+                
                 if self.output_activation:
                     self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
                 else:

@@ -24,7 +24,7 @@ class DeepNeuroModel(object):
         input_shape : tuple, optional
             Input dimensions of first layer. Not counting batch-size.
         input_tensor : tensor, optional
-            If input_tensor is specified, build_model will output a tensor
+            If input_tensor is specified, will output a tensor
             created from input_tensor.
         downsize_filters_factor : int, optional
             If specified, the number of filters at each applicable layer in a model
