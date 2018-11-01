@@ -12,7 +12,12 @@ checkpoint
 *.DS_Store
 *.gz
 *.bak
+*.
 deepneuro/local
+*.zip
+*.tar.gz
+/_build
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

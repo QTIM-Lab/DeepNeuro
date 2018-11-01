@@ -9,6 +9,7 @@ A deep learning python package for neuroimaging data. Focused on validated comma
 ## Table of Contents
 - [About](#about)
 - [Installation](#installation) 
+- [Tutorials](#tutorials)
 - [Modules](#modules)
 - [Contact](#contact)
 - [Citation](#citation)
@@ -33,6 +34,10 @@ This package is in an initial testing phase, and will be released soon. Currentl
 
 3. If you want to inspect the code, or run your Docker container with an DeepNeuro's python wrappers and command line tools, clone this repository ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install with the command "python setup.py install" in the directory you just cloned in to.
 
+## Tutorials
+
+TBD!
+
 ## Modules
 
 <p align="center">
@@ -44,6 +49,18 @@ This package is in an initial testing phase, and will be released soon. Currentl
 <p align="center">
 <a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Skull_Stripping">
 <img src="./deepneuro/pipelines/Skull_Stripping/resources/icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_Brain_Mets">
+<img src="./deepneuro/pipelines/Segment_Brain_Mets/resources/icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Ischemic_Stroke">
+<img src="./deepneuro/pipelines/Ischemic_Stroke/resources/icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>
 

@@ -135,9 +135,8 @@ class DataCollection(object):
 
         if self.total_cases == 0:
             print('Found zero cases. Are you sure you have entered your data sources correctly?')
-            exit(1)
         else:
-            print(('Found', self.total_cases, 'number of cases..'))            
+            print(('Found', self.total_cases, 'cases..'))            
 
     def add_case(self, case_dict, case_name=None, load_data=False):
 
@@ -403,6 +402,20 @@ class DataCollection(object):
 
         # Good for loading data and then immediately
         # using it to train. Not yet implemented
+
+        raise NotImplementedError
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
+
+    def clear_preprocessors(self):
+
+        # Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        raise NotImplementedError
 
         self.augmentations = []
         self.multiplier = 1

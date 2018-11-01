@@ -15,7 +15,7 @@ current_dir = os.path.realpath(os.path.dirname(__file__))
 data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Skullstrip_MRI_Model.h5'), "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"],
                 'gbm_wholetumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Wholetumor_Model.h5'), "https://www.dropbox.com/s/bnbdi1yogq2yye3/GBM_Wholetumor_Public.h5?dl=1"],
                 'gbm_enhancingtumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Enhancing_Model.h5'), "https://www.dropbox.com/s/hgsqi0vj7cfuk1g/GBM_Enhancing_Public.h5?dl=1"],
-                'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), "path"],
+                'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"],
                 'sample_gbm_nifti': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_NIFTI', 'TCGA_GBM_NIFTI.zip'), 'https://www.dropbox.com/s/2hxjszztrqbjkyh/GBM_NIFTI.zip?dl=1']}
 
 
@@ -58,6 +58,8 @@ def load(dataset, output_datapath=None):
                 zip_ref.extractall(os.path.dirname(dataset_path))
                 zip_ref.close()
                 # os.remove(dataset_path)
+            if dataset_path.endswith('.tar.gz'):
+                raise NotImplementedError
         # except Exception:
             # if os.path.exists(dataset_path):
                 # os.remove(dataset_path)

@@ -8,9 +8,10 @@ from deepneuro.utilities.util import replace_suffix
 def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True):
 
     if data_collection is not None:
+        batch_size = np.min(data_collection.case_num, batch_size)
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
         output_data = next(generator)
-    
+
     if type(output_data) is not dict:
         output_data = {'output_data': output_data}
 
@@ -60,7 +61,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         elif plot_rows == 1 or plot_columns == 1:
             axarr = axarr.reshape(plot_rows, plot_columns)
 
-        for plot_idx, (label, data) in enumerate(output_images.items()):
+        for plot_idx, (label, data) in enumerate(sorted(output_images.items())):
 
             image_column = plot_idx % plot_columns
             image_row = plot_idx // plot_columns
@@ -81,6 +82,11 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
                 fig.colorbar(plt_image, ax=axarr[image_row, image_column], cmap='gray')
 
             axarr[image_row, image_column].set_title(label)
+
+        for plot_idx in range(len(output_images), plot_rows * plot_columns):
+            image_column = plot_idx % plot_columns
+            image_row = plot_idx // plot_columns
+            fig.delaxes(axs[image_row, image_column])
 
         plt.show()
 

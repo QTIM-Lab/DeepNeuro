@@ -42,7 +42,7 @@ class Segment_Mets_cli(object):
             Segment an image from DICOMs with all preprocessing steps included.
 
             -output_folder: A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz"
-            -T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
+            -T2, T1, -T1POST, -FLAIR: Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.
             -segmentation_output: Name of output for enhancing tumor segmentations. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "segmentation"
             -gpu_num: Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu.
             -debiased: If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step.
@@ -55,6 +55,7 @@ class Segment_Mets_cli(object):
                 ''')
 
         parser.add_argument('-output_folder', type=str)
+        parser.add_argument('-T2', type=str)
         parser.add_argument('-T1', type=str)
         parser.add_argument('-T1POST', type=str)
         parser.add_argument('-FLAIR', type=str)
@@ -80,9 +81,9 @@ class Segment_Mets_cli(object):
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_num)
 
-        from deepneuro.pipelines.Segment_GBM.predict import predict_GBM
+        from deepneuro.pipelines.Segment_Brain_Mets.predict import predict_brain_mets
 
-        predict_GBM(args.output_folder, T1POST=args.T1POST, T1PRE=args.T1, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
+        predict_brain_mets(args.output_folder, T2=args.T2, T1POST=args.T1POST, T1PRE=args.T1, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
 
     def docker_pipeline(self):
 
