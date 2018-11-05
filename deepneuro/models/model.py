@@ -223,7 +223,7 @@ class DeepNeuroModel(object):
         return
 
 
-def load_old_model(model_file, backend='keras'):
+def load_old_model(model_file, backend='keras', **kwargs):
 
     """ Loading an old keras model file. A thing wrapper around load_model
         that uses DeepNeuro's custom cost functions.
@@ -249,7 +249,7 @@ def load_old_model(model_file, backend='keras'):
         from keras.models import load_model
         from deepneuro.models.keras_model import KerasModel
 
-        custom_objects = cost_function_dict()
+        custom_objects = cost_function_dict(**kwargs)
 
         model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
         model.build_model()

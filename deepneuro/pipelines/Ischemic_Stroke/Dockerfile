@@ -107,7 +107,7 @@ WORKDIR /home/DeepNeuro
 
 # Copy in models -- do this with Python module in future.
 RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_Mets
-RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_Mets/Segment_Mets_Model.h5 "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"
+RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_Mets/Segment_Mets_Model.h5 "https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1"
 
 RUN mkdir -p /home/DeepNeuro/deepneuro/load/SkullStripping
 RUN wget -O /home/DeepNeuro/deepneuro/load/SkullStripping/Skullstrip_MRI_Model.h5 "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"

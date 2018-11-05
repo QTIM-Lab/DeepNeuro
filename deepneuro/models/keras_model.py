@@ -1,5 +1,6 @@
 from keras.engine import Input, Model
-from keras.layers import Activation
+from keras.layers import Activation, Lambda
+from keras.layers.merge import concatenate
 from keras.optimizers import Nadam, SGD, Adam
 from keras import backend as K
 
@@ -8,6 +9,7 @@ from deepneuro.models.model import DeepNeuroModel
 from deepneuro.utilities.visualize import check_data
 from deepneuro.utilities.util import add_parameter
 from deepneuro.models.callbacks import get_callbacks
+from deepneuro.models.cost_functions import WeightedCategoricalCrossEntropy
 
 
 class KerasModel(DeepNeuroModel):
@@ -16,7 +18,11 @@ class KerasModel(DeepNeuroModel):
 
         super(KerasModel, self).load(kwargs)
 
+        # Basic Keras Model Params
         add_parameter(self, kwargs, 'output_activation', True)
+
+        # Specific Cost Function Params
+        add_parameter(self, kwargs, 'categorical_weighting': {0: 0.1, 1: 3.0})
 
         self.keras_optimizer_dict = {'Nadam': Nadam, 'Adam': Adam, 'SGD': SGD}
 
@@ -154,6 +160,19 @@ class KerasModel(DeepNeuroModel):
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
                 self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
                               metrics=['categorical_accuracy'])
+
+            if self.output_type == 'weighted_categorical_label':
+                activation = Activation('sigmoid')(self.output_layer)
+                activation_categorical = Lambda(lambda arg: K.ones_like(arg) - arg)(activation)
+                predictions = concatenate([activation, activation_categorical], axis=-1)
+
+                if self.output_activation:
+                    self.model = Model(inputs=self.inputs, outputs=predictions)
+                else:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+
+                lossFunc = WeightedCategoricalCrossEntropy(self.categorical_weighting)
+                self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=lossFunc.loss_wcc_dist, metrics=[lossFunc.metric_dice_dist, lossFunc.metric_acc])
 
             self.model_input_shape = self.model.layers[0].input_shape
             self.model_output_shape = self.model.layers[-1].output_shape

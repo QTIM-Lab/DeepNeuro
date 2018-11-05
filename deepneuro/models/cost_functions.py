@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 
 
-def cost_function_dict(**kwargs):
+def cost_function_dict(wcc_weights={0: 0.1, 1: 3.0}):
     
     """Summary
     
@@ -17,19 +17,39 @@ def cost_function_dict(**kwargs):
         Description
     """
     
-    lossFunc = WeightedCategoricalCrossEntropy({0: 0.1, 1: 3.0})
+    lossFunc = WeightedCategoricalCrossEntropy(wcc_weights)
 
     return {'dice_coef': dice_coef,
             'dice_coef_loss': dice_coef_loss,
             'multi_dice_coef': multi_dice_coef,
             'multi_dice_loss': multi_dice_loss,
-            'wcc_loss': lossFunc.loss_wcc,
-            'wcc_metric': lossFunc.metric_wcc
+            'loss_wcc': lossFunc.loss_wcc,
+            'metric_wcc': lossFunc.metric_wcc,
+            'loss_wcc_dist': lossFunc.loss_wcc_dist, 
+            'loss_dice': lossFunc.loss_dice,
+            'metric_dice': lossFunc.metric_dice, 
+            'metric_dice_dist': lossFunc.metric_dice_dist, 
+            'metric_acc': lossFunc.metric_acc
             }
 
 
 def dice_coef(y_true, y_pred, smooth=1.):
-
+    """Summary
+    
+    Parameters
+    ----------
+    y_true : Tensor
+        Ground truth values for input to a cost function.
+    y_pred : Tensor
+        Predicted values for input to a cost function.
+    smooth : float, optional
+        Description
+    
+    Returns
+    -------
+    Tensor
+        Soft-dice coefficient ranging from 0 to 1.
+    """
     from keras import backend as K
 
     y_true_f = K.flatten(y_true)
@@ -39,6 +59,23 @@ def dice_coef(y_true, y_pred, smooth=1.):
 
 
 def dice_coef_loss(y_true, y_pred):
+    
+    """ A version of the soft-dice coefficient loss implemented in deepneuro.models.cost_functions.dice_coef
+        that can be minimzed while training a model.
+    
+    Parameters
+    ----------
+    y_true : Tensor
+        Ground truth values for input to a cost function.
+    y_pred : Tensor
+        Predicted values for input to a cost function.
+    
+    Returns
+    -------
+    Tensor
+        Soft-dice loss ranging from 0 to 1.
+    """
+    
     return (1 - dice_coef(y_true, y_pred))
 
 
@@ -133,7 +170,7 @@ class WeightedCategoricalCrossEntropy(object):
         y_true_onehot = concatenate([y_true_complement, y_true1], axis=-1)
         y_pred_max = K.max(y_pred, axis=-1)
         y_pred_max = K.expand_dims(y_pred_max, axis=-1)
-        y_pred_max_mat = K.equal(y_pred, y_pred_max)
+        # y_pred_max_mat = K.equal(y_pred, y_pred_max)
 
         wcc_loss = self.w_categorical_crossentropy_function(y_true1, y_pred)
         distTrans_loss = self.distTransErrorMatrix(y_true_onehot, y_dist, y_pred)
@@ -230,7 +267,7 @@ class WeightedCategoricalCrossEntropy(object):
         exteriorError = multiply([y_d, multLayer2])
         
         # Total error
-        error = add([interiorError, interiorError])
+        error = add([interiorError, exteriorError])
         
         #add one to error to ensure that aren't multiplying by zero
         error = Lambda(lambda arg: (K.ones_like(arg) + arg))(error)

@@ -4,12 +4,42 @@ from deepneuro.models.dn_ops import DnConv, DnPixelNorm, DnUpsampling, DnMaxPool
 from deepneuro.models.ops import leaky_relu, minibatch_state_concat
 
 
+def basic_conv_block():
+
+    
+
 def generator(model, latent_var, depth=1, initial_size=(4, 4), max_size=None, reuse=False, transition=False, alpha_transition=0, name=None):
-
+    
+    """Summary
+    
+    Parameters
+    ----------
+    model : TYPE
+        Description
+    latent_var : TYPE
+        Description
+    depth : int, optional
+        Description
+    initial_size : tuple, optional
+        Description
+    max_size : None, optional
+        Description
+    reuse : bool, optional
+        Description
+    transition : bool, optional
+        Description
+    alpha_transition : int, optional
+        Description
+    name : None, optional
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    """
+    
     import tensorflow as tf
-
-    """
-    """
 
     with tf.variable_scope(name) as scope:
 
