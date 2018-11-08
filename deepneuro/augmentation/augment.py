@@ -82,7 +82,6 @@ class Flip_Rotate_2D(Augmentation):
         add_parameter(self, kwargs, 'flip_axis', 2)
         add_parameter(self, kwargs, 'rotate_axis', (1, 2))
 
-        print(self.flip_axis)
         # TODO: This is incredibly over-elaborate, return to fix.
         self.transforms_list = []
 
@@ -114,7 +113,7 @@ class Flip_Rotate_2D(Augmentation):
                 data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
-                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, self.flip_axis], axes=self.rotate_axis)
+                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, 1], axes=self.rotate_axis)
 
 
 class Shift_Squeeze_Intensities(Augmentation):

@@ -27,13 +27,15 @@ class ErrorCalculation(Postprocessor):
             'dice': 'Dice Coeffecient'
         }
 
-        self.csv_file = open(self.output_log, self.write_mode)
-        self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(['casename'] + [self.cost_function_label_dict[cost_function] for cost_function in self.cost_functions])
-
+        self.csv_file = None
         # Not sure of the best method to close this file
 
     def postprocess(self, input_data, raw_data=None, casename=None):
+
+        if self.csv_file is None:
+            self.csv_file = open(self.output_log, self.write_mode)
+            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_writer.writerow(['casename'] + [self.cost_function_label_dict[cost_function] for cost_function in self.cost_functions])
 
         ground_truth = raw_data[self.ground_truth] 
 

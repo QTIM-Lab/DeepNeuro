@@ -22,7 +22,7 @@ class KerasModel(DeepNeuroModel):
         add_parameter(self, kwargs, 'output_activation', True)
 
         # Specific Cost Function Params
-        add_parameter(self, kwargs, 'categorical_weighting': {0: 0.1, 1: 3.0})
+        add_parameter(self, kwargs, 'categorical_weighting', {0: 0.1, 1: 3.0})
 
         self.keras_optimizer_dict = {'Nadam': Nadam, 'Adam': Adam, 'SGD': SGD}
 

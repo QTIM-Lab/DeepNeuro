@@ -82,7 +82,7 @@ class UNet(KerasModel):
                 right_outputs[level] = concatenate([right_outputs[level], left_outputs[self.depth - level - 1]], axis=self.dim + 1)
 
                 for block_num in range(self.num_blocks):
-                    right_outputs[level] = DnConv(right_outputs[level], filter_num / (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_{}'.format(level, block_num), backend='keras')
+                    right_outputs[level] = DnConv(right_outputs[level], filter_num // (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_{}'.format(level, block_num), backend='keras')
 
             else:
                 continue

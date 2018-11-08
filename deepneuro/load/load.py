@@ -54,11 +54,12 @@ def load(dataset, output_datapath=None):
         if True:
         # try:
             urlretrieve(data_dict[dataset][1], dataset_path)
+            print(dataset_path)
             if dataset_path.endswith('.zip'):
                 zip_ref = zipfile.ZipFile(dataset_path, 'r')
                 zip_ref.extractall(os.path.dirname(dataset_path))
                 zip_ref.close()
-                # os.remove(dataset_path)
+                os.remove(dataset_path)
             if dataset_path.endswith('.tar.gz'):
                 raise NotImplementedError
         # except Exception:

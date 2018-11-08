@@ -5,10 +5,12 @@ from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, **kwargs):
 
     if data_collection is not None:
-        batch_size = np.min(data_collection.case_num, batch_size)
+        if batch_size > data_collection.total_cases * data_collection.multiplier:
+            batch_size = data_collection.total_cases * data_collection.multiplier
+
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
         output_data = next(generator)
 
@@ -32,7 +34,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     for label, data in list(output_data.items()):
 
         if data.ndim == 5:
-            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns)
+            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, **kwargs)
 
         elif data.ndim == 4:
             if data.shape[-1] == 2:
@@ -86,7 +88,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         for plot_idx in range(len(output_images), plot_rows * plot_columns):
             image_column = plot_idx % plot_columns
             image_row = plot_idx // plot_columns
-            fig.delaxes(axs[image_row, image_column])
+            fig.delaxes(axarr[image_row, image_column])
 
         plt.show()
 
@@ -124,7 +126,7 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0):
 
     if input_dict is None:
         input_dict = {}
@@ -137,6 +139,11 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
         if viz_mode_3d == '2d_center':
 
             input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
+            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
+
+        elif viz_mode_3d == '2d_slice':
+
+            input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
             input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
 
         else:

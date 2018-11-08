@@ -224,6 +224,40 @@ class DataCollection(object):
 
         return
 
+    def clear_augmentations(self):
+
+        # Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        raise NotImplementedError
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
+
+    def clear_preprocessors(self):
+
+        # Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        raise NotImplementedError
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
+
+    def clear_data_processors(self):
+
+        self.augmentations = []
+        self.preprocessors = [
+        ]
+
+        # A little inefficient -- will require loading data again to understand data shape.
+        for data_group_label in list(self.data_groups.keys()):
+            self.data_groups[data_group_label].output_shape = None
+
     def get_data(self, case, data_group_labels=None):
 
         data_groups = self.get_data_groups(data_group_labels)
@@ -397,30 +431,6 @@ class DataCollection(object):
                     yield next(lower_recursive_generator)
 
             # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
-
-    def clear_augmentations(self):
-
-        # Good for loading data and then immediately
-        # using it to train. Not yet implemented
-
-        raise NotImplementedError
-
-        self.augmentations = []
-        self.multiplier = 1
-
-        return
-
-    def clear_preprocessors(self):
-
-        # Good for loading data and then immediately
-        # using it to train. Not yet implemented
-
-        raise NotImplementedError
-
-        self.augmentations = []
-        self.multiplier = 1
-
-        return
 
     def return_valid_cases(self, data_group_labels):
 

@@ -114,6 +114,7 @@ RUN wget -O /home/DeepNeuro/deepneuro/load/SkullStripping/Skullstrip_MRI_Model.h
 
 # TODO: Check if Docker has solved this checkpointing problem.
 RUN echo 56
+RUN git fetch --all
 RUN git checkout fall_development_2018
 RUN git pull
 # RUN git pull

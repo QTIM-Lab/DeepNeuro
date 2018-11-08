@@ -89,7 +89,7 @@ class Segment_Mets_cli(object):
 
         args = self.parse_args()
 
-        nvidia_docker_wrapper(['PEM_43-VISIT_01', 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'T2', 'input_directory'], docker_container='qtimlab/deepneuro_PEM_43-VISIT_01:latest')
+        nvidia_docker_wrapper(['segment_mets', 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'T2', 'input_directory'], docker_container='qtimlab/deepneuro_segment_mets:latest')
 
 
 def main():
