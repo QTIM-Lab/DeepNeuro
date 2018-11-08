@@ -1,3 +1,6 @@
+import matplotlib as mpl
+mpl.use('Agg')
+
 import warnings
 
 warnings.filterwarnings("ignore", message=".*dtype size changed.*")
