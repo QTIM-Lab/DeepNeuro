@@ -24,13 +24,13 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
     # Step 2, Load Models
     #--------------------------------------------------------------------#
 
-    mets_prediction_parameters = {'inputs': ['input_data'], 
+    stroke_prediction_parameters = {'inputs': ['input_data'], 
                         'output_filename': os.path.join(output_folder, output_segmentation_filename),
                         'batch_size': 50,
                         'patch_overlaps': 8,
                         'output_patch_shape': (62, 62, 6, 1)}
 
-    mets_model = load_model_with_output(model_name='ischemic_stroke', outputs=[ModelPatchesInference(**mets_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+    stroke_model = load_model_with_output(model_name='ischemic_stroke', outputs=[ModelPatchesInference(**stroke_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
@@ -44,7 +44,7 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
             preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=registration_reference_channel)]
 
         if not normalized:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_preprocessed')]
 
         else:
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
@@ -61,7 +61,7 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
         
         docker_print('Ischemic Stroke Prediction')
         docker_print('======================')
-        mets_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
+        stroke_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
 
 
 if __name__ == '__main__':

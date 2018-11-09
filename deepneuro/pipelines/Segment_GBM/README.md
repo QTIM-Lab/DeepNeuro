@@ -6,7 +6,8 @@ This module creates segmentations of "whole tumor" (edema + contrast-enhancing +
 - [Docker Usage](#docker-usage)
 - [Python Docker Wrapper Usage](#python-docker-wrapper-usage)
 - [Docker Example](#docker-example)
-
+- [Citation](#citation)
+- 
 ## Docker Usage
 
 The best way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
@@ -61,3 +62,12 @@ First, note that the "/INPUT_DATA" designation on the right-hand side of the "-v
 Second, note that you will need to make sure that the left-hand side of the "-v" option is an absolute, rather than relative, path. For example "../Data/" and "~/Data/" will not work (relative path), but "/home/my_user/Data/" will work (absolute path, starting from the root directory).
 
 Third, note that the folders you provide as arguments to the "segment_gbm pipeline" command should be relative paths. This is because you are mounting, and thus renaming, a folder on your system to the "/INPUT_DATA" folder inside the Docker system. For example, if you were mounting the directory "/home/my_user/Data/" to "/INPUT_DATA", you should not provide the path "/home/my_user/Data/Patient_1/FLAIR" as a parameter. Rather, you should provide the path "/INPUT_DATA/Patient_1/FLAIR", as those parts of the path are within the scope of your mounted directory.
+
+## Citation
+
+@article{beers2017sequential,
+  title={Sequential 3D U-Nets for Biologically-Informed Brain Tumor Segmentation},
+  author={Beers, Andrew and Chang, Ken and Brown, James and Sartor, Emmett and Mammen, CP and Gerstner, Elizabeth and Rosen, Bruce and Kalpathy-Cramer, Jayashree},
+  journal={arXiv preprint arXiv:1709.02967},
+  year={2017}
+}

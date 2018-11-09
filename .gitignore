@@ -17,7 +17,7 @@ deepneuro/local
 *.zip
 *.tar.gz
 /_build
-
+*.hdf5
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

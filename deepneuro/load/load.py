@@ -17,7 +17,7 @@ data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Sku
                 'gbm_enhancingtumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Enhancing_Model.h5'), "https://www.dropbox.com/s/hgsqi0vj7cfuk1g/GBM_Enhancing_Public.h5?dl=1"],
                 'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"],
                 'ischemic_stroke': [os.path.join(current_dir, 'Segment_Ischemic_Stroke', 'Ischemic_Stroke_Model.h5'), 'https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1'],
-                'sample_gbm_nifti': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_NIFTI', 'TCGA_GBM_NIFTI.zip'), 'https://www.dropbox.com/s/2hxjszztrqbjkyh/GBM_NIFTI.zip?dl=1']}
+                'sample_gbm_nifti': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_NIFTI', 'TCGA_GBM_NIFTI.zip'), 'https://www.dropbox.com/s/bqclpqzwfsreolb/GBM_NIFTI.zip?dl=1']}
 
 
 def load(dataset, output_datapath=None):
@@ -45,7 +45,7 @@ def load(dataset, output_datapath=None):
     if output_datapath is None:
         dataset_path = data_dict[dataset][0]
     else:
-        dataset_path = output_datapath
+        dataset_path = os.path.join(output_datapath, os.path.basename(data_dict[dataset][0]))
 
     if not os.path.exists(os.path.dirname(dataset_path)):
         os.makedirs(os.path.dirname(dataset_path))
@@ -54,7 +54,6 @@ def load(dataset, output_datapath=None):
         if True:
         # try:
             urlretrieve(data_dict[dataset][1], dataset_path)
-            print(dataset_path)
             if dataset_path.endswith('.zip'):
                 zip_ref = zipfile.ZipFile(dataset_path, 'r')
                 zip_ref.extractall(os.path.dirname(dataset_path))

@@ -338,6 +338,10 @@ class DataCollection(object):
         if case_list is None:
             case_list = self.cases
 
+        if case_list is None or case_list == '':
+            print('No cases found. Yielding None.')
+            yield None
+
         data_batch = {data_group.label: [] for data_group in data_groups}
 
         while True:

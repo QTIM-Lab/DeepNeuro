@@ -10,7 +10,7 @@ from deepneuro.utilities.util import add_parameter
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, model=None, num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -43,7 +43,7 @@ class DeepNeuroModel(object):
             of which layers will be batch-normed is different.
         initial_learning_rate : float, optional
             Initial learning rate for the chosen optimizer type, if necessary.
-        output_type : str, optional
+        output_type, cost_function : str, optional
             Currently can choose from 'regression', which is an output the same size as input,
             'binary_label' which is a binary probability map, or 'categorical_label'
         num_outputs : int, optional
@@ -75,7 +75,8 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
         add_parameter(self, kwargs, 'optimizer', 'Nadam')
-        add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
+        add_parameter(self, kwargs, 'output_type', None)
+        add_parameter(self, kwargs, 'cost_function', None)
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
         add_parameter(self, kwargs, 'initial_learning_rate', .00001)
@@ -101,7 +102,10 @@ class DeepNeuroModel(object):
         self.csv_writer = None
 
         self.num_outputs = num_outputs
-        self.output_type = output_type
+
+        # TODO: Phase out 'output_type' in favor of 'cost_function'
+        if self.cost_function is not None:
+            self.output_type = self.cost_function
 
         self.implementation = implementation
 
@@ -252,6 +256,8 @@ def load_old_model(model_file, backend='keras', **kwargs):
         custom_objects = cost_function_dict(**kwargs)
 
         model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+        
+        # Necessary?
         model.build_model()
 
         return model
