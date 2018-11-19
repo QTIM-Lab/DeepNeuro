@@ -49,9 +49,9 @@ class KerasModel(DeepNeuroModel):
 
         try:
             if validation_data_collection is None:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=self.callbacks)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, callbacks=self.callbacks)
             else:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()
@@ -60,7 +60,7 @@ class KerasModel(DeepNeuroModel):
 
         return
 
-    def fit_one_batch(self, training_data_collection, output_model_filepath=None, input_groups=None, output_directory=None, callbacks=['save_model', 'log'], training_batch_size=16, training_steps_per_epoch=None, num_epochs=None, show_results=True, **kwargs):
+    def fit_one_batch(self, training_data_collection, output_model_filepath=None, input_groups=None, output_directory=None, callbacks=['save_model', 'log'], training_batch_size=16, training_steps_per_epoch=None, num_epochs=None, show_results=False, **kwargs):
 
         one_batch_generator = self.keras_generator(training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, just_one_batch=True, batch_size=training_batch_size))
 
@@ -70,7 +70,10 @@ class KerasModel(DeepNeuroModel):
             training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
 
         try:
-            self.model.fit_generator(generator=one_batch_generator, steps_per_epoch=training_steps_per_epoch, epochs=num_epochs, pickle_safe=True, callbacks=self.callbacks)
+            self.model.fit_generator(generator=one_batch_generator, 
+                steps_per_epoch=training_steps_per_epoch, 
+                epochs=num_epochs,
+                callbacks=self.callbacks)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()
@@ -120,68 +123,84 @@ class KerasModel(DeepNeuroModel):
 
         return self.model.predict(input_data)
 
-    def build_model(self):
+    def build_model(self, compute_output=True):
 
-        # TODO: Brainstorm better way to specify outputs
-        if self.input_tensor is None:
+        # TODO: Move this entire section to cost_functions.py
+        
+        if compute_output:
+            
+            if self.input_tensor is None:
 
-            if self.output_type == 'msq':
-                self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
-
-            if self.output_type == 'dice':
-                if self.output_activation:
-                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
-                else:
+                if self.cost_function == 'mse':
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-            # Not Implemented
-            if self.output_type == 'multi_dice':
-                raise NotImplementedError
-                
-                if self.output_activation:
-                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                elif self.cost_function == 'dice':
+                    if self.output_activation:
+                        self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                    else:
+                        self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
+                # Not Implemented
+                elif self.cost_function == 'multi_dice':
+                    raise NotImplementedError
+                    
+                    if self.output_activation:
+                        self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                    else:
+                        self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
+                elif self.cost_function == 'binary_crossentropy':
+                    if self.output_activation:
+                        self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
+                    else:
+                        self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
+
+                elif self.cost_function == 'categorical_crossentropy':
+                    if self.output_activation:
+                        self.model = Model(inputs=self.inputs, outputs=Activation('softmax')(self.output_layer))
+                    else:
+                        self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
+                                  metrics=['categorical_accuracy'])
+
+                elif self.cost_function == 'weighted_categorical_label':
+                    activation = Activation('sigmoid')(self.output_layer)
+                    activation_categorical = Lambda(lambda arg: K.ones_like(arg) - arg)(activation)
+                    predictions = concatenate([activation, activation_categorical], axis=-1)
+
+                    if self.output_activation:
+                        self.model = Model(inputs=self.inputs, outputs=predictions)
+                    else:
+                        self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+
+                    lossFunc = WeightedCategoricalCrossEntropy(self.categorical_weighting)
+                    self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=lossFunc.loss_wcc_dist, metrics=[lossFunc.metric_dice_dist, lossFunc.metric_acc])
+
                 else:
-                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+                    print('Cost function', self.cost_function, 'not implemented.')
+                    raise NotImplementedError
 
-            if self.output_type == 'binary_crossentropy':
-                if self.output_activation:
-                    self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
-                else:
-                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
+                self.model_input_shape = self.model.layers[0].input_shape
+                self.model_output_shape = self.model.layers[-1].output_shape
 
-            if self.output_type == 'categorical_crossentropy':
-                if self.output_activation:
-                    self.model = Model(inputs=self.inputs, outputs=Activation('softmax')(self.output_layer))
-                else:
-                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
-                              metrics=['categorical_accuracy'])
+                return self.model
 
-            if self.output_type == 'weighted_categorical_label':
-                activation = Activation('sigmoid')(self.output_layer)
-                activation_categorical = Lambda(lambda arg: K.ones_like(arg) - arg)(activation)
-                predictions = concatenate([activation, activation_categorical], axis=-1)
+            else:
 
-                if self.output_activation:
-                    self.model = Model(inputs=self.inputs, outputs=predictions)
-                else:
-                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+                self.model_input_shape = self.model.layers[0].input_shape
+                self.model_output_shape = self.model.layers[-1].output_shape
 
-                lossFunc = WeightedCategoricalCrossEntropy(self.categorical_weighting)
-                self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=lossFunc.loss_wcc_dist, metrics=[lossFunc.metric_dice_dist, lossFunc.metric_acc])
+                return self.output_layer
 
+        else:
             self.model_input_shape = self.model.layers[0].input_shape
             self.model_output_shape = self.model.layers[-1].output_shape
 
-            return self.model
-
-        else:
-
-            return self.output_layer
+            return
 
 
 if __name__ == '__main__':

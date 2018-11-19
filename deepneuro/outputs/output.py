@@ -2,7 +2,8 @@ import os
 import numpy as np
 
 from deepneuro.utilities.conversion import save_data
-from deepneuro.utilities.util import add_parameter, replace_suffix, nifti_splitext
+from deepneuro.utilities.util import add_parameter, replace_suffix, nifti_splitext, additional_kwargs
+from deepneuro.utilities.visualize import check_data
 
 
 class Output(object):
@@ -16,11 +17,15 @@ class Output(object):
 
         # Saving Parameters
         add_parameter(self, kwargs, 'save_to_file', True)
-        add_parameter(self, kwargs, 'save_initial', True)
+        add_parameter(self, kwargs, 'save_initial', False)
         add_parameter(self, kwargs, 'save_all_steps', False)
         add_parameter(self, kwargs, 'output_directory', None)
         add_parameter(self, kwargs, 'output_filename', 'prediction.nii.gz')
         add_parameter(self, kwargs, 'stack_outputs', False)
+
+        # Visualization Parameters
+        add_parameter(self, kwargs, 'show_output', False)
+        add_parameter(self, kwargs, 'show_output_save', False)
 
         # Implementation Parameters
         add_parameter(self, kwargs, 'channels_first', False)
@@ -38,6 +43,8 @@ class Output(object):
         self.postprocessor_string = ''
 
         self.load(kwargs)
+
+        self.kwargs = additional_kwargs(self, kwargs)
 
         return
 
@@ -106,12 +113,12 @@ class Output(object):
         for p_idx, postprocessor in enumerate(self.postprocessors):
             postprocessor.execute(self, raw_data=input_data)
             if self.save_all_steps and p_idx != len(self.postprocessors) - 1:
-                self.save_output(postprocessor)
+                self.save_output(p_idx)
 
         if self.save_to_file and self.postprocessors != []:
-            self.save_output(self.postprocessors[-1])
+            self.save_output(len(self.postprocessors) - 1)
 
-    def save_output(self, postprocessor=None):
+    def save_output(self, postprocessor_idx=None):
 
         # Currently assumes Nifti output. TODO: Make automatically detect output or determine with a class variable.
         # Ideally, split also this out into a saving.py function in utils.
@@ -138,15 +145,25 @@ class Output(object):
             else:
                 output_filename = os.path.abspath(self.output_filename)
 
-            # Naming is unclear.
-            if postprocessor is None:
-                output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + self.postprocessor_string))
-            else:
-                output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + postprocessor.postprocessor_string))
+            # This is a little yucky.
+            postprocessor_string = self.postprocessor_string
+            if postprocessor_idx is not None:
+                string_idx = postprocessor_idx
+                while string_idx >= 0:
+                    if self.postprocessors[string_idx].postprocessor_string is not None:
+                        postprocessor_string = self.postprocessors[string_idx].postprocessor_string
+                    string_idx -= 1
+
+            # Naming is still a little unclear.
+            output_filepath = os.path.join(output_directory, replace_suffix(output_filename, '', augmentation_string + postprocessor_string))
 
             # If prediction already exists, skip it. Useful if process is interrupted.
             if os.path.exists(output_filepath) and not self.replace_existing:
                 return
+
+            if self.show_output:
+                # This function call will need to be updated as Outputs is extended for more data types.
+                check_data({'prediction': input_data}, batch_size=1, **self.kwargs)
 
             # Squeezing is a little cagey. Maybe explicitly remove batch dimension instead.
             output_shape = input_data.shape

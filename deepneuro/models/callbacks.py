@@ -151,14 +151,14 @@ class EpochPredict(Callback):
 
     def __init__(self, **kwargs):
 
-        add_parameter(self, kwargs, 'data_collection', None)
-        add_parameter(self, kwargs, 'epoch_prediction_data_collection', self.data_collection)
+        add_parameter(self, kwargs, 'epoch_prediction_data_collection', None)
         add_parameter(self, kwargs, 'epoch_prediction_object', None)
         add_parameter(self, kwargs, 'deepneuro_model', None)
         add_parameter(self, kwargs, 'epoch_prediction_dir', None)
         add_parameter(self, kwargs, 'output_gif', None)
-        add_parameter(self, kwargs, 'batch_size', 1)
-        add_parameter(self, kwargs, 'epoch_prediction_batch_size', self.batch_size)
+        add_parameter(self, kwargs, 'epoch_prediction_batch_size', 1)
+
+        self.kwargs = kwargs
 
         if not os.path.exists(self.epoch_prediction_dir):
             os.mkdir(self.epoch_prediction_dir)
@@ -185,7 +185,7 @@ class EpochPredict(Callback):
         else:
             prediction = self.epoch_prediction_object.process_case(self.predict_data[self.deepneuro_model.input_data], model=self.deepneuro_model)
 
-        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size)
+        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
 
         if len(output_images.keys()) > 1:
             self.predictions += [[output_images['prediction_' + str(idx)].astype('uint8') for idx in range(len(output_images.keys()))]]
@@ -254,7 +254,7 @@ class SaveModel(Callback):
         return
 
 
-def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', base_learning_rate=.0001, max_learning_rate=.0006, learning_rate_cycle=2000, **kwargs):
+def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', cyclic_base_learning_rate=.001, cyclic_max_learning_rate=.006, learning_rate_cycle=2000, **kwargs):
 
     """ Very disorganized currently. Replace with dictionary? Also address never-ending parameters
     """
@@ -275,11 +275,11 @@ def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_mode
         if callback == 'log':
             return_callbacks += [CSVLogger(output_model_filepath.replace('.h5', '.log'))]
 
-        if callback == 'cyclic_loss':
-            return_callbacks += [CyclicLR(base_lr=base_learning_rate, max_lr=max_learning_rate, step_size=learning_rate_cycle)]
+        if callback == 'cyclic_learning_rate':
+            return_callbacks += [CyclicLR(base_lr=cyclic_base_learning_rate, max_lr=cyclic_max_learning_rate, step_size=learning_rate_cycle)]
 
         if callback == 'predict_epoch':
-            return_callbacks += [EpochPredict(deepneuro_model=model, data_collection=data_collection, epoch_prediction_dir=epoch_prediction_dir, batch_size=batch_size, epoch_prediction_object=epoch_prediction_object, epoch_prediction_data_collection=epoch_prediction_data_collection, epoch_prediction_batch_size=epoch_prediction_batch_size)]
+            return_callbacks += [EpochPredict(deepneuro_model=model, prediction_data_collection=data_collection, epoch_prediction_dir=epoch_prediction_dir, epoch_prediction_object=epoch_prediction_object, epoch_prediction_data_collection=epoch_prediction_data_collection, epoch_prediction_batch_size=epoch_prediction_batch_size, **kwargs)]
 
         if callback == 'predict_gan':
             return_callbacks += [GANPredict(deepneuro_model=model, data_collection=data_collection, epoch_prediction_dir=epoch_prediction_dir, batch_size=batch_size, epoch_prediction_object=epoch_prediction_object, epoch_prediction_data_collection=epoch_prediction_data_collection, epoch_prediction_batch_size=epoch_prediction_batch_size, latent_size=latent_size)]

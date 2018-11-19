@@ -11,7 +11,7 @@ class ErrorCalculation(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'ErrorCalculation')
-        add_parameter(self, kwargs, 'postprocessor_string', '')
+        add_parameter(self, kwargs, 'postprocessor_string', None)
 
         # Logging Parameters
         add_parameter(self, kwargs, 'output_log', 'outputs.csv')
@@ -56,8 +56,12 @@ class ErrorCalculation(Postprocessor):
             output_row += [str(cost)]
 
         self.csv_writer.writerow(output_row)
+        self.csv_file.flush()
 
         return input_data
+
+    def close(self):
+        self.csv_file.close()
 
 
 def dice_cost_function(input_data, ground_truth):

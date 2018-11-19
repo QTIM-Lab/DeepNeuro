@@ -37,7 +37,7 @@ This package is in an initial testing phase, and will be released soon. Currentl
 ## Tutorials
 
 <p align="center">
-<a href="./notebooks/resources/Train_Model.ipynb">
+<a href="./notebooks/Preprocess_and_Augment.ipynb">
 <img src="./notebooks/resources/train_preprocess_icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>

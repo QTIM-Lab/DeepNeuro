@@ -126,7 +126,7 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, **kwargs):
 
     if input_dict is None:
         input_dict = {}
@@ -144,6 +144,19 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
         elif viz_mode_3d == '2d_slice':
 
             input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
+            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
+
+        elif viz_mode_3d == 'mosaic':
+
+            input_data_slice = np.zeros((input_data.shape[0], mosaic_rows * input_data.shape[1], mosaic_rows * input_data.shape[2], 1), dtype=input_data.dtype)
+
+            image_idx = 0
+            slice_gap = input_data.shape[3] // (mosaic_rows * mosaic_columns)
+            for m_row in range(mosaic_rows):
+                for m_col in range(mosaic_columns):
+                    input_data_slice[:, m_row * input_data.shape[1]: (m_row + 1) * input_data.shape[1], m_col * input_data.shape[2]: (m_col + 1) * input_data.shape[2]] = input_data[:, ..., slice_gap * image_idx, i][..., np.newaxis]
+                    image_idx += 1
+
             input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
 
         else:

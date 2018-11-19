@@ -10,7 +10,7 @@ from deepneuro.utilities.util import add_parameter
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -60,6 +60,7 @@ class DeepNeuroModel(object):
         """
 
         # Inputs
+        add_parameter(self, kwargs, 'model', None)
         add_parameter(self, kwargs, 'input_shape', (32, 32, 32, 1))
         add_parameter(self, kwargs, 'input_tensor', None)
         add_parameter(self, kwargs, 'dim', len(self.input_shape) - 1)
@@ -76,7 +77,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'activation', 'relu')
         add_parameter(self, kwargs, 'optimizer', 'Nadam')
         add_parameter(self, kwargs, 'output_type', None)
-        add_parameter(self, kwargs, 'cost_function', None)
+        add_parameter(self, kwargs, 'cost_function', 'mse')
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
         add_parameter(self, kwargs, 'initial_learning_rate', .00001)
@@ -110,8 +111,6 @@ class DeepNeuroModel(object):
         self.implementation = implementation
 
         self.load(kwargs)
-
-        self.model = model
 
         if self.model is None:
             self.build_model()
@@ -258,7 +257,7 @@ def load_old_model(model_file, backend='keras', **kwargs):
         model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
         
         # Necessary?
-        model.build_model()
+        model.build_model(compute_output=False)
 
         return model
 
