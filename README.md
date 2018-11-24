@@ -7,13 +7,13 @@
 A deep learning python package for neuroimaging data. Focused on validated command-line tools you can use today. Created by the Quantitative Tumor Imaging Lab at the Martinos Center (Harvard-MIT Program in Health, Sciences, and Technology / Massachussets General Hospital).
 
 ## Table of Contents
-- [About](#about)
-- [Installation](#installation) 
-- [Tutorials](#tutorials)
-- [Modules](#modules)
-- [Contact](#contact)
-- [Citation](#citation)
-- [Acknowledgements](#acknowledgements)
+- [:question: About](#about)
+- [:floppy_disk: Installation](#installation) 
+- [:mortar_board: Tutorials](#tutorials)
+- [:gift: Modules](#modules)
+- [:speech_balloon: Contact](#contact)
+- [:mega: Citation](#citation)
+- [:yellow_heart: Acknowledgements](#acknowledgements)
 
 ## About
 DeepNeuro is an open-source toolset of deep learning applications for neuroimaging. We have several goals for this package:
@@ -39,6 +39,18 @@ This package is in an initial testing phase, and will be released soon. Currentl
 <p align="center">
 <a href="./notebooks/Preprocess_and_Augment.ipynb">
 <img src="./notebooks/resources/train_preprocess_icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="./notebooks/Train_Model.ipynb">
+<img src="./notebooks/resources/train_model_icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="./notebooks/Run_Inference.ipynb">
+<img src="./notebooks/resources/model_inference_icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>
 
