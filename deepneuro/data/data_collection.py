@@ -135,9 +135,8 @@ class DataCollection(object):
 
         if self.total_cases == 0:
             print('Found zero cases. Are you sure you have entered your data sources correctly?')
-            exit(1)
         else:
-            print(('Found', self.total_cases, 'number of cases..'))            
+            print(('Found', self.total_cases, 'cases..'))            
 
     def add_case(self, case_dict, case_name=None, load_data=False):
 
@@ -225,6 +224,40 @@ class DataCollection(object):
 
         return
 
+    def clear_augmentations(self):
+
+        # Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        raise NotImplementedError
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
+
+    def clear_preprocessors(self):
+
+        # Good for loading data and then immediately
+        # using it to train. Not yet implemented
+
+        raise NotImplementedError
+
+        self.augmentations = []
+        self.multiplier = 1
+
+        return
+
+    def clear_data_processors(self):
+
+        self.augmentations = []
+        self.preprocessors = [
+        ]
+
+        # A little inefficient -- will require loading data again to understand data shape.
+        for data_group_label in list(self.data_groups.keys()):
+            self.data_groups[data_group_label].output_shape = None
+
     def get_data(self, case, data_group_labels=None):
 
         data_groups = self.get_data_groups(data_group_labels)
@@ -239,6 +272,23 @@ class DataCollection(object):
         next(recursive_augmentation_generator)
                     
         return {data_group.label: data_group.base_case for data_group in data_groups}
+
+    def get_current_casename(self):
+
+        if self.source == 'hdf5':
+            data_groups = self.get_data_groups()
+            return data_groups[0].data_casenames[self.current_case][0].decode("utf-8")
+        else:
+            return self.current_case
+
+    def get_data_groups(self, data_group_labels=None):
+
+        if data_group_labels is None:
+            data_groups = list(self.data_groups.values())
+        else:
+            data_groups = [self.data_groups[label] for label in data_group_labels]
+
+        return data_groups
 
     # @profile
     def preprocess(self):
@@ -287,6 +337,10 @@ class DataCollection(object):
 
         if case_list is None:
             case_list = self.cases
+
+        if case_list is None or case_list == '':
+            print('No cases found. Yielding None.')
+            yield None
 
         data_batch = {data_group.label: [] for data_group in data_groups}
 
@@ -382,16 +436,6 @@ class DataCollection(object):
 
             # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
 
-    def clear_augmentations(self):
-
-        # Good for loading data and then immediately
-        # using it to train. Not yet implemented
-
-        self.augmentations = []
-        self.multiplier = 1
-
-        return
-
     def return_valid_cases(self, data_group_labels):
 
         valid_cases = []
@@ -486,15 +530,6 @@ class DataCollection(object):
                         self.data_groups[data_group_label].write_to_storage()
 
         return
-
-    def get_data_groups(self, data_group_labels=None):
-
-        if data_group_labels is None:
-            data_groups = list(self.data_groups.values())
-        else:
-            data_groups = [self.data_groups[label] for label in data_group_labels]
-
-        return data_groups
 
     def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
         

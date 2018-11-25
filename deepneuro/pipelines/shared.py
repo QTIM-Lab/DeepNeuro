@@ -38,13 +38,13 @@ def load_data(inputs, output_folder, input_directory=None, ground_truth=None, in
     return data_collection
 
 
-def load_model_with_output(model_path=None, model_name=None, outputs=None, postprocessors=None):
+def load_model_with_output(model_path=None, model_name=None, outputs=None, postprocessors=None, **kwargs):
 
     if model_path is not None:
-        model = load_old_model(model_path)
+        model = load_old_model(model_path, **kwargs)
 
     elif model_name is not None:
-        model = load_old_model(load(model_name))
+        model = load_old_model(load(model_name), **kwargs)
 
     else:
         print('Error. No model provided.')

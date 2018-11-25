@@ -47,3 +47,7 @@ class Postprocessor(object):
     def clear_outputs(self):
 
         return
+
+    def close(self):
+
+        return

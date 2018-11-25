@@ -38,9 +38,14 @@ class PGGAN(GAN):
 
         super(PGGAN, self).load(kwargs)
 
+        add_parameter(self, kwargs, 'initial_size', (4, 4))
+
+        if type(self.initial_size) not in [list, tuple]:
+            self.initial_size = (4,) * self.dim
+
         # PGGAN Parameters
         self.starting_depth = 1
-        self.transition_dict = {True: 'Transition', False: ''}
+        self.transition_dict = {True: '_Transition', False: ''}
 
         if self.dim == 3:
             raise NotImplementedError 
@@ -99,11 +104,11 @@ class PGGAN(GAN):
             previous_depth = np.ceil((self.training_stage + 1) / 2)
             self.progressive_depth = int(current_depth)
 
-            current_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(current_depth), self.transition_dict[self.transition]), 'model.ckpt')
+            current_model_path = os.path.join(self.output_model_filepath, '{}{}'.format(str(current_depth), self.transition_dict[self.transition]), 'model.ckpt')
             if not os.path.exists(os.path.dirname(current_model_path)):
                 os.mkdir(os.path.dirname(current_model_path))
 
-            previous_model_path = os.path.join(self.output_model_filepath, '{}_{}'.format(str(previous_depth), self.transition_dict[not self.transition]), 'model.ckpt')
+            previous_model_path = os.path.join(self.output_model_filepath, '{}{}'.format(str(previous_depth), self.transition_dict[not self.transition]), 'model.ckpt')
 
             self.callback_process('on_depth_begin', [current_depth, self.transition])
 

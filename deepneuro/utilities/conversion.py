@@ -18,7 +18,7 @@ def _modify_dims(input_data, channels=False, batch=False, dim=None):
 
 
 # @profile
-def read_image_files(image_files, return_affine=False, channels=True, batch=False):
+def read_image_files(image_files, return_affine=False, channels=True, batch=True):
 
     # Rename this function to something more descriptive?
 
@@ -42,7 +42,7 @@ def read_image_files(image_files, return_affine=False, channels=True, batch=Fals
 
     # This is hacked together, will need to be more flexible
     # as data types expand.
-    if 'image' in data_format:
+    if data_format in ['image_jpg_png', 'image_other', 'numpy']:
         array = np.concatenate([image for image in image_list], axis=-1)
     elif image_list[0].ndim == 4:
         array = np.rollaxis(np.stack([image for image in image_list], axis=-1), 3, 0)
@@ -307,6 +307,18 @@ def nifti_2_numpy(input_filepath, return_all=False):
         return nifti.get_data()
 
 
+def numpy_2_numpy(input_filepath, return_all=False):
+
+    output_array = np.load(input_filepath)
+
+    if return_all:
+        return output_array, None, None
+    else:
+        return output_array
+
+    return
+
+
 def save_numpy_2_nifti(image_numpy, output_filepath=None, reference_data=None, metadata=None, **kwargs):
 
     """ This is a bit convoluted.
@@ -350,14 +362,16 @@ FORMAT_LIST = {'dicom': ('.dcm', '.ima'),
                 'nrrd': ('.nrrd', '.nhdr'), 
                 'image_jpg_png': ('.jpg', '.png'),
                 'image_other': ('.tif', '.gif', '.bmp'), 
-                'itk_transform': ('.txt', '.tfm')}
+                'itk_transform': ('.txt', '.tfm'),
+                'numpy': ('.npy')}
 
 NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
                 'nifti': nifti_2_numpy, 
                 'nrrd': nrrd_2_numpy, 
                 'image_jpg_png': image_jpg_png_2_numpy, 
                 'image_other': image_other_2_numpy,
-                'itk_transform': itk_transform_2_numpy}
+                'itk_transform': itk_transform_2_numpy,
+                'numpy': numpy_2_numpy}
 
 SAVE_EXPORTER_LIST = {'nifti': save_numpy_2_nifti,
                     'image_jpg_png': save_numpy_2_image_jpg_png,

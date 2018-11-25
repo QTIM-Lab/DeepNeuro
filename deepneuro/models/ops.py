@@ -117,6 +117,10 @@ def minibatch_state_concat(input_, averaging='all', dim=2):
         raise NotImplementedError
 
     batch_size = tf.shape(input_)[0]
+    # A little weird, because + is overloaded by Tensorflow
+    multiples = [1] * (dim + 1)
+    multiples[0] = batch_size
+    multiples[1:-1] = input_.shape[1:-1]
     multiples = (4,) * dim + (1,)
     multiples = (batch_size,) + multiples
 

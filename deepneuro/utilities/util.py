@@ -17,6 +17,15 @@ def add_parameter(class_object, kwargs, parameter, default=None):
         setattr(class_object, parameter, default)
 
 
+def additional_kwargs(class_object, kwargs):
+    output_kwargs = {}
+    for parameter in kwargs:
+        if not hasattr(class_object, parameter):
+            output_kwargs[parameter] = kwargs[parameter]
+
+    return output_kwargs
+
+
 def rot90(array, n=1, axis=2):
 
     """Rotate an array by 90 degrees in the counter-clockwise direction around the given axis

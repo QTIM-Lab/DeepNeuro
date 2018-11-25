@@ -7,12 +7,13 @@
 A deep learning python package for neuroimaging data. Focused on validated command-line tools you can use today. Created by the Quantitative Tumor Imaging Lab at the Martinos Center (Harvard-MIT Program in Health, Sciences, and Technology / Massachussets General Hospital).
 
 ## Table of Contents
-- [About](#about)
-- [Installation](#installation) 
-- [Modules](#modules)
-- [Contact](#contact)
-- [Citation](#citation)
-- [Acknowledgements](#acknowledgements)
+- [:question: About](#about)
+- [:floppy_disk: Installation](#installation) 
+- [:mortar_board: Tutorials](#tutorials)
+- [:gift: Modules](#modules)
+- [:speech_balloon: Contact](#contact)
+- [:mega: Citation](#citation)
+- [:yellow_heart: Acknowledgements](#acknowledgements)
 
 ## About
 DeepNeuro is an open-source toolset of deep learning applications for neuroimaging. We have several goals for this package:
@@ -33,6 +34,26 @@ This package is in an initial testing phase, and will be released soon. Currentl
 
 3. If you want to inspect the code, or run your Docker container with an DeepNeuro's python wrappers and command line tools, clone this repository ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install with the command "python setup.py install" in the directory you just cloned in to.
 
+## Tutorials
+
+<p align="center">
+<a href="./notebooks/Preprocess_and_Augment.ipynb">
+<img src="./notebooks/resources/train_preprocess_icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="./notebooks/Train_Model.ipynb">
+<img src="./notebooks/resources/train_model_icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="./notebooks/Run_Inference.ipynb">
+<img src="./notebooks/resources/model_inference_icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
 ## Modules
 
 <p align="center">
@@ -44,6 +65,18 @@ This package is in an initial testing phase, and will be released soon. Currentl
 <p align="center">
 <a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Skull_Stripping">
 <img src="./deepneuro/pipelines/Skull_Stripping/resources/icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Segment_Brain_Mets">
+<img src="./deepneuro/pipelines/Segment_Brain_Mets/resources/icon.png?raw=true" width="684" alt=""></img>
+</a>
+</p>
+
+<p align="center">
+<a href="https://github.com/QTIM-Lab/DeepNeuro/tree/master/deepneuro/pipelines/Ischemic_Stroke">
+<img src="./deepneuro/pipelines/Ischemic_Stroke/resources/icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>
 
@@ -66,4 +99,4 @@ Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy
 
 ## Acknowledgements
 
-The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to high-powered graphical processing units.
+The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to high-powered graphical processing units. The DeepNeuro project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)

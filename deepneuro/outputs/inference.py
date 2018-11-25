@@ -8,17 +8,6 @@ class ModelInference(Output):
 
     def load(self, kwargs):
 
-        """ Parameters
-            ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
-
-        """
-
         # Evaluation Params
         add_parameter(self, kwargs, 'ground_truth', None)
 
@@ -27,6 +16,7 @@ class ModelInference(Output):
 
         # Model Parameters
         add_parameter(self, kwargs, 'input_channels', None)
+        add_parameter(self, kwargs, 'output_channels', None)
 
         add_parameter(self, kwargs, 'channels_dim', None)
 
@@ -60,6 +50,9 @@ class ModelInference(Output):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
         output_data = self.predict(input_data, model)
+
+        if self.output_channels is not None:
+            output_data = np.take(output_data, self.output_channels, self.channels_dim)
 
         # Will fail for time-data.
         if self.channels_first:
@@ -145,6 +138,9 @@ class ModelPatchesInference(ModelInference):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
         output_data = self.predict(input_data, model)
+
+        if self.output_channels is not None:
+            output_data = np.take(output_data, self.output_channels, self.channels_dim)
 
         # Will fail for time-data.
         if self.channels_first:

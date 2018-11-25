@@ -5,12 +5,15 @@ from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, **kwargs):
 
     if data_collection is not None:
+        if batch_size > data_collection.total_cases * data_collection.multiplier:
+            batch_size = data_collection.total_cases * data_collection.multiplier
+
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
         output_data = next(generator)
-    
+
     if type(output_data) is not dict:
         output_data = {'output_data': output_data}
 
@@ -31,7 +34,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     for label, data in list(output_data.items()):
 
         if data.ndim == 5:
-            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns)
+            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, **kwargs)
 
         elif data.ndim == 4:
             if data.shape[-1] == 2:
@@ -60,7 +63,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         elif plot_rows == 1 or plot_columns == 1:
             axarr = axarr.reshape(plot_rows, plot_columns)
 
-        for plot_idx, (label, data) in enumerate(output_images.items()):
+        for plot_idx, (label, data) in enumerate(sorted(output_images.items())):
 
             image_column = plot_idx % plot_columns
             image_row = plot_idx // plot_columns
@@ -81,6 +84,11 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
                 fig.colorbar(plt_image, ax=axarr[image_row, image_column], cmap='gray')
 
             axarr[image_row, image_column].set_title(label)
+
+        for plot_idx in range(len(output_images), plot_rows * plot_columns):
+            image_column = plot_idx % plot_columns
+            image_row = plot_idx // plot_columns
+            fig.delaxes(axarr[image_row, image_column])
 
         plt.show()
 
@@ -118,7 +126,7 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, **kwargs):
 
     if input_dict is None:
         input_dict = {}
@@ -131,6 +139,24 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
         if viz_mode_3d == '2d_center':
 
             input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
+            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
+
+        elif viz_mode_3d == '2d_slice':
+
+            input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
+            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
+
+        elif viz_mode_3d == 'mosaic':
+
+            input_data_slice = np.zeros((input_data.shape[0], mosaic_rows * input_data.shape[1], mosaic_rows * input_data.shape[2], 1), dtype=input_data.dtype)
+
+            image_idx = 0
+            slice_gap = input_data.shape[3] // (mosaic_rows * mosaic_columns)
+            for m_row in range(mosaic_rows):
+                for m_col in range(mosaic_columns):
+                    input_data_slice[:, m_row * input_data.shape[1]: (m_row + 1) * input_data.shape[1], m_col * input_data.shape[2]: (m_col + 1) * input_data.shape[2]] = input_data[:, ..., slice_gap * image_idx, i][..., np.newaxis]
+                    image_idx += 1
+
             input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
 
         else:

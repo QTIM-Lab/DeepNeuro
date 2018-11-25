@@ -70,6 +70,37 @@ class MergeChannels(Preprocessor):
         self.output_data = output_data
 
 
+class SelectChannels(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Merge')
+
+        # Dropping Parameters
+        add_parameter(self, kwargs, 'channels', [0, 1, 2, 3])
+
+        self.output_shape = {}
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(SelectChannels, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+            data_shape = list(data_group.get_shape())
+            data_shape[-1] = len(self.channels)
+            self.output_shape[label] = data_shape
+
+    def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
+        output_data = np.take(input_data, self.channels, axis=-1)
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
+
+
 class SplitData(Preprocessor):
 
     def load(self, kwargs):

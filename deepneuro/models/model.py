@@ -10,7 +10,7 @@ from deepneuro.utilities.util import add_parameter
 
 class DeepNeuroModel(object):
     
-    def __init__(self, model=None, output_type='regression', num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, num_outputs=1, padding='same', implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
@@ -24,7 +24,7 @@ class DeepNeuroModel(object):
         input_shape : tuple, optional
             Input dimensions of first layer. Not counting batch-size.
         input_tensor : tensor, optional
-            If input_tensor is specified, build_model will output a tensor
+            If input_tensor is specified, will output a tensor
             created from input_tensor.
         downsize_filters_factor : int, optional
             If specified, the number of filters at each applicable layer in a model
@@ -43,7 +43,7 @@ class DeepNeuroModel(object):
             of which layers will be batch-normed is different.
         initial_learning_rate : float, optional
             Initial learning rate for the chosen optimizer type, if necessary.
-        output_type : str, optional
+        output_type, cost_function : str, optional
             Currently can choose from 'regression', which is an output the same size as input,
             'binary_label' which is a binary probability map, or 'categorical_label'
         num_outputs : int, optional
@@ -60,6 +60,7 @@ class DeepNeuroModel(object):
         """
 
         # Inputs
+        add_parameter(self, kwargs, 'model', None)
         add_parameter(self, kwargs, 'input_shape', (32, 32, 32, 1))
         add_parameter(self, kwargs, 'input_tensor', None)
         add_parameter(self, kwargs, 'dim', len(self.input_shape) - 1)
@@ -75,7 +76,8 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'stride_size', (1, 1, 1))
         add_parameter(self, kwargs, 'activation', 'relu')
         add_parameter(self, kwargs, 'optimizer', 'Nadam')
-        add_parameter(self, kwargs, 'cost_function', 'mean_squared_error')
+        add_parameter(self, kwargs, 'output_type', None)
+        add_parameter(self, kwargs, 'cost_function', 'mse')
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
         add_parameter(self, kwargs, 'initial_learning_rate', .00001)
@@ -101,13 +103,14 @@ class DeepNeuroModel(object):
         self.csv_writer = None
 
         self.num_outputs = num_outputs
-        self.output_type = output_type
+
+        # TODO: Phase out 'output_type' in favor of 'cost_function'
+        if self.cost_function is not None:
+            self.output_type = self.cost_function
 
         self.implementation = implementation
 
         self.load(kwargs)
-
-        self.model = model
 
         if self.model is None:
             self.build_model()
@@ -223,7 +226,7 @@ class DeepNeuroModel(object):
         return
 
 
-def load_old_model(model_file, backend='keras'):
+def load_old_model(model_file, backend='keras', **kwargs):
 
     """ Loading an old keras model file. A thing wrapper around load_model
         that uses DeepNeuro's custom cost functions.
@@ -249,10 +252,12 @@ def load_old_model(model_file, backend='keras'):
         from keras.models import load_model
         from deepneuro.models.keras_model import KerasModel
 
-        custom_objects = cost_function_dict()
+        custom_objects = cost_function_dict(**kwargs)
 
         model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
-        model.build_model()
+        
+        # Necessary?
+        model.build_model(compute_output=False)
 
         return model
 
