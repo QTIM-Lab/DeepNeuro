@@ -129,6 +129,7 @@ class PatchInterpretability(Output):
                 if not os.path.exists(self.current_patch_filename) or self.overwrite_patches:
                     self.create_patch_hdf5_file()
                     patch_data = self.generate_patch_data(input_data, model)
+                    print(patch_data)
 
                 if self.cluster_individual_case:
                     self.cluster_patch_data(input_data)

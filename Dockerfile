@@ -97,6 +97,14 @@ RUN wget "https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14
   tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
   rm Linux_Ubuntu14.04.tar.bz2
 
+# Build and install dcmqi
+WORKDIR /usr/src
+RUN git clone https://github.com/QIICR/dcmqi.git && \
+  mkdir dcmqi-superbuild && \
+  cd dcmqi-superbuild && \
+  cmake -DCMAKE_INSTALL_PREFIX=/usr ../dcmqi && \
+  make -j$(grep -c processor /proc/cpuinfo)
+
 # Environmental Variables
 ENV PATH "$PATH:/opt/slicer"
 ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
