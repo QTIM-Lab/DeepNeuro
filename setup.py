@@ -12,6 +12,9 @@ import sys
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
+import os
+
+os.environ["MPLCONFIGDIR"] = "."
 
 if sys.version_info[:2] < (2, 7):
     raise RuntimeError("Python version 2.7 or greater required.")
