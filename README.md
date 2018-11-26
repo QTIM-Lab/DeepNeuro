@@ -37,19 +37,19 @@ This package is in an initial testing phase, and will be released soon. Currentl
 ## Tutorials
 
 <p align="center">
-<a href="./notebooks/Preprocess_and_Augment.ipynb">
+<a href="https://colab.research.google.com/github/QTIM-Lab/DeepNeuro/blob/master/notebooks/Preprocess_and_Augment.ipynb">
 <img src="./notebooks/resources/train_preprocess_icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>
 
 <p align="center">
-<a href="./notebooks/Train_Model.ipynb">
+<a href="https://colab.research.google.com/github/QTIM-Lab/DeepNeuro/blob/master/notebooks/Train_Model.ipynb">
 <img src="./notebooks/resources/train_model_icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>
 
 <p align="center">
-<a href="./notebooks/Run_Inference.ipynb">
+<a href="https://colab.research.google.com/github/QTIM-Lab/DeepNeuro/blob/master/notebooks/Run_Inference.ipynb">
 <img src="./notebooks/resources/model_inference_icon.png?raw=true" width="684" alt=""></img>
 </a>
 </p>

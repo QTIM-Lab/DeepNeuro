@@ -7,7 +7,7 @@ This module creates segmentations of "whole tumor" (edema + contrast-enhancing +
 - [Python Docker Wrapper Usage](#python-docker-wrapper-usage)
 - [Docker Example](#docker-example)
 - [Citation](#citation)
-- 
+
 ## Docker Usage
 
 The best way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
