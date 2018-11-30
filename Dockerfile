@@ -70,8 +70,10 @@ RUN pip3 --no-cache-dir install --upgrade ipython && \
 	python3 -m ipykernel.kernelspec
 
 # Install TensorFlow
+# For specific installations -- TODO, peg a version of Tensorflow.
 # RUN pip --no-cache-dir install \
 	# https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+# Generic.
 RUN pip3 --no-cache-dir install tensorflow-gpu
 
 # Install Keras
@@ -96,6 +98,17 @@ RUN wget "https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14
   DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes bzip2 && \
   tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
   rm Linux_Ubuntu14.04.tar.bz2
+
+# Python 2.7
+WORKDIR /usr/src
+ENV PYTHON_VERSION 2.7.10
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+  tar xvzf Python-${PYTHON_VERSION}.tgz && \
+  cd Python-${PYTHON_VERSION} && \
+  ./configure && \
+  make -j$(grep -c processor /proc/cpuinfo) && \
+  make install && \
+  cd .. && rm -rf Python-${PYTHON_VERSION}*
 
 # Build and install dcmqi
 WORKDIR /usr/src
