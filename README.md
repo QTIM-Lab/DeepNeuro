@@ -34,7 +34,7 @@ This package is in an initial testing phase, and will be released soon. Currentl
 
 3. Pull the DeepNeuro Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro"
 
-4. If you want to inspect the code, or run your Docker container with an DeepNeuro's python wrappers and command line tools, clone this repository ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install with the command "python setup.py install" in the directory you just cloned in to.
+4. If you want to run DeepNeuro outside of a Docker container, you can install the DeepNeuro Python package locally using the pip pacakge manager. On the command line, run ```pip install deepneuro```
 
 ## Tutorials
 
