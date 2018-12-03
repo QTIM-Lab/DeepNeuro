@@ -10,6 +10,9 @@ def load_data(inputs, output_folder, input_directory=None, ground_truth=None, in
     """ In the future, this will need to be modified for multiple types of inputs (i.e. data groups).
     """
 
+    if any(data is None for data in inputs):
+        raise ValueError("Cannot run pipeline; required inputs are missing. Please consult this module's documentation, and make sure all required parameters are input.")
+
     inputs = [os.path.abspath(input_filename) for input_filename in inputs]
     output_folder = os.path.abspath(output_folder)
 
@@ -21,7 +24,7 @@ def load_data(inputs, output_folder, input_directory=None, ground_truth=None, in
     if input_directory is None:
 
         if any(data is None for data in input_data):
-            raise ValueError("Cannot run pipeline; required inputs are missing.")
+            raise ValueError("Cannot run pipeline; required inputs are missing. Please consult this module's documentation, and make sure all required parameters are input.")
 
         data_collection = DataCollection(verbose=verbose)
         data_collection.add_case(input_data, case_name=output_folder)

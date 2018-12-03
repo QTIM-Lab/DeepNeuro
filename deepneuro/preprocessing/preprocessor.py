@@ -199,7 +199,14 @@ class DICOMConverter(Preprocessor):
         # Not yet implemented
         add_parameter(self, kwargs, 'output_dictionary', None)
 
+        self.array_input = False
+
         return
+
+    def preprocess(self, data_group):
+
+        self.output_data = self.output_filenames
+        data_group.preprocessed_case = self.output_filenames
 
     def save_to_file(self, data_group):
 
@@ -215,3 +222,4 @@ class DICOMConverter(Preprocessor):
                     save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
 
         return
+
