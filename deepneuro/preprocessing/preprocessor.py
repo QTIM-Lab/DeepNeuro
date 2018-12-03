@@ -234,27 +234,3 @@ class DICOMConverter(Preprocessor):
             if self.return_array:
                 self.convert_to_array_data(data_group)
 
-    def preprocess(self, data_group):
-
-        # Very bad/confusing.
-        self.output_data = data_group.preprocessed_case
-        self.convert_to_array_data(data_group)
-        self.output_data = data_group.preprocessed_case
-        data_group.preprocessed_case = self.output_filenames
-
-    def save_to_file(self, data_group):
-
-        """ No idea how this will work if the amount of output files is changed in a preprocessing step
-            Also missing affines is a problem.
-        """
-
-        input_filenames = data_group.preprocessed_case
-        for file_idx, output_filename in enumerate(self.output_filenames):
-            if self.overwrite or not os.path.exists(output_filename):
-                if type(self.output_data) is list:
-                    save_data(self.output_data[file_idx], output_filename)
-                else:
-                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename)
-
-        return
-
