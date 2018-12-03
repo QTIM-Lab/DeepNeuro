@@ -203,9 +203,43 @@ class DICOMConverter(Preprocessor):
 
         return
 
+    def execute(self, data_collection):
+
+        """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
+        """
+
+        if self.verbose:
+            docker_print('Working on Preprocessor:', self.name)
+
+        for label, data_group in list(self.data_groups.items()):
+
+            self.generate_output_filenames(data_collection, data_group)
+
+            if type(data_group.preprocessed_case) is not list:
+                self.output_data = data_group.preprocessed_case            
+            else:
+
+                for file_idx, output_filename in enumerate(self.output_filenames):
+                    if os.path.isdir(data_group.preprocessed_case[file_idx]):
+                        if self.overwrite or not os.path.exists(output_filename):
+                            array_data, affine = read_image_files(data_group.preprocessed_case[file_idx], return_affine=True)
+                            # TO-DO: Check if subsetting language behaviour below has edge cases.
+                            save_data(array_data[..., 0], output_filename, reference_data=affine)
+                    else:
+                        self.output_filenames[file_idx] = data_group.preprocessed_case[file_idx]
+
+                data_group.preprocessed_case = self.output_filenames
+                self.output_data = data_group.preprocessed_case
+
+            if self.return_array:
+                self.convert_to_array_data(data_group)
+
     def preprocess(self, data_group):
 
-        self.output_data = self.output_filenames
+        # Very bad/confusing.
+        self.output_data = data_group.preprocessed_case
+        self.convert_to_array_data(data_group)
+        self.output_data = data_group.preprocessed_case
         data_group.preprocessed_case = self.output_filenames
 
     def save_to_file(self, data_group):
@@ -214,12 +248,13 @@ class DICOMConverter(Preprocessor):
             Also missing affines is a problem.
         """
 
+        input_filenames = data_group.preprocessed_case
         for file_idx, output_filename in enumerate(self.output_filenames):
             if self.overwrite or not os.path.exists(output_filename):
                 if type(self.output_data) is list:
-                    save_data(self.output_data[file_idx], output_filename, reference_data=data_group.preprocessed_affine)
+                    save_data(self.output_data[file_idx], output_filename)
                 else:
-                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
+                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename)
 
         return
 
