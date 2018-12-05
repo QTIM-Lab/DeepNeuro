@@ -24,7 +24,7 @@ DeepNeuro is an open-source toolset of deep learning applications for neuroimagi
 * Provide training scripts and links to publically-available data to replicate the results of DeepNeuro's models.
 * Provide implementations of popular models for medical imaging data, and pre-processed datasets for educational purposes.
 
-This package is in an initial testing phase, and will be released soon. Currently, out glioblastoma segmentation package is available -- see details below for installation and usage instructions. 
+This package is under active development, but we encourage users to both try the modules with pre-trained modules highlighted below, and try their hand at making their own DeepNeuro modules using the tutorials below.
 
 ## Installation
 
