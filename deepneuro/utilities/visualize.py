@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from collections import OrderedDict
+
 from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, **kwargs):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, **kwargs):
 
     if data_collection is not None:
         if batch_size > data_collection.total_cases * data_collection.multiplier:
@@ -23,7 +25,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     if output_groups is not None:
         output_data = {label: data for label, data in list(output_data.items()) if label in output_groups}
 
-    output_images = {}
+    output_images = OrderedDict()
 
     if viz_rows is None:
         viz_rows = int(np.ceil(np.sqrt(batch_size)))
@@ -34,14 +36,23 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     for label, data in list(output_data.items()):
 
         if data.ndim == 5:
-            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, **kwargs)
+            output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, subplot_titles=subplot_titles, **kwargs)
 
         elif data.ndim == 4:
+
             if data.shape[-1] == 2:
                 for i in range(data.shape[-1]):
-                    output_images[label + '_' + str(i)] = merge_data(data[..., i][..., np.newaxis], [viz_rows, viz_columns], 1)
-                    color_range[label + '_' + str(i)] = color_range[label]
+                    
+                    if subplot_titles is None:
+                        subplot_title = label + '_' + str(i)
+                    else:
+                        subplot_title = subplot_titles[label][i]
+
+                    output_images[subplot_title] = merge_data(data[..., i][..., np.newaxis], [viz_rows, viz_columns], 1)
+                    color_range[subplot_title] = color_range[label]
+
             if data.shape[-1] not in [1, 3]:
+
                 output_images[label + '_RGB'] = merge_data(data[..., 0:3], [viz_rows, viz_columns], 3)
                 color_range[label + '_RGB'] = color_range[label]
                 for i in range(3, data.shape[-1]):
@@ -53,17 +64,18 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     if show_output:
 
         plots = len(list(output_images.keys()))
-        plot_rows = int(np.ceil(np.sqrt(plots)))
-        plot_columns = int(np.ceil(plots / float(plot_rows)))
-        fig, axarr = plt.subplots(plot_rows, plot_columns)
+        if subplot_rows is None:
+            subplot_rows = int(np.ceil(np.sqrt(plots)))
+        plot_columns = int(np.ceil(plots / float(subplot_rows)))
+        fig, axarr = plt.subplots(subplot_rows, plot_columns)
 
         # matplotlib is so annoying
-        if plot_rows == 1 and plot_columns == 1:
+        if subplot_rows == 1 and plot_columns == 1:
             axarr = np.array([axarr]).reshape(1, 1)
-        elif plot_rows == 1 or plot_columns == 1:
-            axarr = axarr.reshape(plot_rows, plot_columns)
+        elif subplot_rows == 1 or plot_columns == 1:
+            axarr = axarr.reshape(subplot_rows, plot_columns)
 
-        for plot_idx, (label, data) in enumerate(sorted(output_images.items())):
+        for plot_idx, (label, data) in enumerate(output_images.items()):
 
             image_column = plot_idx % plot_columns
             image_row = plot_idx // plot_columns
@@ -76,19 +88,24 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
 
                 plt_image = axarr[image_row, image_column].imshow(np.squeeze(data), cmap=plt.get_cmap('hot'), vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
 
-                fig.colorbar(plt_image, ax=axarr[image_row, image_column])
+                if colorbar:
+                    fig.colorbar(plt_image, ax=axarr[image_row, image_column])
 
             elif data.shape[-1] == 1:
                 plt_image = axarr[image_row, image_column].imshow(np.squeeze(data), cmap='gray', vmin=color_range[label][0], vmax=color_range[label][1], interpolation='none')
 
-                fig.colorbar(plt_image, ax=axarr[image_row, image_column], cmap='gray')
+                if colorbar:
+                    fig.colorbar(plt_image, ax=axarr[image_row, image_column], cmap='gray')
 
             axarr[image_row, image_column].set_title(label)
 
-        for plot_idx in range(len(output_images), plot_rows * plot_columns):
+        for plot_idx in range(len(output_images), subplot_rows * plot_columns):
             image_column = plot_idx % plot_columns
             image_row = plot_idx // plot_columns
             fig.delaxes(axarr[image_row, image_column])
+
+        if title is not None:
+            fig.suptitle(title, fontsize=28)
 
         plt.show()
 
@@ -126,7 +143,7 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
-def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, **kwargs):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, subplot_titles=None, **kwargs):
 
     if input_dict is None:
         input_dict = {}
@@ -165,11 +182,16 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
 
         if input_dict is not None:
 
-            if input_data.shape[-1] == 1:
-                input_dict[label] = input_data_slice
+            if subplot_titles is None:
+                if input_data.shape[-1] == 1:
+                    subplot_title = label
+                else:
+                    subplot_title = label + '_' + str(i)
             else:
-                input_dict[label + '_' + str(i)] = input_data_slice
-                color_range[label + '_' + str(i)] = color_range[label]
+                subplot_title = subplot_titles[label][i]
+
+            input_dict[subplot_title] = input_data_slice
+            color_range[subplot_title] = color_range[label]
 
     return input_dict, color_range
 
