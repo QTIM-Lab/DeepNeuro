@@ -18,36 +18,38 @@ def _modify_dims(input_data, channels=False, batch=False, dim=None):
 
 
 # @profile
-def read_image_files(image_files, return_affine=False, channels=True, batch=True):
+def read_image_files(input_data, return_affine=False, channels=True, batch=True):
 
-    # Rename this function to something more descriptive?
+    # Rename this function to read_data
 
-    if type(image_files) is np.ndarray:
+    if type(input_data) is np.ndarray:
         if return_affine:
-            return image_files, None
+            return input_data, None
         else:
-            return image_files
-    elif type(image_files) is str:
-        image_files = [image_files]
+            return input_data
+    elif type(input_data) is str:
+        input_data = [input_data]
 
-    image_list = []
+    data_list = []
     affine = None
-    for image_file in image_files:
+    for image_file in input_data:
         data, _, affine, data_format = convert_input_2_numpy(image_file, return_all=True)
 
         if 'image' in data_format and data.ndim == 2:
             data = data[..., np.newaxis]
 
-        image_list.append(data)
+        data_list.append(data)
 
     # This is hacked together, will need to be more flexible
     # as data types expand.
     if data_format in ['image_jpg_png', 'image_other', 'numpy']:
-        array = np.concatenate([image for image in image_list], axis=-1)
-    elif image_list[0].ndim == 4:
-        array = np.rollaxis(np.stack([image for image in image_list], axis=-1), 3, 0)
+        array = np.concatenate([image for image in data_list], axis=-1)
+    elif data_format in ['float_string']:
+        array = np.array(data_list)
+    elif data_list[0].ndim == 4:
+        array = np.rollaxis(np.stack([image for image in data_list], axis=-1), 3, 0)
     else:
-        array = np.stack([image for image in image_list], axis=-1)
+        array = np.stack([image for image in data_list], axis=-1)
 
     # This is a little clunky.
     if return_affine:
@@ -316,7 +318,23 @@ def numpy_2_numpy(input_filepath, return_all=False):
     else:
         return output_array
 
-    return
+
+def float_string_2_numpy(input_string, return_all=False):
+
+    output_array = float(input_string)
+
+    if return_all:
+        return output_array, None, None
+    else:
+        return output_array
+
+
+def string_2_numpy(input_string, return_all=False):
+
+    if return_all:
+        return input_string, None, None
+    else:
+        return input_string
 
 
 def save_numpy_2_nifti(image_numpy, output_filepath=None, reference_data=None, metadata=None, **kwargs):
@@ -371,7 +389,8 @@ NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
                 'image_jpg_png': image_jpg_png_2_numpy, 
                 'image_other': image_other_2_numpy,
                 'itk_transform': itk_transform_2_numpy,
-                'numpy': numpy_2_numpy}
+                'numpy': numpy_2_numpy,
+                'float_string': float_string_2_numpy}
 
 SAVE_EXPORTER_LIST = {'nifti': save_numpy_2_nifti,
                     'image_jpg_png': save_numpy_2_image_jpg_png,
@@ -385,11 +404,15 @@ def check_format(filepath):
     if os.path.isdir(filepath):
         format_type = 'dicom'
     else:
-        for data_type in FORMAT_LIST:
-            if filepath.lower().endswith(FORMAT_LIST[data_type]):
-                format_type = data_type
-            if format_type is not None:
-                break
+        try:
+            float(filepath)
+            format_type = 'float_string'
+        except:
+            for data_type in FORMAT_LIST:
+                if filepath.lower().endswith(FORMAT_LIST[data_type]):
+                    format_type = data_type
+                if format_type is not None:
+                    break
 
     if format_type is None:
         raise ValueError
