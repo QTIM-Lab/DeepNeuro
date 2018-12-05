@@ -28,6 +28,7 @@ class N4BiasCorrection(Preprocessor):
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
         self.output_data = self.output_filenames
+        data_group.preprocessed_case = self.output_filenames
 
 
 class Normalization(Preprocessor):

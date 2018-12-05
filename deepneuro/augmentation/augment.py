@@ -101,19 +101,22 @@ class Flip_Rotate_2D(Augmentation):
 
     def reset(self, augmentation_num):
 
-        np.random.shuffle(self.available_transforms)    
+        np.random.shuffle(self.available_transforms)
 
     def augment(self, augmentation_num=0):
 
         for label, data_group in list(self.data_groups.items()):
 
+            input_data = data_group.augmentation_cases[augmentation_num]
+
             if self.available_transforms[self.iteration % self.total_transforms, 0]:
-                data_group.augmentation_cases[augmentation_num + 1] = np.flip(data_group.augmentation_cases[augmentation_num], self.flip_axis)
+                data_group.augmentation_cases[augmentation_num + 1] = np.flip(input_data, self.flip_axis)
+                input_data = data_group.augmentation_cases[augmentation_num + 1]
             else:
-                data_group.augmentation_cases[augmentation_num + 1] = data_group.augmentation_cases[augmentation_num]
+                data_group.augmentation_cases[augmentation_num + 1] = input_data
 
             if self.available_transforms[self.iteration % self.total_transforms, 1]:
-                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(data_group.augmentation_cases[augmentation_num], self.available_transforms[self.iteration % self.total_transforms, 1], axes=self.rotate_axis)
+                data_group.augmentation_cases[augmentation_num + 1] = np.rot90(input_data, self.available_transforms[self.iteration % self.total_transforms, 1], axes=self.rotate_axis)
 
 
 class Shift_Squeeze_Intensities(Augmentation):

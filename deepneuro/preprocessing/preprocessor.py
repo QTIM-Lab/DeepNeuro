@@ -199,19 +199,38 @@ class DICOMConverter(Preprocessor):
         # Not yet implemented
         add_parameter(self, kwargs, 'output_dictionary', None)
 
+        self.array_input = False
+
         return
 
-    def save_to_file(self, data_group):
+    def execute(self, data_collection):
 
-        """ No idea how this will work if the amount of output files is changed in a preprocessing step
-            Also missing affines is a problem.
+        """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
 
-        for file_idx, output_filename in enumerate(self.output_filenames):
-            if self.overwrite or not os.path.exists(output_filename):
-                if type(self.output_data) is list:
-                    save_data(self.output_data[file_idx], output_filename, reference_data=data_group.preprocessed_affine)
-                else:
-                    save_data(np.squeeze(self.output_data[..., file_idx]), output_filename, reference_data=data_group.preprocessed_affine)
+        if self.verbose:
+            docker_print('Working on Preprocessor:', self.name)
 
-        return
+        for label, data_group in list(self.data_groups.items()):
+
+            self.generate_output_filenames(data_collection, data_group)
+
+            if type(data_group.preprocessed_case) is not list:
+                self.output_data = data_group.preprocessed_case            
+            else:
+
+                for file_idx, output_filename in enumerate(self.output_filenames):
+                    if os.path.isdir(data_group.preprocessed_case[file_idx]):
+                        if self.overwrite or not os.path.exists(output_filename):
+                            array_data, affine = read_image_files(data_group.preprocessed_case[file_idx], return_affine=True)
+                            # TO-DO: Check if subsetting language behaviour below has edge cases.
+                            save_data(array_data[..., 0], output_filename, reference_data=affine)
+                    else:
+                        self.output_filenames[file_idx] = data_group.preprocessed_case[file_idx]
+
+                data_group.preprocessed_case = self.output_filenames
+                self.output_data = data_group.preprocessed_case
+
+            if self.return_array:
+                self.convert_to_array_data(data_group)
+
