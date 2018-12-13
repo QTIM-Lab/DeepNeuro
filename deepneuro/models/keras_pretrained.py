@@ -58,7 +58,7 @@ class KerasPreTrainedModel(KerasModel):
 
     def build_model(self):
         
-        self.model = self.models[self.model_type](weights=self.pretrained_weights, include_top=self.include_top)
+        self.model = self.models[self.model_type](weights=self.pretrained_weights, include_top=False)
 
         if self.output_classes is not None:
 
@@ -68,12 +68,12 @@ class KerasPreTrainedModel(KerasModel):
                 self.model.layers[-1].outbound_nodes = []
                 self.model.add(Dense(self.output_classes, activation='softmax'))
 
-            elif self.modeltype in ['inception']:
+            elif self.model_type in ['inception']:
                 model_output = self.model.output
                 model_output = GlobalAveragePooling2D()(model_output)
                 model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
                 predictions = Dense(self.output_classes, activation='softmax')(model_output)
-                self.model = Model(self.inputs, predictions)
+                self.model = Model(self.model.input, predictions)
             else:
                 raise NotImplementedError
 
@@ -81,4 +81,6 @@ class KerasPreTrainedModel(KerasModel):
             for layer in self.model.layers[:self.bottleneck_layers_num]:
                 layer.trainable = False
 
-        super(KerasPreTrainedModel, self).build_model()
+        self.inputs = self.model.input
+
+        super(KerasPreTrainedModel, self).build_model(compute_output=False)

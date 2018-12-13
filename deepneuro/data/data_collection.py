@@ -50,6 +50,20 @@ class DataCollection(object):
 
             self.fill_data_groups()
 
+    def __repr__(self):
+        output_string = 'DataCollection'
+        data_groups = self.get_data_groups()
+        for data_group in data_groups:
+            output_string += '\n{} {}'.format(data_group.label, data_group.get_shape())
+        return output_string
+
+    def __str__(self):
+        output_string = 'DataCollection'
+        data_groups = self.get_data_groups()
+        for data_group in data_groups:
+            output_string += '\n{} {}'.format(data_group.label, data_group.get_shape())
+        return output_string
+
     def fill_data_groups(self):
 
         """ Populates data collection variables from either a directory structure or an hdf5 file.

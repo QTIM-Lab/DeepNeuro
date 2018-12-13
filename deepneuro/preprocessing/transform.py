@@ -151,6 +151,37 @@ class SplitData(Preprocessor):
         self.output_data = output_data
 
 
+class Resize(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Resize')
+
+        # Registration Parameters
+        add_parameter(self, kwargs, 'output_shape', [1, 1, 1])
+        add_parameter(self, kwargs, 'interpolation', 'linear')
+
+        # Derived Parameters
+        add_parameter(self, kwargs, 'preprocessor_string', '_Resized_' + str(self.output_shape).strip('[]').replace(' ', '').replace(',', ''))
+        self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
+        self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
+
+        self.array_input = True
+
+    def preprocess(self, data_group):
+
+        for file_idx, filename in enumerate(data_group.preprocessed_case):
+            if self.reference_channel is None:
+                specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, quotes(filename), quotes(self.output_filenames[file_idx])]
+            else:
+                specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_channel, '--interpolation', self.interpolation_dict[self.interpolation], quotes(self.base_file), quotes(self.output_filename)]
+            subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+
+        self.output_data = self.output_filenames
+        data_group.preprocessed_case = self.output_filenames
+
+
 class Resample(Preprocessor):
 
     def load(self, kwargs):

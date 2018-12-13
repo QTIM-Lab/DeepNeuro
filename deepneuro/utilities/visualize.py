@@ -34,7 +34,6 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     viz_columns = int(np.ceil(batch_size / float(viz_rows)))
 
     for label, data in list(output_data.items()):
-
         if data.ndim == 5:
             output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, subplot_titles=subplot_titles, **kwargs)
 
@@ -60,6 +59,10 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
                     color_range[label + '_' + str(i)] = color_range[label]
             else:
                 output_images[label] = merge_data(data, [viz_rows, viz_columns], data.shape[-1])
+
+        elif data.ndim == 3:
+
+            output_images[label] = merge_data(data, [viz_rows, viz_columns], data.shape[-1])
 
     if show_output:
 
@@ -143,6 +146,16 @@ def combine_outputs(input_data_list):
     raise NotImplementedError
 
 
+def display_1d_data(input_data):
+
+    return
+
+
+def display_2d_data(input_data):
+
+    return
+
+
 def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, subplot_titles=None, **kwargs):
 
     if input_dict is None:
@@ -165,7 +178,7 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
 
         elif viz_mode_3d == 'mosaic':
 
-            input_data_slice = np.zeros((input_data.shape[0], mosaic_rows * input_data.shape[1], mosaic_rows * input_data.shape[2], 1), dtype=input_data.dtype)
+            input_data_slice = np.zeros((input_data.shape[0], mosaic_rows * input_data.shape[1], mosaic_columns * input_data.shape[2], 1), dtype=input_data.dtype)
 
             image_idx = 0
             slice_gap = input_data.shape[3] // (mosaic_rows * mosaic_columns)

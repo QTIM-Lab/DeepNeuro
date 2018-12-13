@@ -32,8 +32,8 @@ def read_image_files(input_data, return_affine=False, channels=True, batch=True)
 
     data_list = []
     affine = None
-    for image_file in input_data:
-        data, _, affine, data_format = convert_input_2_numpy(image_file, return_all=True)
+    for data_file in input_data:
+        data, _, affine, data_format = convert_input_2_numpy(data_file, return_all=True)
 
         if 'image' in data_format and data.ndim == 2:
             data = data[..., np.newaxis]
@@ -45,7 +45,7 @@ def read_image_files(input_data, return_affine=False, channels=True, batch=True)
     if data_format in ['image_jpg_png', 'image_other', 'numpy']:
         array = np.concatenate([image for image in data_list], axis=-1)
     elif data_format in ['float_string']:
-        array = np.array(data_list)
+        array = np.array(data_list)[np.newaxis, ...]
     elif data_list[0].ndim == 4:
         array = np.rollaxis(np.stack([image for image in data_list], axis=-1), 3, 0)
     else:

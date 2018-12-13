@@ -5,6 +5,11 @@ from subprocess import call
 from deepneuro.utilities.util import quotes
 
 
+def docker_wrapper(**kwargs):
+
+    return
+
+
 def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
 
     if filename_args is not None:

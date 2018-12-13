@@ -19,6 +19,7 @@ deepneuro/local
 /_build
 *.hdf5
 *.gif
+*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
