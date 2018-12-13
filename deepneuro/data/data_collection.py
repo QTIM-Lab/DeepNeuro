@@ -297,10 +297,12 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
+            # Status of affines is undetermined here, may need future bug fix.
             if self.preprocessors != []:
                 data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
             else:
                 data_group.preprocessed_case = data_group.data[self.current_case]
+                data_group.preprocessed_affine = data_group.get_affine(index=self.current_case)
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
