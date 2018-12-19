@@ -153,10 +153,12 @@ class EpochPredict(Callback):
 
         add_parameter(self, kwargs, 'epoch_prediction_data_collection', None)
         add_parameter(self, kwargs, 'epoch_prediction_object', None)
-        add_parameter(self, kwargs, 'deepneuro_model', None)
-        add_parameter(self, kwargs, 'epoch_prediction_dir', None)
-        add_parameter(self, kwargs, 'output_gif', None)
         add_parameter(self, kwargs, 'epoch_prediction_batch_size', 1)
+        add_parameter(self, kwargs, 'epoch_prediction_dir', None)
+
+        add_parameter(self, kwargs, 'deepneuro_model', None)
+        
+        add_parameter(self, kwargs, 'callback_output_mode', 'gif')
 
         self.kwargs = kwargs
 
@@ -169,13 +171,31 @@ class EpochPredict(Callback):
         self.predict_data = next(self.epoch_prediction_data_collection.data_generator(perpetual=True, verbose=False, just_one_batch=True, batch_size=self.epoch_prediction_batch_size))
  
     def on_train_end(self, logs={}):
+
         if self.predictions != []:
-            if type(self.predictions[0]) is list:
-                for output in range(len(self.predictions[0])):
-                    current_predictions = [item[output] for item in self.predictions]
-                    imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+
+            if self.callback_output_mode == 'gif':
+
+                if type(self.predictions[0]) is list:
+                    for output in range(len(self.predictions[0])):
+                        current_predictions = [item[output] for item in self.predictions]
+                        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+                else:
+                    imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+
+            elif self.callback_output_mode == 'mosaic':
+
+                if type(self.predictions[0]) is list:
+                    for output in range(len(self.predictions[0])):
+                        current_predictions = [item[output] for item in self.predictions]
+                        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+                else:
+                    output_mosaic = np.array(self.predictions)
+                    print(output_mosaic.shape)
+
             else:
-                imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+                raise NotImplementedError  
+
         return
  
     def on_epoch_end(self, epoch, logs={}):
