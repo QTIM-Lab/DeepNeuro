@@ -399,7 +399,7 @@ class DataCollection(object):
                             
                             for label in data_batch:
                                 data_batch[label] = np.stack(data_batch[label])
-                            
+
                             if just_one_batch:
                                 while True:
                                     yield data_batch
@@ -482,12 +482,11 @@ class DataCollection(object):
             raise ValueError('No output_filepath provided; data cannot be written.')
 
         # Create Data File
-        if True:
-        # try:
+        try:
             hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
-        # except Exception as e:
-            # os.remove(output_filepath)
-            # raise e
+        except Exception as e:
+            os.remove(output_filepath)
+            raise e
 
         # Write data
         self.write_image_data_to_storage(data_group_labels)

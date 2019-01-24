@@ -158,7 +158,7 @@ class EpochPredict(Callback):
 
         add_parameter(self, kwargs, 'deepneuro_model', None)
         
-        add_parameter(self, kwargs, 'callback_output_mode', 'gif')
+        add_parameter(self, kwargs, 'epoch_prediction_output_mode', 'gif')
 
         self.kwargs = kwargs
 
@@ -174,7 +174,7 @@ class EpochPredict(Callback):
 
         if self.predictions != []:
 
-            if self.callback_output_mode == 'gif':
+            if self.epoch_prediction_output_mode == 'gif':
 
                 if type(self.predictions[0]) is list:
                     for output in range(len(self.predictions[0])):
@@ -183,12 +183,15 @@ class EpochPredict(Callback):
                 else:
                     imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
 
-            elif self.callback_output_mode == 'mosaic':
+            elif self.epoch_prediction_output_mode == 'mosaic':
 
                 if type(self.predictions[0]) is list:
                     for output in range(len(self.predictions[0])):
                         current_predictions = [item[output] for item in self.predictions]
-                        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+                        prediction_array = np.array(current_predictions)
+                        check_data({'Training Progress': prediction_array}, show_output=True, **self.kwargs)
+                        print(prediction_array.shape)
+                        # imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
                 else:
                     output_mosaic = np.array(self.predictions)
                     print(output_mosaic.shape)

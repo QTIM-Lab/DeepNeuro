@@ -69,18 +69,18 @@ class DataGroup(object):
         """
 
         if self.source == 'hdf5':
-            if return_affine:
-                return self.data[index][:][np.newaxis], self.data_affines[index]
-            else:
-                return self.data[index][:][np.newaxis]
+            self.preprocessed_case = self.data[index][:][np.newaxis][0]
+            if self.data_affines is not None:
+                self.preprocessed_affine = self.data_affines[index]
         else:
             self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
             if affine is not None:
                 self.preprocessed_affine = affine
-            if return_affine:
-                return self.preprocessed_case, self.preprocessed_affine
-            else:
-                return self.preprocessed_case
+
+        if return_affine:
+            return self.preprocessed_case, self.preprocessed_affine
+        else:
+            return self.preprocessed_case
 
         return None
 

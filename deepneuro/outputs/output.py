@@ -129,7 +129,7 @@ class Output(object):
 
             casename = self.data_collection.data_groups[self.inputs[0]].base_casename
             input_affine = self.data_collection.data_groups[self.inputs[0]].preprocessed_affine
-            
+
             augmentation_string = self.data_collection.data_groups[self.inputs[0]].augmentation_strings[-1]
 
             if self.output_directory is None:

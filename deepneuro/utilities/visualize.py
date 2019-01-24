@@ -25,15 +25,24 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     if output_groups is not None:
         output_data = {label: data for label, data in list(output_data.items()) if label in output_groups}
 
+    if not show_output:
+        subplot_titles = None
+
     output_images = OrderedDict()
+
+    if data_collection is None:
+        reference_key = list(output_data)[0]
+        batch_size = output_data[reference_key].shape[0]
 
     if viz_rows is None:
         viz_rows = int(np.ceil(np.sqrt(batch_size)))
+    else:
+        viz_rows = min(viz_rows, batch_size)
 
-    viz_rows = min(viz_rows, batch_size)
     viz_columns = int(np.ceil(batch_size / float(viz_rows)))
 
     for label, data in list(output_data.items()):
+
         if data.ndim == 5:
             output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, subplot_titles=subplot_titles, **kwargs)
 
@@ -58,6 +67,7 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
                     output_images[label + '_' + str(i)] = merge_data(data[..., i][..., np.newaxis], [viz_rows, viz_columns], 1)
                     color_range[label + '_' + str(i)] = color_range[label]
             else:
+
                 output_images[label] = merge_data(data, [viz_rows, viz_columns], data.shape[-1])
 
         elif data.ndim == 3:

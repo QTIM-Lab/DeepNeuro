@@ -167,7 +167,7 @@ class KerasModel(DeepNeuroModel):
                     self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
                                   metrics=['categorical_accuracy'])
 
-                elif self.cost_function == 'weighted_categorical_label':
+                elif self.cost_function == 'weighted_categorical_cross_entropy':
                     activation = Activation('sigmoid')(self.output_layer)
                     activation_categorical = Lambda(lambda arg: K.ones_like(arg) - arg)(activation)
                     predictions = concatenate([activation, activation_categorical], axis=-1)

@@ -1,6 +1,8 @@
 import csv
 import numpy as np
 
+from skimage.measure import label
+
 from deepneuro.postprocessing.postprocessor import Postprocessor
 from deepneuro.utilities.util import add_parameter
 
@@ -20,11 +22,15 @@ class ErrorCalculation(Postprocessor):
         add_parameter(self, kwargs, 'print_output', True)
 
         self.cost_function_dict = {
-            'dice': dice_cost_function
+            'dice': dice_cost_function,
+            'accuracy': accuracy_cost_function,
+            'cluster_accuracy': cluster_accuracy_cost_function
         }
 
         self.cost_function_label_dict = {
-            'dice': 'Dice Coeffecient'
+            'dice': 'Dice Coeffecient',
+            'accuracy': 'Accuracy',
+            'cluster_accuracy': 'Cluster Accuracy'
         }
 
         self.csv_file = None
@@ -65,12 +71,28 @@ class ErrorCalculation(Postprocessor):
 
 
 def dice_cost_function(input_data, ground_truth):
-
+    
+    """ Calculate the dice coefficient.
+    
+    Parameters
+    ----------
+    input_data : TYPE
+        Description
+    ground_truth : TYPE
+        Description
+    
+    Returns
+    -------
+    float
+        Dice coefficient.
+    
+    """
+    
     im1 = np.asarray(input_data).astype(np.bool)
     im2 = np.asarray(ground_truth).astype(np.bool)
 
     if im1.shape != im2.shape:
-        raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
+        raise ValueError("Shape mismatch: input_data and ground_truth must have the same shape.")
 
     im_sum = im1.sum() + im2.sum()
     if im_sum == 0:
@@ -80,3 +102,13 @@ def dice_cost_function(input_data, ground_truth):
     intersection = np.logical_and(im1, im2)
 
     return 2. * intersection.sum() / im_sum
+
+
+def accuracy_cost_function(input_data, ground_truth):
+
+    return np.sum(input_data == ground_truth)
+
+
+def cluster_accuracy_cost_function(input_data, ground_truth):
+
+

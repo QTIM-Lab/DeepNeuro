@@ -3,31 +3,15 @@ import sys
 import os
 
 from deepneuro.docker.docker_cli import nvidia_docker_wrapper
+from deepneuro.pipeline.shared import DeepNeuroCLI
 
 
-class Segment_GBM_cli(object):
+class Segment_GBM_cli(DeepNeuroCLI):
 
-    def __init__(self):
+    def load(self):
 
-        parser = argparse.ArgumentParser(
-            description='A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center',
-            usage='''segment_gbm <command> [<args>]
-
-                    The following commands are available:
-                       pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
-                       docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
-                ''')
-
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-
-        if not hasattr(self, args.command):
-            print('Sorry, that\'s not one of the commands.')
-            parser.print_help()
-            exit(1)
-
-        # use dispatch pattern to invoke method with same name
-        getattr(self, args.command)()
+        self.command_name = 'segment_gbm'
+        super(Segment_GBM_cli, self).load()
 
     def parse_args(self):
 
@@ -84,7 +68,7 @@ class Segment_GBM_cli(object):
 
         args = self.parse_args()
 
-        nvidia_docker_wrapper(['segment_gbm', 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_segment_gbm:latest')
+        nvidia_docker_wrapper([self.command_name, 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_segment_gbm:latest')
 
 
 def main():
