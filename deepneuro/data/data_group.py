@@ -70,8 +70,14 @@ class DataGroup(object):
 
         if self.source == 'hdf5':
             self.preprocessed_case = self.data[index][:][np.newaxis][0]
+
+            # Storing affines needs work. How not to duplicate affines in case
+            # of augmentation, for example?
             if self.data_affines is not None:
-                self.preprocessed_affine = self.data_affines[index]
+                if self.data_affines.shape[0] == 0:
+                    self.preprocessed_affine = None
+                else:
+                    self.preprocessed_affine = self.data_affines[index]
         else:
             self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
             if affine is not None:
@@ -109,6 +115,11 @@ class DataGroup(object):
 
     # @profile
     def write_to_storage(self):
+
+        # if self.base_case.shape != self.data_storage.shape:
+        #     print(self.base_case.shape, self.data_storage.shape)
+        #     print("""Attempting to write data to HDF5 with incorrect shape. Are you attempting to save different size data inputs to HDF5? DeepNeuro currently only saves equal size inputs/""")
+        #     raise ValueError
 
         if len(self.augmentation_cases) == 1:
             self.data_storage.append(self.base_case)

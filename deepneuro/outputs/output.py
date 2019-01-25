@@ -139,7 +139,7 @@ class Output(object):
 
             # This is very messed up, revise. Unclear what these conditions are conditioning for.
             if os.path.exists(casename) and not os.path.isdir(casename):
-                output_filename = os.path.basename(nifti_splitext(os.path.abspath(casename))[0]) + os.path.abspath(self.output_filename)
+                output_filename = os.path.basename(nifti_splitext(os.path.abspath(casename))[0]) + self.output_filename
             elif self.output_directory is not None:
                 output_filename = os.path.join(output_directory, os.path.basename(nifti_splitext(os.path.abspath(casename))[0]) + self.output_filename)
             else:
