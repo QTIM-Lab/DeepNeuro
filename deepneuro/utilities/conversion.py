@@ -376,6 +376,9 @@ def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
     if _lycon_available:
         lycon.save(output_filepath, input_numpy)
     else:
+        # Necessary conditional?
+        if input_numpy.ndim == 3 and input_numpy.shape[-1] == 1:
+            input_numpy = np.squeeze(input_numpy)
         imsave(os.path.abspath(output_filepath), input_numpy)
 
     return output_filepath
@@ -383,6 +386,9 @@ def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
 
 def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
 
+    # Necessary conditional?
+    if input_numpy.ndim == 3 and input_numpy.shape[-1] == 1:
+        input_numpy = np.squeeze(input_numpy)
     imsave(os.path.abspath(output_filepath), input_numpy)
 
     return output_filepath
