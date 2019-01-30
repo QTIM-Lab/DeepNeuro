@@ -493,7 +493,7 @@ def save_data(input_data, output_filename, reference_data=None, metadata=None, a
     if output_format is None:
         output_format = check_format(output_filename)
 
-    if isinstance(input_data, str) and output_format is not 'text':
+    if isinstance(input_data, str) and output_format != 'text':
         input_data, metadata, reference_data, data_format = convert_input_2_numpy(input_data, return_all=True)
 
     return SAVE_EXPORTER_LIST[output_format](input_data, output_filename, reference_data=reference_data, metadata=metadata, affine=affine)
