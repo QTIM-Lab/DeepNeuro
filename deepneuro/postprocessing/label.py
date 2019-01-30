@@ -122,6 +122,6 @@ class FillHoles(Postprocessor):
         for batch in range(input_data.shape[0]):
             for channel in range(input_data.shape[-1]):
                 for slice_idx in range(input_data.shape[self.slice_dimension]):
-                        input_data[batch, ..., slice_idx, channel] = binary_fill_holes(input_data[batch, ..., slice_idx, channel]).astype(np.float)
+                    input_data[batch, ..., slice_idx, channel] = binary_fill_holes(input_data[batch, ..., slice_idx, channel]).astype(np.float)
 
         return input_data
