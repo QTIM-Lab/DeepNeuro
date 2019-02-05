@@ -197,6 +197,9 @@ class KerasModel(DeepNeuroModel):
                 return self.output_layer
 
         else:
+
+            self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss="categorical_crossentropy", metrics=['categorical_accuracy'])
+
             self.model_input_shape = self.model.layers[0].input_shape
             self.model_output_shape = self.model.layers[-1].output_shape
 

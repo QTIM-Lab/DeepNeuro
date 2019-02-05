@@ -8,6 +8,52 @@ from deepneuro.utilities.util import add_parameter, quotes
 FNULL = open(os.devnull, 'w')
 
 
+class SqueezeAxes(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'SqueezeAxes')
+
+        # Dropping Parameters
+        add_parameter(self, kwargs, 'axes', None)
+
+        if type(self.axes) is not list and self.axes is not None:
+            self.axes = [self.axes]
+
+        self.output_shape = {}
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(SqueezeAxes, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+
+            data_shape = list(data_group.get_shape())
+            
+            # Messy, revise.
+            new_shape = []
+            if self.axes is None:
+                for axis in data_shape:
+                    if axis != 1:
+                        new_shape += [axis]
+            else:
+                for axis in data_shape:
+                    if axis != 1 and axis in self.axes:
+                        new_shape += [axis]
+
+            self.output_shape[label] = new_shape
+
+    def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
+        output_data = np.squeeze(input_data, axis=self.axes)
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
+
+
 class MergeChannels(Preprocessor):
 
     def load(self, kwargs):
@@ -70,6 +116,44 @@ class MergeChannels(Preprocessor):
         self.output_data = output_data
 
 
+class OneHotEncode(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'OneHotEncode')
+
+        # Class Parameters
+        add_parameter(self, kwargs, 'num_classes', 3)
+
+        self.output_shape = {}
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(OneHotEncode, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+            data_shape = list(data_group.get_shape())
+            data_shape[-1] = self.num_classes
+            self.output_shape[label] = tuple(data_shape)
+
+    def preprocess(self, data_group):
+
+        # Relatively brittle, only works for 1-dimensional data.
+        input_data = data_group.preprocessed_case
+        classes = np.unique(input_data)
+        data_dict = {class_name: i for i, class_name in enumerate(classes)}
+
+        # Probably not the most efficient.
+        output_data = np.zeros(self.num_classes)
+        for item in input_data:
+            output_data[int(item)] = 1
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
+
+
 class SelectChannels(Preprocessor):
 
     def load(self, kwargs):
@@ -120,6 +204,9 @@ class SplitData(Preprocessor):
 
         super(SplitData, self).initialize(data_collection)
 
+        # If input data is different shapes, providing an output shape
+        # does not make too much sense here. Common problem in all
+        # DeepNeuro
         for label, data_group in list(self.data_groups.items()):
             data_shape = list(data_group.get_shape())
             data_shape[-1] = len(self.label_splits)
@@ -131,14 +218,16 @@ class SplitData(Preprocessor):
         """
 
         input_data = data_group.preprocessed_case
-        output_data = np.zeros(self.output_shape[data_group.label])
+        output_shape = list(input_data.shape)
+        output_shape[-1] = len(self.label_splits)
+        output_data = np.zeros(output_shape)
 
         # Merge Target Channels
         if self.split_method == 'integer_levels':
             for label_idx, label in enumerate(self.label_splits):
                 if type(label) is list:
                     # This is a little clunky
-                    single_label_data = np.zeros(self.output_shape[data_group.label][0:-1])[..., np.newaxis]
+                    single_label_data = np.zeros(output_shape[0:-1])[..., np.newaxis]
                     for index in label:
                         single_label_data += np.where(input_data == index, 1, 0)
                     single_label_data = np.where(single_label_data > 0, 1, 0)

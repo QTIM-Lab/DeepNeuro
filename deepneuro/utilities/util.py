@@ -166,7 +166,10 @@ def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter
         return output_filepath
 
     else:
-        split_filename = nifti_splitext(input_filepath)
+        if '.' in os.path.basename(input_filepath):
+            split_filename = nifti_splitext(input_filepath)
+        else:
+            split_filename = [input_filepath, '']
 
         if suffix_delimiter is not None:
             input_suffix = str.split(split_filename[0], suffix_delimiter)[-1]

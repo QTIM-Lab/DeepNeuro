@@ -1,19 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from collections import OrderedDict
 
 from deepneuro.utilities.conversion import save_data
-from deepneuro.utilities.util import replace_suffix
+from deepneuro.utilities.util import replace_suffix, nifti_splitext
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, **kwargs):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, output_directory=None, case_name=None, **kwargs):
 
     if data_collection is not None:
         if batch_size > data_collection.total_cases * data_collection.multiplier:
             batch_size = data_collection.total_cases * data_collection.multiplier
 
         generator = data_collection.data_generator(perpetual=True, verbose=False, batch_size=batch_size)
+        case_name = data_collection.current_case
         output_data = next(generator)
 
     if type(output_data) is not dict:
@@ -123,10 +125,15 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         plt.show()
 
     output_filepaths = {}
-    for label, data in list(output_images.items()):
-        output_images[label] = image_preprocess(data)
-        if output_filepath is not None:
-            output_filepaths[label] = save_data(output_images[label], replace_suffix(output_filepath, '', '_' + label))
+    if (output_directory is not None or output_filepath is not None):
+        for label, data in list(output_images.items()):
+            output_images[label] = image_preprocess(data)
+            if output_filepath is not None:
+                output_filepaths[label] = save_data(output_images[label], replace_suffix(output_filepath, '', '_' + label))
+                continue
+            if output_directory is not None and case_name is not None:
+                print(os.path.join(output_directory, nifti_splitext(replace_suffix(os.path.basename(case_name), '', '_' + label))[0]) + '.png')
+                output_filepaths[label] = save_data(output_images[label], os.path.join(output_directory, nifti_splitext(replace_suffix(os.path.basename(case_name), '', '_' + label))[0]) + '.png')
 
     return output_filepaths, output_images
 

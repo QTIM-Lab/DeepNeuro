@@ -1,5 +1,9 @@
 import os
 
+#--------------------------------------------------------------------#
+# Step 0, Import DeepNeuro Commands
+#--------------------------------------------------------------------#
+
 from deepneuro.outputs.inference import ModelPatchesInference
 from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
@@ -12,8 +16,6 @@ from deepneuro.utilities.util import docker_print
 
 def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, skullstripped=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_wholetumor_filename='wholetumor_segmentation.nii.gz', output_enhancing_filename='enhancing_segmentation.nii.gz', verbose=True, input_data=None, registration_reference='FLAIR'):
 
-    registration_reference_channel = None
-
     #--------------------------------------------------------------------#
     # Step 1, Load Data
     #--------------------------------------------------------------------#
@@ -21,7 +23,7 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
     data_collection = load_data(inputs=[FLAIR, T1POST, T1PRE], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
 
     #--------------------------------------------------------------------#
-    # Step 2, Load Models
+    # Step 2, Load Models and Postprocessors
     #--------------------------------------------------------------------#
 
     wholetumor_prediction_parameters = {'inputs': ['input_data'], 
@@ -37,8 +39,13 @@ def predict_GBM(output_folder, T1POST=None, FLAIR=None, T1PRE=None, ground_truth
                         'patch_overlaps': 8,
                         'output_patch_shape': (56, 56, 6, 1)}
 
-    wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
-    enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+    wholetumor_model = load_model_with_output(model_name='gbm_wholetumor_mri', 
+        outputs=[ModelPatchesInference(**wholetumor_prediction_parameters)], 
+        postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+
+    enhancing_model = load_model_with_output(model_name='gbm_enhancingtumor_mri', 
+        outputs=[ModelPatchesInference(**enhancing_prediction_parameters)], 
+        postprocessors=[BinarizeLabel(postprocessor_string='_label')])
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors

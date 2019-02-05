@@ -26,6 +26,7 @@ class DataCollection(object):
         add_parameter(self, kwargs, 'recursive', False)
         add_parameter(self, kwargs, 'file_identifying_chars', None)
 
+        self.open_hdf5 = None
         self.case_list = case_list
         self.verbose = verbose
 
@@ -91,8 +92,8 @@ class DataCollection(object):
                             self.data_groups[data_group_name].source = data_type
 
             elif data_type == 'hdf5':
-                open_hdf5 = tables.open_file(self.data_sources[data_type], "r")
-                for data_group in open_hdf5.root._f_iter_nodes():
+                self.open_hdf5 = tables.open_file(self.data_sources[data_type], "r")
+                for data_group in self.open_hdf5.root._f_iter_nodes():
                     if '_affines' not in data_group.name and '_casenames' not in data_group.name:
 
                         self.data_groups[data_group.name] = DataGroup(data_group.name)
@@ -309,12 +310,12 @@ class DataCollection(object):
 
         data_groups = self.get_data_groups()
 
-        for data_group in data_groups:
+        # for data_group in data_groups:
 
-            if self.preprocessors != []:
-                data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
-            else:
-                data_group.preprocessed_case = data_group.data[self.current_case]
+        #     if self.preprocessors != []:
+        #         data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
+        #     else:
+        #         data_group.preprocessed_case = data_group.data[self.current_case]
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
@@ -328,7 +329,12 @@ class DataCollection(object):
         # This is weird.
         self.current_case = case
 
-        self.preprocess()
+        for data_group in data_groups:
+
+            if self.preprocessors != []:
+                data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
+            else:
+                data_group.preprocessed_case = data_group.data[self.current_case]
 
         for data_group in data_groups:
 
@@ -341,8 +347,15 @@ class DataCollection(object):
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
 
+        self.preprocess()
+
+        for data_group in data_groups:
+
+            # Inconsistencies in batch size during preprocessing, TODO! Important.
+            data_group.preprocessed_case = data_group.preprocessed_case[np.newaxis, ...]
+
             if len(self.augmentations) != 0:
-                data_group.augmentation_cases[0] = data_group.base_case
+                data_group.augmentation_cases[0] = data_group.preprocessed_case
 
     # @profile
     def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False):
@@ -389,9 +402,9 @@ class DataCollection(object):
                         # TODO: This section is terribly complex and repetitive. Revise!
 
                         for data_idx, data_group in enumerate(data_groups):
-                            
+
                             if len(self.augmentations) == 0:
-                                data_batch[data_group.label].append(data_group.preprocessed_case)
+                                data_batch[data_group.label].append(data_group.preprocessed_case[0])
                             else:
                                 data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
 
@@ -481,17 +494,20 @@ class DataCollection(object):
         if output_filepath is None:
             raise ValueError('No output_filepath provided; data cannot be written.')
 
-        # Create Data File
+        # Create Data File. Exception catching is not perfect here -- file could remain open in create func.
         try:
             hdf5_file = self.create_hdf5_file(output_filepath, data_group_labels=data_group_labels)
+
+            # Write data
+            self.write_image_data_to_storage(data_group_labels)
+
+            hdf5_file.close()
+
         except Exception as e:
+
+            hdf5_file.close()
             os.remove(output_filepath)
             raise e
-
-        # Write data
-        self.write_image_data_to_storage(data_group_labels)
-
-        hdf5_file.close()
 
     def create_hdf5_file(self, output_filepath, data_group_labels=None):
 
@@ -593,6 +609,14 @@ class DataCollection(object):
                 data_group.output_shape = tuple(output_shape)
 
         return
+
+    def close_open_data_files(self):
+
+        if self.open_hdf5 is not None:
+            self.open_hdf5.close()
+            return_hdf5 = self.open_hdf5
+            self.open_hdf5 = None
+            return return_hdf5
 
 
 if __name__ == '__main__':

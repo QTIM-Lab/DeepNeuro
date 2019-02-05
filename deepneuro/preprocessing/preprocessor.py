@@ -136,7 +136,7 @@ class Preprocessor(object):
             if os.path.isdir(filename):
                 output_filename = os.path.join(filename, os.path.basename(os.path.dirname(filename) + suffix + file_extension))
             else:
-                output_filename = replace_suffix(filename, '', suffix, file_extension=file_extension)
+                output_filename = replace_suffix(filename, '', suffix)
         else:
             if os.path.isdir(filename):
                 output_filename = os.path.join(self.output_folder, os.path.basename(filename + suffix + file_extension))

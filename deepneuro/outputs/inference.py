@@ -70,7 +70,7 @@ class ModelInference(Output):
         return prediction
 
 
-class ModelPatchesInference(ModelInference):
+class PatchesInference(ModelInference):
 
     def load(self, kwargs):
 
@@ -85,7 +85,7 @@ class ModelPatchesInference(ModelInference):
 
         """
 
-        super(ModelPatchesInference, self).load(kwargs)
+        super(PatchesInference, self).load(kwargs)
 
         # Patching Parameters
         add_parameter(self, kwargs, 'patch_overlaps', 1)
@@ -210,7 +210,7 @@ class ModelPatchesInference(ModelInference):
                 input_patches = self.grab_patch(input_data, corner_batch)
                 
                 prediction = self.run_inference(input_patches)
-                
+
                 self.insert_patch(repatched_image, prediction, corner_batch)
 
             if rep_idx == 0:

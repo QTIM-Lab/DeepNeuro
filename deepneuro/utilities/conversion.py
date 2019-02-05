@@ -3,13 +3,21 @@ import numpy as np
 import nibabel as nib
 import nrrd
 import pydicom
-import lycon
 import subprocess
 
 from collections import defaultdict
 from scipy.misc import imsave, imread
 
 from deepneuro.utilities.util import grab_files_recursive, quotes
+
+# Not sure whether to include a warning about lycon.
+# It has installation problems on Windows currently.
+# TODO: Do so at package import.
+try:
+    import lycon
+    _lycon_available = True
+except:
+    _lycon_available = False
 
 
 def _modify_dims(input_data, channels=False, batch=False, dim=None):
@@ -45,9 +53,9 @@ def read_image_files(input_data, return_affine=False, channels=True, batch=True)
     if data_format in ['image_jpg_png', 'image_other', 'numpy']:
         array = np.concatenate([image for image in data_list], axis=-1)
     elif data_format in ['float_string']:
-        array = np.array(data_list)[np.newaxis, ...]
+        array = np.array(data_list)
     elif data_list[0].ndim == 4:
-        array = np.rollaxis(np.stack([image for image in data_list], axis=-1), 3, 0)
+        array = np.swapaxes(np.stack([image for image in data_list], axis=-1), 3, 4)
     else:
         array = np.stack([image for image in data_list], axis=-1)
 
@@ -238,7 +246,10 @@ def image_jpg_png_2_numpy(input_image, return_all=False):
         in loading images.
     """
 
-    output_array = lycon.load(input_image)
+    if _lycon_available:
+        output_array = lycon.load(input_image)
+    else:
+        output_array = imread(input_image)
 
     if return_all:
         return output_array, None, None
@@ -362,13 +373,22 @@ def save_numpy_2_nifti(image_numpy, output_filepath=None, reference_data=None, m
 
 def save_numpy_2_image_jpg_png(input_numpy, output_filepath, **kwargs):
 
-    lycon.save(output_filepath, input_numpy)
+    if _lycon_available:
+        lycon.save(output_filepath, input_numpy)
+    else:
+        # Necessary conditional?
+        if input_numpy.ndim == 3 and input_numpy.shape[-1] == 1:
+            input_numpy = np.squeeze(input_numpy)
+        imsave(os.path.abspath(output_filepath), input_numpy)
 
     return output_filepath
 
 
 def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
 
+    # Necessary conditional?
+    if input_numpy.ndim == 3 and input_numpy.shape[-1] == 1:
+        input_numpy = np.squeeze(input_numpy)
     imsave(os.path.abspath(output_filepath), input_numpy)
 
     return output_filepath

@@ -1,10 +1,11 @@
 Template_Dictionary = {
     
-    'Module Name': "Segment_GBM"
+    "Module Name": "Segment_GBM",
+    "Docker Name": "deepneuro_segment_gbm",
+    "Command Line Name": "segment_gbm"
     'Module Description': """
     """
 
-}
+    
 
-if __name__ == '__main__':
-    pass
+}

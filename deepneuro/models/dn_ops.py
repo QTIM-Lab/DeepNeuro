@@ -1,7 +1,7 @@
 
 import tensorflow as tf
 
-from keras.layers import UpSampling2D, UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation, BatchNormalization, Dropout
+from keras.layers import UpSampling2D, UpSampling3D, Conv3D, MaxPooling3D, Conv2D, MaxPooling2D, Activation, BatchNormalization, Dropout, ZeroPadding2D, ZeroPadding3D
 
 from deepneuro.models.ops import pixel_norm_2d, pixel_norm_3d, conv2d, conv3d, deconv2d, deconv3d, upscale2d
 
@@ -164,3 +164,18 @@ def DnPixelNorm(input_, dim=3, backend='tensorflow'):
 
     if backend == 'keras':
         raise NotImplementedError
+
+
+def DnZeroPadding(input_, padding=(1, 1), dim=3, backend='keras'):
+
+    if backend == 'keras':
+
+        if dim == 2:
+            return ZeroPadding2D(padding=padding)(input_)
+        elif dim == 3:
+            print(padding)
+            return ZeroPadding3D(padding=padding)(input_)
+
+    if backend == 'tensorflow':
+        raise NotImplementedError
+

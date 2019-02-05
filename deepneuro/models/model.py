@@ -10,7 +10,7 @@ from deepneuro.utilities.util import add_parameter
 
 class DeepNeuroModel(object):
     
-    def __init__(self, num_outputs=1, padding='same', implementation='keras', **kwargs):
+    def __init__(self, num_outputs=1, implementation='keras', **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
