@@ -1,8 +1,8 @@
-![Alt text](./package_resources/logos/DeepNeuro_alt.PNG?raw=true "DeepNeuro")
+![Alt text](./package_resources/logos/DeepRad.png?raw=true "DeepRad")
 
 [![Build Status](https://travis-ci.org/QTIM-Lab/DeepNeuro.svg?branch=master)](https://travis-ci.org/QTIM-Lab/DeepNeuro)
 
-# DeepNeuro
+# DeepRad
 
 A deep learning python package for neuroimaging data. Focused on validated command-line tools you can use today. Created by the Quantitative Tumor Imaging Lab at the Martinos Center (Harvard-MIT Program in Health, Sciences, and Technology / Massachussets General Hospital).
 
@@ -16,15 +16,15 @@ A deep learning python package for neuroimaging data. Focused on validated comma
 - [:yellow_heart: Acknowledgements](#acknowledgements)
 
 ## About
-DeepNeuro is an open-source toolset of deep learning applications for neuroimaging. We have several goals for this package:
+DeepRad is an open-source toolset of deep learning applications for neuroimaging. We have several goals for this package:
 
 * Provide easy-to-use command line tools for neuroimaging using deep learning.
 * Create Docker containers for each tool and all out-of-package pre-processing steps, so they can each can be run without having install prerequisite libraries.
 * Provide freely available deep learning models trained on a wealth of neuroimaging data.
-* Provide training scripts and links to publically-available data to replicate the results of DeepNeuro's models.
+* Provide training scripts and links to publically-available data to replicate the results of DeepRad's models.
 * Provide implementations of popular models for medical imaging data, and pre-processed datasets for educational purposes.
 
-This package is under active development, but we encourage users to both try the modules with pre-trained modules highlighted below, and try their hand at making their own DeepNeuro modules using the tutorials below.
+This package is under active development, but we encourage users to both try the modules with pre-trained modules highlighted below, and try their hand at making their own DeepRad modules using the tutorials below.
 
 ## Installation
 
@@ -32,9 +32,9 @@ This package is under active development, but we encourage users to both try the
 
 2. Install the Docker Engine Utility for NVIDIA GPUs, AKA nvidia-docker. You can find installation instructions at their Github page, here: https://github.com/NVIDIA/nvidia-docker
 
-3. Pull the DeepNeuro Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro"
+3. Pull the DeepRad Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro"
 
-4. If you want to run DeepNeuro outside of a Docker container, you can install the DeepNeuro Python package locally using the pip pacakge manager. On the command line, run ```pip install deepneuro```
+4. If you want to run DeepRad outside of a Docker container, you can install the DeepRad Python package locally using the pip pacakge manager. On the command line, run ```pip install deepneuro```
 
 ## Tutorials
 
@@ -84,11 +84,11 @@ This package is under active development, but we encourage users to both try the
 
 ## Contact
 
-DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
+DeepRad is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
 
 ## Citation
 
-If you use DeepNeuro in your published work, please cite:
+If you use DeepRad in your published work, please cite:
 
 Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy-Cramer, J. (2018). <a href="https://arxiv.org/pdf/1808.04589.pdf">DeepNeuro: an open-source deep learning toolbox for neuroimaging</a>. arXiv preprint arXiv:1808.04589.
 
@@ -101,4 +101,4 @@ Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy
 
 ## Acknowledgements
 
-The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to high-powered graphical processing units. The DeepNeuro project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)
+The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepRad, including access to high-powered graphical processing units. The DeepRad project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)
