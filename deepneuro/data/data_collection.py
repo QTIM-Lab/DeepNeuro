@@ -358,7 +358,7 @@ class DataCollection(object):
                 data_group.augmentation_cases[0] = data_group.preprocessed_case
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False, yield_casenames=False):
 
         data_groups = self.get_data_groups(data_group_labels)
 

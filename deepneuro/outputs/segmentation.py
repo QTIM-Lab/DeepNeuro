@@ -1,40 +1,69 @@
-class InceptionScore(Output):
+import numpy as np
+
+from deepneuro.outputs.inference import ModelInference
+from deepneuro.utilities.util import add_parameter, docker_print
+
+
+class PatchesInference(ModelInference):
 
     def load(self, kwargs):
 
         """ Parameters
             ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
+            patch_overlaps: int, optional
+                The amount of times a grid of patches is predicted over an entire
+                output volume. Subsequent grids are offset from the original grid
+                by patch_size / patch_overlaps, and the final output is the result
+                of averaging over each grid for each voxel. Default is 1.
+            input_patch_shape: tuple, optional
+                The input dimensions of the predicted patches, not including batch
+                size. If None, DeepNeuro will attempt to extract this value from the
+                given model. Default is None.
+            output_patch_shape: tuple, optional
+                The output dimensions of the predicted patches, not including batch
+                size. If smaller than the input patch size in any dimension, patches
+                will be cropped symmetrically by the difference in size to meet this
+                shape. Default is None.
+            check_empty_patch: bool, optional
+                Do not predict patches if they only contain zeros. Default is True.
+            pad_borders: bool, optional
+                Pads input borders by patch_size / 2 with zeros. This allows patches
+                at the boundary of an image to be successfully predicted, albeit with
+                zero infill values. Default is True.
+            patch_dimensions: tuple or list, optional
+            output_patch_dimensions: tuple or list, optional
 
         """
 
-        super(ModelPatchesInference, self).load(kwargs)
+        super(PatchesInference, self).load(kwargs)
 
         # Patching Parameters
         add_parameter(self, kwargs, 'patch_overlaps', 1)
+        add_parameter(self, kwargs, 'input_patch_shape', None)
         add_parameter(self, kwargs, 'output_patch_shape', None)
         add_parameter(self, kwargs, 'check_empty_patch', True)
         add_parameter(self, kwargs, 'pad_borders', True)
 
         add_parameter(self, kwargs, 'patch_dimensions', None)
-
         add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
 
     def process_case(self, input_data, model=None):
-
-        # A little bit strange to access casename this way. Maybe make it an optional
-        # return of the generator.
-
-        # Note that input_modalities as the first input is hard-coded here. Very fragile.
-
-        # If an image is being repatched, its output shape is not certain. We attempt to infer it from
-        # the input data. This is wonky. Move this to PatchInference, maybe.
-
+        
+        """Summary
+        
+        Parameters
+        ----------
+        input_data : TYPE
+            Description
+        model : None, optional
+            Description
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        
         if model is not None:
             self.model = model
 
@@ -46,7 +75,8 @@ class InceptionScore(Output):
 
         # Determine patch shape. Currently only extends to spatial patching.
         # This leading dims business has got to have a better solution..
-        self.input_patch_shape = self.model.model_input_shape
+        if self.input_patch_shape is None:
+            self.input_patch_shape = self.model.model_input_shape
         if self.output_patch_shape is None:
             self.output_patch_shape = self.model.model_output_shape
 
@@ -80,7 +110,7 @@ class InceptionScore(Output):
 
     def predict(self, input_data, model=None):
 
-        repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps, dtype=int) for axis in self.patch_dimensions]
+        repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps + 1, dtype=int)[:-1] for axis in self.patch_dimensions]
 
         if self.pad_borders:
             # TODO -- Clean up this border-padding code and make it more readable.
@@ -101,6 +131,8 @@ class InceptionScore(Output):
                 input_slice = [slice(None)] + [slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, None) for dim in self.patch_dimensions] + [slice(None)]
             padded_input_data[tuple(input_slice)] = input_data
             input_data = padded_input_data
+        else:
+            repatched_shape = self.output_shape
 
         repatched_image = np.zeros(repatched_shape)
 
@@ -133,14 +165,14 @@ class InceptionScore(Output):
                 corner_batch = corners_list[corner_list_idx:corner_list_idx + self.batch_size]
                 input_patches = self.grab_patch(input_data, corner_batch)
                 
-                prediction = self.model.predict(input_patches)
-                
+                prediction = self.run_inference(input_patches)
+
                 self.insert_patch(repatched_image, prediction, corner_batch)
 
             if rep_idx == 0:
                 output_data = np.copy(repatched_image)
             else:
-                output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data)  # Running Average
+                output_data = self.aggregate_predictions(output_data, repatched_image, rep_idx)
 
         if self.pad_borders:
 
@@ -150,6 +182,15 @@ class InceptionScore(Output):
                 output_slice[dim] = slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, 1)
             output_data = output_data[tuple(output_slice)]
 
+        return output_data
+
+    def run_inference(self, data):
+
+        return self.model.predict(data)
+
+    def aggregate_predictions(self, output_data, repatched_image, rep_idx):
+
+        output_data = output_data + (1.0 / (rep_idx)) * (repatched_image - output_data)  # Running Average
         return output_data
 
     def pad_data(self, data, pad_dimensions):
