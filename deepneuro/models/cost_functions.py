@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 
 
-def cost_function_dict(wcc_weights={0: 0.1, 1: 3.0}):
+def cost_function_dict(wcc_weights={0: 0.1, 1: 3.0}, **kwargs):
     
     """Summary
     
