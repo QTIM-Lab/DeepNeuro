@@ -83,7 +83,7 @@ class Segment_Mets_cli(object):
 
         from deepneuro.pipelines.Segment_Brain_Mets.predict import predict_brain_mets
 
-        predict_brain_mets(args.output_folder, T2=args.T2, T1POST=args.T1POST, T1PRE=args.T1, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
+        predict_brain_mets(args.output_folder, T2=args.T2, T1POST=args.T1POST, T1PRE=args.T1, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
 
     def docker_pipeline(self):
 

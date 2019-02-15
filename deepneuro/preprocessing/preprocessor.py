@@ -24,7 +24,7 @@ class Preprocessor(object):
 
         # Internal Parameters
         add_parameter(self, kwargs, 'data_groups', None)
-        add_parameter(self, kwargs, 'verbose', True)
+        add_parameter(self, kwargs, 'verbose', False)
 
         # Derived Parameters
         self.array_input = True
@@ -67,7 +67,7 @@ class Preprocessor(object):
             self.generate_output_filenames(data_collection, data_group)
 
             if self.array_input and type(data_group.preprocessed_case) is list:
-                data_group.get_data()
+                data_group.preprocessed_case, data_group.preprocessed_affine = data_group.get_data(return_affine=True)
             elif not self.array_input and type(data_group.preprocessed_case) is list:
                 pass
             elif not self.array_input:
@@ -164,9 +164,18 @@ class Preprocessor(object):
 
         return
 
-    def clear_outputs(self, data_collection, data_group, clear_files_only=False):
+    def clear_outputs(self, data_collection):
 
-        raise NotImplementedError
+        """ Remove intermediate preprocessor outputs if save_to_file is set to False.
+        """
+
+        for label, data_group in list(self.data_groups.items()):
+
+            self.generate_output_filenames(data_collection, data_group)
+
+            for file_idx, output_filename in enumerate(self.output_filenames):
+                if os.path.exists(output_filename):
+                    os.remove(output_filename)
 
         return
 

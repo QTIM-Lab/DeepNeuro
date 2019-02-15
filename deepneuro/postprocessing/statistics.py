@@ -13,7 +13,7 @@ class ErrorCalculation(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'ErrorCalculation')
-        add_parameter(self, kwargs, 'postprocessor_string', None)
+        add_parameter(self, kwargs, 'postprocessor_string', '')
 
         # Logging Parameters
         add_parameter(self, kwargs, 'output_log', 'outputs.csv')
@@ -33,6 +33,7 @@ class ErrorCalculation(Postprocessor):
             'cluster_accuracy': 'Cluster Accuracy'
         }
 
+        self.transform_output = False
         self.csv_file = None
         # Not sure of the best method to close this file
 

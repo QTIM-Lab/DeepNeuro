@@ -10,14 +10,11 @@ from deepneuro.utilities.util import add_parameter
 
 class DeepNeuroModel(object):
     
-    def __init__(self, num_outputs=1, implementation='keras', **kwargs):
+    def __init__(self, **kwargs):
 
         """A model object with some basic parameters that can be added to in the load() method. Each child of
         this class should be able to build and store a model composed of tensors, as well as convert an input
         tensor into an output tensor according to a model's schema. 
-        
-        TODO: Add a parameter for optimizer type.
-        TODO: Add option for outputting multiple labels.
         
         Parameters
         ----------
@@ -53,8 +50,8 @@ class DeepNeuroModel(object):
             each model.
         padding : str, optional
             Padding for convolutional layers.
-        implementation : str, optional
-            Determines whether this is a 'tensorflow' or 'keras' model at present. [PROVISIONAL]
+        backend : str, optional
+            Determines deep learning framework for model implementation, if multiple available.
         **kwargs
             Addtional variables that may be needed in children classes.
         """
@@ -81,6 +78,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
         add_parameter(self, kwargs, 'initial_learning_rate', .00001)
+        add_parameter(self, kwargs, 'num_outputs', 1)
 
         # Logging Parameters - Temporary
         add_parameter(self, kwargs, 'output_log_file', 'deepneuro_log.csv')
@@ -102,13 +100,9 @@ class DeepNeuroModel(object):
         self.write_file = None
         self.csv_writer = None
 
-        self.num_outputs = num_outputs
-
         # TODO: Phase out 'output_type' in favor of 'cost_function'
         if self.cost_function is not None:
             self.output_type = self.cost_function
-
-        self.implementation = implementation
 
         self.load(kwargs)
 
@@ -158,7 +152,7 @@ class DeepNeuroModel(object):
 
         self.outputs = []
 
-    def generate_outputs(self, data_collection, case=None):
+    def generate_outputs(self, data_collection=None, case=None):
 
         return_outputs = []
 
@@ -193,7 +187,7 @@ class DeepNeuroModel(object):
 
     def predict(self, input_data):
 
-        return
+        return input_data
 
     def log(self, inputs=None, headers=None, verbose=False):
 
@@ -221,24 +215,23 @@ class DeepNeuroModel(object):
             if self.write_file.open:
                 self.write_file.close()
 
-    def fit_one_batch(self, training_data_collection, output, output_directory):
 
-        return
-
-
-def load_old_model(model_file, backend='keras', **kwargs):
+def load_old_model(model_file, backend='keras', model_name=None, custom_object_dict=None, **kwargs):
 
     """ Loading an old keras model file. A thing wrapper around load_model
         that uses DeepNeuro's custom cost functions.
-    
-        TODO: Investigate application in Tensorflow.
 
         Parameters
         ----------
         model_file : str
             At present, a filepath to a ".h5" keras file.
-        implementation : str, optional
-            Specify 'keras' or 'tensorflow' implementation.
+        backend : str, optional
+            Specify 'keras' or 'tensorflow' backend for loading.
+        model_name : str, optional
+            If loading a Tensorflow model, you must specify which
+            DeepNeuroModel architecture is loaded.
+        custom_object_dict: dict, optional
+            If you are loading a model with custom objects.
         
         Returns
         -------
@@ -261,7 +254,7 @@ def load_old_model(model_file, backend='keras', **kwargs):
 
         return model
 
-    if backend == 'tf':
+    if backend == 'tf' or backend == 'tensorflow':
 
         import tensorflow as tf
 

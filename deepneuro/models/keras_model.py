@@ -125,49 +125,64 @@ class KerasModel(DeepNeuroModel):
 
     def build_model(self, compute_output=True):
 
+        """ 
+        """
+
         # TODO: Move this entire section to cost_functions.py
-        
-        if compute_output:
-            
-            if self.input_tensor is None:
 
-                if self.cost_function == 'mse':
+        if self.input_tensor is None:
+
+            if self.cost_function == 'mse':
+
+                if compute_output:
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-                elif self.cost_function == 'dice':
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
+
+            elif self.cost_function == 'dice':
+
+                if compute_output:
                     if self.output_activation:
                         self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-                # Not Implemented
-                elif self.cost_function == 'multi_dice':
-                    raise NotImplementedError
-                    
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
+            # Not Implemented
+            elif self.cost_function == 'multi_dice':
+                raise NotImplementedError
+                
+                if compute_output:
                     if self.output_activation:
                         self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
 
-                elif self.cost_function == 'binary_crossentropy':
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=dice_coef_loss, metrics=[dice_coef])
+
+            elif self.cost_function == 'binary_crossentropy':
+
+                if compute_output:
                     if self.output_activation:
                         self.model = Model(inputs=self.inputs, outputs=Activation('sigmoid')(self.output_layer))
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
 
-                elif self.cost_function == 'categorical_crossentropy':
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='binary_crossentropy', metrics=['binary_accuracy'])
+
+            elif self.cost_function == 'categorical_crossentropy':
+
+                if compute_output:
                     if self.output_activation:
                         self.model = Model(inputs=self.inputs, outputs=Activation('softmax')(self.output_layer))
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy',
-                                  metrics=['categorical_accuracy'])
+                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
-                elif self.cost_function == 'weighted_categorical_cross_entropy':
+            elif self.cost_function == 'weighted_categorical_crossentropy':
+
+                if compute_output:
                     activation = Activation('sigmoid')(self.output_layer)
                     activation_categorical = Lambda(lambda arg: K.ones_like(arg) - arg)(activation)
                     predictions = concatenate([activation, activation_categorical], axis=-1)
@@ -177,33 +192,23 @@ class KerasModel(DeepNeuroModel):
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
 
-                    lossFunc = WeightedCategoricalCrossEntropy(self.categorical_weighting)
-                    self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=lossFunc.loss_wcc_dist, metrics=[lossFunc.metric_dice_dist, lossFunc.metric_acc])
-
-                else:
-                    print('Cost function', self.cost_function, 'not implemented.')
-                    raise NotImplementedError
-
-                self.model_input_shape = self.model.layers[0].input_shape
-                self.model_output_shape = self.model.layers[-1].output_shape
-
-                return self.model
+                lossFunc = WeightedCategoricalCrossEntropy(self.categorical_weighting)
+                self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss=lossFunc.loss_wcc_dist, metrics=[lossFunc.metric_dice_dist, lossFunc.metric_acc])
 
             else:
-
-                self.model_input_shape = self.model.layers[0].input_shape
-                self.model_output_shape = self.model.layers[-1].output_shape
-
-                return self.output_layer
-
-        else:
-
-            self.model.compile(self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss="categorical_crossentropy", metrics=['categorical_accuracy'])
+                raise NotImplementedError('Cost function {} not implemented.'.format(self.cost_function))
 
             self.model_input_shape = self.model.layers[0].input_shape
             self.model_output_shape = self.model.layers[-1].output_shape
 
-            return
+            return self.model
+
+        else:
+
+            self.model_input_shape = self.model.layers[0].input_shape
+            self.model_output_shape = self.model.layers[-1].output_shape
+
+            return self.output_layer
 
 
 if __name__ == '__main__':

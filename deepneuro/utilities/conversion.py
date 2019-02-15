@@ -435,7 +435,7 @@ def check_format(filepath):
                     break
 
     if format_type is None:
-        raise ValueError
+        raise ValueError('The provided file extension at {} is not an acceptable file extension for DeepNeuro.'.format(filepath))
     else:
         return format_type
 

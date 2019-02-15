@@ -48,8 +48,6 @@ class MaskValues(Preprocessor):
 
     def preprocess(self, data_group):
 
-        input_data = data_group.preprocessed_case
-
         if self.mask_mode == 'lower':
             data_group.preprocessed_case[data_group.preprocessed_case < self.mask_threshold] = self.mask_value
         elif self.mask_mode == 'higher':

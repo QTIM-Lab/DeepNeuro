@@ -149,6 +149,9 @@ class CyclicLR(Callback):
 
 class EpochPredict(Callback):
 
+    """
+    """
+
     def __init__(self, **kwargs):
 
         add_parameter(self, kwargs, 'epoch_prediction_data_collection', None)
@@ -185,6 +188,8 @@ class EpochPredict(Callback):
 
             elif self.epoch_prediction_output_mode == 'mosaic':
 
+                raise NotImplementedError('Training callback mosaics are not yet implemented. (epoch_prediction_output_mode = \'mosaic\'')
+
                 if type(self.predictions[0]) is list:
                     for output in range(len(self.predictions[0])):
                         current_predictions = [item[output] for item in self.predictions]
@@ -206,7 +211,7 @@ class EpochPredict(Callback):
         if self.epoch_prediction_object is None:
             prediction = self.deepneuro_model.predict(self.predict_data[self.deepneuro_model.input_data])
         else:
-            prediction = self.epoch_prediction_object.process_case(self.predict_data[self.deepneuro_model.input_data], model=self.deepneuro_model)
+            prediction = self.epoch_prediction_object.process_case(self.predict_data, model=self.deepneuro_model)
 
         output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
 

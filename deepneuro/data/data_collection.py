@@ -273,21 +273,6 @@ class DataCollection(object):
         for data_group_label in list(self.data_groups.keys()):
             self.data_groups[data_group_label].output_shape = None
 
-    def get_data(self, case, data_group_labels=None):
-
-        data_groups = self.get_data_groups(data_group_labels)
-
-        if self.verbose:
-            print(('Working on image.. ', case))
-
-        if case != self.current_case:
-            self.load_case_data(case)
-
-        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
-        next(recursive_augmentation_generator)
-                    
-        return {data_group.label: data_group.base_case for data_group in data_groups}
-
     def get_current_casename(self):
 
         if self.source == 'hdf5':
@@ -308,14 +293,8 @@ class DataCollection(object):
     # @profile
     def preprocess(self):
 
-        data_groups = self.get_data_groups()
-
-        # for data_group in data_groups:
-
-        #     if self.preprocessors != []:
-        #         data_group.preprocessed_case = copy.copy(data_group.data[self.current_case])
-        #     else:
-        #         data_group.preprocessed_case = data_group.data[self.current_case]
+        """ Executes all queued preprocessor functions in this DataCollection.
+        """
 
         for preprocessor in self.preprocessors:
             preprocessor.reset()
@@ -336,18 +315,20 @@ class DataCollection(object):
             else:
                 data_group.preprocessed_case = data_group.data[self.current_case]
 
+        self.preprocess()
+
         for data_group in data_groups:
 
-            data_group.base_case = data_group.get_data(index=case)
-            data_group.base_affine = data_group.get_affine(index=case)
+            data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
+
+            if self.preprocessors == []:
+                data_group.preprocessed_case, data_group.preprocessed_affine = data_group.base_case, data_group.base_affine
 
             if data_group.source == 'hdf5':
                 data_group.base_casename = data_group.data_casenames[case][0].decode("utf-8")
             else:
                 data_group.base_case = data_group.base_case[np.newaxis, ...]
                 data_group.base_casename = case
-
-        self.preprocess()
 
         for data_group in data_groups:
 
@@ -357,8 +338,52 @@ class DataCollection(object):
             if len(self.augmentations) != 0:
                 data_group.augmentation_cases[0] = data_group.preprocessed_case
 
+    def get_data(self, case, data_group_labels=None):
+
+        """A function that retrieves data currently stored in the DataCollection
+        denoted by current_case, or otherwise loads a specific, singular case.
+        A simpler alternative to data_generator, which can yield all of the
+        cases in a DataCollection
+        
+        Parameters
+        ----------
+        case : string or int
+            Casename identifier or, in the case of DataCollections
+            reading from HDF5, data row identifiers.
+        data_group_labels : None, optional
+            A set of 
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+
+        data_groups = self.get_data_groups(data_group_labels)
+
+        if self.verbose:
+            print(('Working on image.. ', case))
+
+        if case != self.current_case:
+            self.load_case_data(case)
+
+        recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
+        next(recursive_augmentation_generator)
+        
+        # TODO: Evaluate use of np.stack here; it may be unnessecary or inefficient
+        data_batch = {}
+        data_batch['casename'] = np.stack([self.current_case])
+        for data_group in data_groups:
+            if len(self.augmentations) == 0:
+                data_batch[data_group.label] = data_group.preprocessed_case
+            else:
+                data_batch[data_group.label] = data_group.augmentation_cases[-1]
+            data_batch[data_group.label + '_augmentation_string'] = np.stack([data_group.augmentation_strings[-1]])
+            data_batch[data_group.label + '_affine'] = np.stack([data_group.preprocessed_affine])
+        return data_batch
+
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False, yield_casenames=False):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False):
 
         data_groups = self.get_data_groups(data_group_labels)
 
@@ -369,7 +394,11 @@ class DataCollection(object):
             print('No cases found. Yielding None.')
             yield None
 
-        data_batch = {data_group.label: [] for data_group in data_groups}
+        data_batch_labels = ['casename']
+        for data_group in data_groups:
+            data_batch_labels += [data_group.label, data_group.label + '_augmentation_string', data_group.label + '_affine']
+
+        data_batch = {label: [] for label in data_batch_labels}
 
         while True:
 
@@ -377,11 +406,13 @@ class DataCollection(object):
 
             for case_idx, case_name in enumerate(case_list):
 
+                if self.source == 'hdf5':
+                    case_name_string = data_groups[0].data_casenames[case_name][0].decode("utf-8")
+                else:
+                    case_name_string = case_name
+
                 if verbose:
-                    if self.source == 'hdf5':
-                        print(('Working on image.. ', case_idx, 'at', data_groups[0].data_casenames[case_name][0].decode("utf-8")))
-                    else:
-                        print(('Working on image.. ', case_idx, 'at', case_name))
+                    print(('Working on image.. ', case_idx, 'at', case_name_string))
 
                 # Is error-catching useful here?
                 if True:
@@ -408,6 +439,11 @@ class DataCollection(object):
                             else:
                                 data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
 
+                            data_batch[data_group.label + '_augmentation_string'].append(data_group.augmentation_strings[-1])
+                            data_batch[data_group.label + '_affine'].append(data_group.preprocessed_affine)
+
+                        data_batch['casename'].append(case_name_string)
+
                         if len(data_batch[data_groups[0].label]) == batch_size:
                             
                             for label in data_batch:
@@ -419,7 +455,7 @@ class DataCollection(object):
                             else:
                                 yield data_batch
 
-                            data_batch = {data_group.label: [] for data_group in data_groups}    
+                            data_batch = {label: [] for label in data_batch_labels}   
 
                     else:
                         yield True
@@ -453,7 +489,6 @@ class DataCollection(object):
 
                 lower_recursive_generator = self.recursive_augmentation(data_groups, augmentation_num + 1)
 
-                # Why did I do this
                 sub_augmentation_iterations = self.multiplier
                 for i in range(augmentation_num + 1):
                     sub_augmentation_iterations /= self.augmentations[i]['iterations']
@@ -462,26 +497,6 @@ class DataCollection(object):
                     yield next(lower_recursive_generator)
 
             # print 'FINISH RECURSION FOR AUGMENTATION NUM', augmentation_num
-
-    def return_valid_cases(self, data_group_labels):
-
-        valid_cases = []
-        for case_name in self.cases:
-
-            # This is terrible code. TODO: rewrite.
-            missing_case = False
-
-            for data_label, data_group in list(self.data_groups.items()):
-                if data_label not in data_group_labels:
-                    continue
-                if case_name not in data_group.cases:
-                    missing_case = True
-                    break
-
-            if not missing_case:
-                valid_cases += [case_name]
-
-        return valid_cases, len(valid_cases)
 
     def write_data_to_file(self, output_filepath=None, data_group_labels=None):
 
@@ -540,12 +555,7 @@ class DataCollection(object):
 
     def write_image_data_to_storage(self, data_group_labels=None, repeat=1):
 
-        # This is very shady. Currently trying to reconcile between loading data from a
-        # directory and loading data from an hdf5.
-        if False:
-            storage_cases, total_cases = self.return_valid_cases(data_group_labels)
-        else:
-            storage_cases, total_cases = self.cases, self.total_cases
+        storage_cases, total_cases = self.cases, self.total_cases
 
         storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
 
@@ -562,7 +572,7 @@ class DataCollection(object):
 
     def add_channel(self, case, input_data, data_group_labels=None, channel_dim=-1):
         
-        """ This function and remove_channel are edge cases that might be best dealt with outside of data_collection.
+        """ This function and remove_channel are edge cases that should be dealt with outside of data_collection.
         """
 
         # TODO: Add functionality for inserting channel at specific index, multiple channels
@@ -577,10 +587,10 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
-            if data_group.base_case is None:
+            if case != self.current_case:
                 self.load_case_data(case)
 
-            data_group.base_case = np.concatenate((data_group.base_case, input_data[np.newaxis, ...]), axis=channel_dim)
+            data_group.preprocessed_case = np.concatenate((data_group.preprocessed_case, input_data[np.newaxis, ...]), axis=channel_dim)
 
             # # Perhaps should not use tuples for output shape.
             # This is broken.
@@ -611,12 +621,18 @@ class DataCollection(object):
         return
 
     def close_open_data_files(self):
-
+        
         if self.open_hdf5 is not None:
             self.open_hdf5.close()
             return_hdf5 = self.open_hdf5
             self.open_hdf5 = None
             return return_hdf5
+
+    def clear_preprocessor_outputs(self):
+
+        for preprocessor in self.preprocessors:
+            if not preprocessor.save_output:
+                preprocessor.clear_outputs(self)
 
 
 if __name__ == '__main__':

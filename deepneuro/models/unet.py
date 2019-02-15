@@ -20,8 +20,9 @@ class UNet(KerasModel):
                 Specified the layers deep the proposed U-Net should go.
                 Layer depth is symmetric on both upsampling and downsampling
                 arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
+            num_blocks : int, optional
+                Number of consecutive convolutional layers at each resolution
+                in the U-Net. Default is 2.
 
         """
 
@@ -57,8 +58,20 @@ class UNet(KerasModel):
 
                 left_outputs += [DnConv(self.inputs, filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_{}'.format(level, 0), backend='keras')]
 
+                if self.dropout is not None and self.dropout != 0:
+                    left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
+
+                if self.batch_norm:
+                    left_outputs[level] = BatchNormalization()(left_outputs[level])
+
                 for block_num in range(1, self.num_blocks):
                     left_outputs[level] = DnConv(left_outputs[level], filter_num * (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_{}'.format(level, block_num), backend='keras')
+
+                    if self.dropout is not None and self.dropout != 0:
+                        left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
+
+                    if self.batch_norm:
+                        left_outputs[level] = BatchNormalization()(left_outputs[level])
             else:
 
                 left_outputs += [DnMaxPooling(left_outputs[level - 1], pool_size=self.pool_size, dim=self.dim, backend='keras', padding=self.pooling_padding)]
@@ -66,11 +79,11 @@ class UNet(KerasModel):
                 for block_num in range(self.num_blocks):
                     left_outputs[level] = DnConv(left_outputs[level], filter_num * (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_{}'.format(level, block_num), backend='keras')
 
-            if self.dropout is not None and self.dropout != 0:
-                left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
+                    if self.dropout is not None and self.dropout != 0:
+                        left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
 
-            if self.batch_norm:
-                left_outputs[level] = BatchNormalization()(left_outputs[level])
+                    if self.batch_norm:
+                        left_outputs[level] = BatchNormalization()(left_outputs[level])
 
         right_outputs = [left_outputs[self.depth - 1]]
 
@@ -110,14 +123,11 @@ class UNet(KerasModel):
                 for block_num in range(self.num_blocks):
                     right_outputs[level] = DnConv(right_outputs[level], filter_num // (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='upsampling_conv_{}_{}'.format(level, block_num), backend='keras')
 
-            else:
-                continue
+                    if self.dropout is not None and self.dropout != 0:
+                        right_outputs[level] = Dropout(self.dropout)(right_outputs[level])
 
-            if self.dropout is not None and self.dropout != 0:
-                right_outputs[level] = Dropout(self.dropout)(right_outputs[level])
-
-            if self.batch_norm:
-                right_outputs[level] = BatchNormalization()(right_outputs[level])
+                    if self.batch_norm:
+                        right_outputs[level] = BatchNormalization()(right_outputs[level])
 
         self.output_layer = DnConv(right_outputs[level], self.output_channels, (1, ) * self.dim, stride_size=(1,) * self.dim, dim=self.dim, name='end_conv', backend='keras') 
 

@@ -77,23 +77,25 @@ class SkullStrip(Preprocessor):
 
 class SkullStrip_Model(Preprocessor):
 
-    """ Skull-stripping as a pre-processor is slightly broken right now -- only works for single-patient use cases.
+    """ Performs skull-stripping using a model trained in DeepNeuro.
     """
 
     def load(self, kwargs):
 
         """ Parameters
             ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
+            name : str, optional
+                Preprocessor name for internal use. Default is 'SkullStrip_Model'
+            preprocessor_string: str, optional
+                Appended suffix to filenames saved out from this preprocessor.
+                Default is '_SkullStripped'
+            reference_channel: int or list, optional
+                
+            model: DeepNeuroModel, optional
+                DeepNeuroModel from which to run inference in this preprocessor.
 
         """
 
-        add_parameter(self, kwargs, 'same_mask', True)
         add_parameter(self, kwargs, 'reference_channel', [0, 1])
         add_parameter(self, kwargs, 'model', None)  # TODO: Replace with load(skull_strip_model)
 
@@ -109,17 +111,13 @@ class SkullStrip_Model(Preprocessor):
         if type(self.reference_channel) is not list:
             self.reference_channel = [self.reference_channel]
 
-    def initialize(self, data_collection):
-
-        super(SkullStrip_Model, self).initialize(data_collection)
-
     def execute(self, data_collection):
 
         if self.mask_numpy is None:
 
             for label, data_group in list(data_collection.data_groups.items()):
 
-                input_data = np.take(data_group.preprocessed_case, self.reference_channel, axis=-1)[np.newaxis, ...]
+                input_data = {'input_data': np.take(data_group.preprocessed_case, self.reference_channel, axis=-1)[np.newaxis, ...]}
 
                 # Hacky -- TODO: Revise.
                 self.model.outputs[-1].model = self.model

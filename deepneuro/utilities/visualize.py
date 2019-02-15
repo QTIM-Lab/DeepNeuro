@@ -1,3 +1,8 @@
+""" A function library for tools to visualize data. At present, only hosts
+    the check_data function, which allows one to inspect DataCollections and
+    other freeform data.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -8,7 +13,77 @@ from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import replace_suffix, nifti_splitext
 
 
-def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_center', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, output_directory=None, case_name=None, **kwargs):
+def check_data(output_data=None, 
+    data_collection=None, 
+    batch_size=4, 
+    merge_batch=True, 
+    show_output=True, 
+    output_filepath=None, 
+    viz_rows=None, 
+    viz_mode_2d=None, 
+    viz_mode_3d='2d_slice', 
+    color_range=None, 
+    output_groups=None, 
+    combine_outputs=False, 
+    rgb_output=True, 
+    colorbar=True, 
+    subplot_rows=None, 
+    title=None, 
+    subplot_titles=None, 
+    output_directory=None, 
+    case_name=None, 
+    **kwargs):
+
+    """Summary
+    
+    Parameters
+    ----------
+    output_data : None, optional
+        Description
+    data_collection : None, optional
+        Description
+    batch_size : int, optional
+        Description
+    merge_batch : bool, optional
+        Description
+    show_output : bool, optional
+        Description
+    output_filepath : None, optional
+        Description
+    viz_rows : None, optional
+        Description
+    viz_mode_2d : None, optional
+        Description
+    viz_mode_3d : str, optional
+        Description
+    color_range : None, optional
+        Description
+    output_groups : None, optional
+        Description
+    combine_outputs : bool, optional
+        Description
+    rgb_output : bool, optional
+        Description
+    colorbar : bool, optional
+        Description
+    subplot_rows : None, optional
+        Description
+    title : None, optional
+        Description
+    subplot_titles : None, optional
+        Description
+    output_directory : None, optional
+        Description
+    case_name : None, optional
+        Description
+    **kwargs
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    """
 
     if data_collection is not None:
         if batch_size > data_collection.total_cases * data_collection.multiplier:
@@ -20,6 +95,9 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
 
     if type(output_data) is not dict:
         output_data = {'output_data': output_data}
+
+    # Very bad, reformat.
+    output_data = {label: data for label, data in list(output_data.items()) if '_affine' not in label and '_augmentation_string' not in label and 'casename' not in label}
 
     if color_range is None:
         color_range = {label: [np.min(data), np.max(data)] for label, data in list(output_data.items())}
@@ -44,6 +122,9 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
     viz_columns = int(np.ceil(batch_size / float(viz_rows)))
 
     for label, data in list(output_data.items()):
+
+        if '_affine' in label or '_augmentation_string' in label or 'casename' in label:
+            continue
 
         if data.ndim == 5:
             output_images, color_range = display_3d_data(data, color_range, viz_mode_3d, label, output_images, viz_rows, viz_columns, subplot_titles=subplot_titles, **kwargs)
@@ -75,6 +156,10 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
         elif data.ndim == 3:
 
             output_images[label] = merge_data(data, [viz_rows, viz_columns], data.shape[-1])
+
+        # elif data.ndim == 2:
+
+        #     output_images[label] = display_1d_data(data, [viz_rows, viz_columns])
 
     if show_output:
 
@@ -132,7 +217,6 @@ def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch
                 output_filepaths[label] = save_data(output_images[label], replace_suffix(output_filepath, '', '_' + label))
                 continue
             if output_directory is not None and case_name is not None:
-                print(os.path.join(output_directory, nifti_splitext(replace_suffix(os.path.basename(case_name), '', '_' + label))[0]) + '.png')
                 output_filepaths[label] = save_data(output_images[label], os.path.join(output_directory, nifti_splitext(replace_suffix(os.path.basename(case_name), '', '_' + label))[0]) + '.png')
 
     return output_filepaths, output_images
@@ -154,26 +238,28 @@ def combine_outputs(input_data_list):
     """ Merges images rows
     """
 
-    # height_width = [0, 0]
-
-    for data in input_data_list:
-
-        pass
-
     raise NotImplementedError
 
 
-def display_1d_data(input_data):
+def display_1d_data(input_data, viz_rows=2, viz_columns=2):
+
+    class_viz_rows = int(np.ceil(np.sqrt(input_data.shape[-1])))
+
+    output_data = np.zeros((class_viz_rows * viz_rows, class_viz_rows * viz_columns))
+
+    raise NotImplementedError
 
     return
 
 
 def display_2d_data(input_data):
 
+    raise NotImplementedError
+
     return
 
 
-def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=0, mosaic_rows=4, mosaic_columns=4, subplot_titles=None, **kwargs):
+def display_3d_data(input_data, color_range, viz_mode_3d='2d_slice', label=None, input_dict=None, viz_rows=2, viz_columns=2, slice_index=None, mosaic_rows=4, mosaic_columns=4, subplot_titles=None, **kwargs):
 
     if input_dict is None:
         input_dict = {}
@@ -183,14 +269,12 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_center', label=None
 
     for i in range(input_data.shape[-1]):
 
-        if viz_mode_3d == '2d_center':
+        if viz_mode_3d == '2d_slice':
 
-            input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
-            input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
-
-        elif viz_mode_3d == '2d_slice':
-
-            input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
+            if slice_index is None:
+                input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
+            else:
+                input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
             input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
 
         elif viz_mode_3d == 'mosaic':

@@ -1,11 +1,55 @@
+""" A list of preprocessors that generally deal with geometric
+    transformations of input data.
+"""
+
 import subprocess
 import os
 import numpy as np
+import itertools
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
+
+
+class ReorderAxes(Preprocessor):
+
+    """ Equivalent to NumPy's transpose function. Reorders the axes in
+        your data according to the axis_ordering parameter.
+
+        axis_ordering: list or tuple
+            New ordering of axes, in list format.
+    """
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'ReorderAxes')
+
+        # Dropping Parameters
+        add_parameter(self, kwargs, 'axis_ordering', None)
+
+        assert self.axis_ordering is not None, 'You must provide an axis ordering for ReorderAxes.'
+
+        self.output_shape = {}
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(ReorderAxes, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+
+            # print(self.output_shape[label])
+            self.output_shape[label] = self.axis_ordering
+
+    def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
+        self.output_data = np.transpose(input_data, axes=self.axis_ordering)
+
+        data_group.preprocessed_case = self.output_data
 
 
 class SqueezeAxes(Preprocessor):
@@ -143,7 +187,6 @@ class OneHotEncode(Preprocessor):
         # Relatively brittle, only works for 1-dimensional data.
         input_data = data_group.preprocessed_case
         classes = np.unique(input_data)
-        data_dict = {class_name: i for i, class_name in enumerate(classes)}
 
         # Probably not the most efficient.
         output_data = np.zeros(self.num_classes)
@@ -238,6 +281,43 @@ class SplitData(Preprocessor):
 
         data_group.preprocessed_case = output_data
         self.output_data = output_data
+
+
+class CropValues(Preprocessor):
+
+    """ Implemented from https://stackoverflow.com/questions/31400769/bounding-box-of-numpy-array
+        Removes all rows/columns/etc composed only of the provided values.
+
+        mask_value: int
+            Value to be cropped. Currently, only 0 supported.
+    """
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'CropValues')
+
+        # Dropping Parameters
+        add_parameter(self, kwargs, 'mask_value', 0)
+
+        assert self.mask_value == 0, 'Nonzero mask_value has not yet been implemented.'
+
+        self.array_input = True
+
+    def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
+
+        num_dims = input_data.ndim
+        slice_boundaries = []
+        for axis in itertools.combinations(range(num_dims), num_dims - 1):
+            nonzero = np.any(input_data, axis=axis)
+            slice_boundary = list(np.where(nonzero)[0][[0, -1]])
+            slice_boundaries = [slice(slice_boundary[0], slice_boundary[1] + 1, 1)] + slice_boundaries
+
+        self.output_data = input_data[tuple(slice_boundaries)]
+
+        data_group.preprocessed_case = self.output_data
 
 
 class Resize(Preprocessor):

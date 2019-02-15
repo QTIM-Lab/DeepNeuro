@@ -1,50 +1,97 @@
 # Segment_GBM
 
-This module creates segmentations of "whole tumor" (edema + contrast-enhancing + necrosis) and contrasting-enhancing tumor given pre-contrast T1, post-contrast T1, and FLAIR input volumes. These segmentations are created by deep neural networks trained on hundreds of public and private datasets of pre-operative high- and low-grade GBMs. The following pre-processing steps are included in module: N4Bias Correction, Isotropic Resampling (1x1x1), Image Registration, Skull-Stripping, and Zero-Mean normalization. This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
+This command-line module creates segmentations of "whole tumor" (edema + contrast-enhancing + necrosis) and contrasting-enhancing tumor given pre-contrast T1, post-contrast T1, and FLAIR input volumes. These segmentations are created by deep neural networks trained on hundreds of public and private datasets of pre-operative high- and low-grade GBMs. The following pre-processing steps are included in module: N4Bias Correction (3DSlicer), Image Registration (3DSlicer), Skull-Stripping (DeepNeuro), and Zero-Mean normalization. This module can take in as input NIfTI files (.nii.gz) and DICOM directories (/\*.dcm). This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
 
 ## Table of Contents
+- [Local Command-Line Usage](#command-line-usage)
 - [Docker Usage](#docker-usage)
-- [Python Docker Wrapper Usage](#python-docker-wrapper-usage)
+- [Singularity Usage](#singularity-usage)
+- [Python Container Wrapper Usage](#python-docker-wrapper-usage)
 - [Docker Example](#docker-example)
+- [Singularity Example](#singularity-example)
+- [Interactive Python Usage](#interactive-python-usage)
 - [Citation](#citation)
 
-## Docker Usage
+## Command Line Usage
 
-The best way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
-
-Pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command "docker pull qtimlab/deepneuro_segment_gbm".
-
-You can then create a command using the following template to create a glioblastoma segmentation:
+If you have installed DeepNeuro locally on your workstation, without the use of Docker or Singularity, you can run this module directly from the command line. The basic format of the command is as follows:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -debiased -resampled -registered -save_all_steps -save_preprocessed -wholetumor_output <str> -enhancing_output <str>]
+segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
 ```
 
-In order to use Docker, you must mount the directory containing all of your data and your output. All inputted filepaths must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. Note that the Python wrapper for Docker in this module will adjust paths for you.
-
-A brief explanation of this function's parameters follows:
+This functions basic parameters are as follows:
 
 | Parameter       | Documenation           |
 | ------------- |-------------|
 | -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
 | -T1, -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
-| -wholetumor_output, -enhancing_output | Optional. Name of output for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz"      |
-| -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
+| -wholetumor_output, -enhancing_output | Optional. Name of output filepaths for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz". Files with these names will be output into your output_directory.      |
+
+This DeepNeuro pipeline assumes that your data will need to be preprocessed before it is preprocessed. However, you may have already performed some of these preprocessing steps yourself. You can skip some preprocessing steps by adding the following flags to your command:
+
+| Parameter       | Documenation           |
+| ------------- |-------------|
 | -debiased | If flagged, data is assumed to already have been N4 bias-corrected, and skips that preprocessing step. |
 | -registered | If flagged, data is assumed to already have been registered into the same space, and skips that preprocessing step. |
-| -skullstripped | If flagged, data is assumed to already have been skullstripped, and skips that preprocessing step. |
-| -preprocessed | If flagged, data is assumed to already have been entirely preprocessed by DeepNeuro, including intensity normalization. Only use if data has been passed through DeepNeuro already to ensure proper performance. |
-| -save_all_steps | If flagged, intermediate volumes in between preprocessing steps will be saved in output_folder. |
-| -save_preprocessed | If flagged, the final volumes after bias correction, resampling, and registration. |
+| -skullstripped | If flagged, data is assumed to already have been skullstripped, and skips that preprocessing step. DeepNeuro assumes that skullstripped data has had non-brain tissue replaced with the intensity value '0'. |
+| -preprocessed | If flagged, data is assumed to already have been entirely preprocessed by DeepNeuro, including intensity normalization. Only use if data has been passed through DeepNeuro already to ensure reproducible performance. |
 
-## Python Docker Wrapper Usage
+You can also turn on additional miscellaneous parameters with the following flags:
+
+| Parameter       | Documenation           |
+| ------------- |-------------|
+| -gpu_num | Optional. Which CUDA GPU ID # to use, if your workstation has multiple GPUs. Defaults to 0, i.e. the first gpu. |
+| -save_all_steps | If flagged, input volumes will be saved out after each preprocessing step, allowing to evaluate the differences between raw and pre-processed data. |
+| -save_only_segmentations | By default, this module will output preprocessed data volumes in addition to segmentations. Turn this flag on in order to ONLY output segmentations. |
+| -quiet | If flagged, this module will run in quiet mode, with no command-line output. |
+| -output_probabilities | By default, DeepNeuro binarizes outputs of neural networks into 0 and 1 labelmaps. Set this flag to output the original pseudoprobability maps, which range from 0 to 1. |
+
+In order to run this command-line locally, you must have installed and added to your path 3DSlicer, and have it added to your workstation's system path. If you are not able to install 3DSlicer, or do not have the technical skills to add it to you system path, we advise you use either a Docker or Singularity container as detailed below.
+
+## Docker Usage
+
+The easiest way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
+
+Before you can use this container, you must first pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_gbm/. Use the command ```docker pull qtimlab/deepneuro_segment_gbm```.
+
+You can then create a command for this module using the following template:
+
+```
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+```
+
+Notice that the parameters used here are the same parameters used in the section above, [Command Line Usage](#command-line-usage). Please refer to this section for details on each of this commands parameters.
+
+In order to use Docker, you must mount the directory containing all of your data and your output. All filepaths input to DeepNeuro must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. For more detail on how to mount a directory, see [Docker Example](docker-example)
+
+## Singularity Usage
+
+Singularity is a software that operates very similarly to Docker, but is more preferred in certain shared computing cluster environments. If you are not familiar with Singularity, you can install it [here](https://singularity.lbl.gov/docs-installation) and read a tutorial on proper usage [here](https://singularity.lbl.gov/quickstart).
+
+You can then create a command for this module using the following template:
+
+singularity exec --nv docker://tensorflow/tensorflow:latest-gpu \
+    python ./models/tutorials/image/mnist/convolutional.py
+
+```
+singularity exec --nv docker://qtimlab/deepneuro_segment_gbm -B [MOUNTED_DIRECTORY]:/INPUT_DATA segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+```
+
+Notice that the parameters used here are the same parameters used in the section above, [Command Line Usage](#command-line-usage). Please refer to this section for details on each of this commands parameters.
+
+In order to use Singularity, you must mount the directory containing all of your data and your output. All filepaths input to DeepNeuro must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. For more detail on how to mount a directory, see [Docker Example](docker-example)
+
+## Python Container Wrapper Usage
 
 To avoid adjusting your  you may want to avoid using nvidia-docker directly. I've also created a python utility that wraps around the nvidia-docker command above, and is slightly easier to use. In order to use this utlity, you will need to clone this repository. ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install it ("python setup.py install", in the directory you cloned the repository).
 
 Once you have installed the repository, you can use the following command on the command-line:
 
 ```
-segment_gbm docker_pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> [-gpu_num <int> -bias -resampled -registered -save_all_steps -save_preprocessed
+segment_gbm docker_pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+
+segment_gbm singularity_pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
 ```
 
 Parameters should be exactly the same as in the Docker use-case, except now you will not have to modify filepaths to be relative to the mounted folder.

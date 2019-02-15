@@ -6,6 +6,9 @@ from deepneuro.utilities.util import add_parameter, docker_print
 
 class PatchesInference(ModelInference):
 
+    """
+    """
+
     def load(self, kwargs):
 
         """ Parameters
@@ -47,6 +50,8 @@ class PatchesInference(ModelInference):
         add_parameter(self, kwargs, 'patch_dimensions', None)
         add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
 
+        self.batch_size = 1
+
     def process_case(self, input_data, model=None):
         
         """Summary
@@ -63,6 +68,8 @@ class PatchesInference(ModelInference):
         TYPE
             Description
         """
+        
+        input_data = input_data[self.lead_key]
         
         if model is not None:
             self.model = model
@@ -95,7 +102,7 @@ class PatchesInference(ModelInference):
         for i in range(len(self.patch_dimensions)):
             self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
-        output_data = self.predict(input_data, model)
+        output_data = self.predict(input_data)
 
         if self.output_channels is not None:
             output_data = np.take(output_data, self.output_channels, self.channels_dim)
@@ -108,7 +115,7 @@ class PatchesInference(ModelInference):
 
         return output_data
 
-    def predict(self, input_data, model=None):
+    def predict(self, input_data):
 
         repetition_offsets = [np.linspace(0, self.input_patch_shape[axis] - 1, self.patch_overlaps + 1, dtype=int)[:-1] for axis in self.patch_dimensions]
 

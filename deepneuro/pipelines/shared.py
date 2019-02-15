@@ -10,13 +10,16 @@ from shutil import copy
 from deepneuro.data.data_collection import DataCollection
 from deepneuro.models.model import load_old_model
 from deepneuro.load.load import load
+from deepneuro.docker.docker_cli import nvidia_docker_wrapper
 
 
-def DeepNeuroCLI(object):
+class DeepNeuroCLI(object):
 
     def __init__(self):
 
         self.command_name = 'deepneuro_module'
+        self.docker_container = 'qtimlab/deepneuro:latest'
+        self.filepath_arguments = []
 
         self.load()
 
@@ -45,6 +48,12 @@ def DeepNeuroCLI(object):
 
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
+
+    def docker_pipeline(self):
+
+        args = self.parse_args()
+
+        nvidia_docker_wrapper([self.command_name, 'pipeline'], vars(args), self.filepath_arguments, docker_container=self.docker_container)
 
 
 def load_data(inputs, output_folder, input_directory=None, ground_truth=None, input_data=None, verbose=True):

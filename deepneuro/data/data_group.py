@@ -69,40 +69,24 @@ class DataGroup(object):
         """
 
         if self.source == 'hdf5':
-            self.preprocessed_case = self.data[index][:][np.newaxis][0]
+            preprocessed_case = self.data[index][:][np.newaxis][0]
 
             # Storing affines needs work. How not to duplicate affines in case
             # of augmentation, for example?
             if self.data_affines is not None:
                 if self.data_affines.shape[0] == 0:
-                    self.preprocessed_affine = None
+                    preprocessed_affine = None
                 else:
-                    self.preprocessed_affine = self.data_affines[index]
+                    preprocessed_affine = self.data_affines[index]
+            else:
+                preprocessed_affine = None
         else:
-            self.preprocessed_case, affine = read_image_files(self.preprocessed_case, return_affine=True)
-            if affine is not None:
-                self.preprocessed_affine = affine
+            preprocessed_case, preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
 
         if return_affine:
-            return self.preprocessed_case, self.preprocessed_affine
+            return preprocessed_case, preprocessed_affine
         else:
-            return self.preprocessed_case
-
-        return None
-
-    def get_affine(self, index):
-
-        if self.source == 'directories':
-            if self.preprocessed_affine is None:
-                self.preprocessed_case, self.preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
-            return self.preprocessed_affine
-        # A little unsure of the practical implication of the storage code below.
-        elif self.source == 'hdf5':
-            if self.data_affines.shape[0] == 0:
-                affine = None
-            else:
-                affine = self.data_affines[index]
-            return affine
+            return preprocessed_case
 
         return None
 

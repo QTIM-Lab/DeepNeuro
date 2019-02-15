@@ -5,7 +5,10 @@
 """
 
 import os
+import csv
 import numpy as np
+
+from collections import defaultdict
 
 from deepneuro.utilities.conversion import save_data
 from deepneuro.utilities.util import add_parameter, replace_suffix, nifti_splitext, additional_kwargs
@@ -45,6 +48,8 @@ class Output(object):
         stack_outputs: bool
             If True, DeepNeuro will attempt to combined multiple channels into one
             output file where possible.
+        case_in_filename : bool
+
         channels_first: bool
 
         """
@@ -59,8 +64,10 @@ class Output(object):
         add_parameter(self, kwargs, 'save_initial', False)
         add_parameter(self, kwargs, 'save_all_steps', False)
         add_parameter(self, kwargs, 'output_directory', None)
-        add_parameter(self, kwargs, 'output_filename_base', '_inference.nii.gz')
+        add_parameter(self, kwargs, 'output_filename', None)
+        add_parameter(self, kwargs, 'output_filename_base', 'prediction.png')
         add_parameter(self, kwargs, 'stack_outputs', False)
+        add_parameter(self, kwargs, 'case_in_filename', True)
 
         # Visualization Parameters
         add_parameter(self, kwargs, 'show_output', False)
@@ -75,6 +82,9 @@ class Output(object):
         add_parameter(self, kwargs, 'verbose', True)
         add_parameter(self, kwargs, 'case', None)
 
+        if self.output_filename is not None:
+            self.output_filename_base = self.output_filename
+
         # Derived Parameters
         self.return_objects = []
         self.return_filenames = []
@@ -82,10 +92,8 @@ class Output(object):
         self.postprocessor_string = ''
         self.lead_key = self.inputs[0]
         self.case_directory_output = False
-        self.output_extension = nifti_splitext(self.output_filename_base)[1]
-        self.open_files = {}
-        if self.output_directory is None:
-            self.case_directory_output = True
+        self.output_filename_base, self.output_extension = nifti_splitext(self.output_filename_base)
+        self.open_files = defaultdict(lambda: None)
 
         self.load(kwargs)
 
@@ -117,39 +125,41 @@ class Output(object):
 
     def generate(self):
 
-        # Very ambiguous naming scheme here.
-        # The conditionals are a little cagey here.
-        # Also the duplicated code.
+        self.generate_output_directory()
 
-        self.generate_output_attributes()
+        if self.case is not None:
+            return self.generate_invidual_case(self.case)
 
-        if self.case is None:
+        data_generator = self.data_collection.data_generator(verbose=True, batch_size=self.batch_size)
 
-            # At present, this only works for one input, one output patch networks.
-            data_generator = self.data_collection.data_generator(verbose=True)
-
-            input_data = next(data_generator)
-            
-            while input_data is not None:
-                self.return_objects = []
-                self.return_filenames = []
-                self.process_case(input_data[self.lead_key])
-                self.postprocess(input_data)
-                input_data = next(data_generator)
-
-        else:
+        input_data = next(data_generator)
+        
+        while input_data is not None:
             self.return_objects = []
             self.return_filenames = []
-            input_data = self.data_collection.get_data(self.case)[self.lead_key]
             self.process_case(input_data)
-            self.postprocess(input_data)         
+            self.postprocess(input_data)
+            input_data = next(data_generator)       
 
         self.close_output()
 
         return_dict = {'data': self.return_objects, 'filenames': self.return_filenames}
         return return_dict
 
-    def generate_output_attributes(self):
+    def generate_invidual_case(self, case):
+
+        self.return_objects = []
+        self.return_filenames = []
+        input_data = self.data_collection.get_data(self.case)
+        self.process_case(input_data)
+        self.postprocess(input_data)         
+
+        self.close_output()
+
+        return_dict = {'data': self.return_objects, 'filenames': self.return_filenames}
+        return return_dict
+
+    def generate_output_directory(self):
         
         """Summary
         
@@ -159,35 +169,39 @@ class Output(object):
             Description
         """
 
-        self.casename = self.data_collection.data_groups[self.lead_key].base_casename
-        self.input_affine = self.data_collection.data_groups[self.lead_key].preprocessed_affine
-        self.augmentation_string = self.data_collection.data_groups[self.lead_key].augmentation_strings[-1]
-
-        # Create output directory. If not provided, output into original patient folder.
-        if self.case_directory_output:
-            self.output_directory = os.path.abspath(self.casename)
-        else:
-            self.output_directory = os.path.abspath(self.output_directory)
+        self.output_directory = os.path.abspath(self.output_directory)
 
         if not os.path.exists(self.output_directory):
             os.makedirs(self.output_directory)
 
-        if self.output_extension in ['csv']:
-            self.output_filename = self.output_filename_base
-        else:
-            # Determine output filename based on casename.
-            if os.path.exists(self.casename) and not os.path.isdir(self.casename):
-                self.output_filename = os.path.basename(nifti_splitext(os.path.abspath(self.casename))[0]) + self.output_filename_base
-            elif os.path.isdir(self.casename):
-                if self.casename.endswith(os.sep):
-                    casename = self.casename[0:-1]
-                self.output_filename = os.path.basename(casename) + self.output_filename_base
-            else:
-                self.output_filename = casename + self.output_filename_base
-            
-            self.output_filename = os.path.join(self.output_directory, self.output_filename)
-
         return
+
+    def generate_filenames(self, data, postprocessor_idx=None):
+
+        output_filenames = []
+        for idx in range(len(data['casename'])):
+
+            casename = data['casename'][idx]
+            augmentation_string = data[self.lead_key + '_augmentation_string'][idx]
+
+            if self.case_in_filename:
+                fileparts = [casename, self.output_filename_base]
+            else:
+                fileparts = [self.output_filename_base]
+
+            if augmentation_string != '':
+                fileparts = fileparts + [augmentation_string]
+            if [self.postprocessors[postprocessor_idx].postprocessor_string] != '':
+                fileparts = fileparts + [self.postprocessors[postprocessor_idx].postprocessor_string]
+
+            output_filename = '_'.join(fileparts)
+
+            if self.output_extension not in ['.csv']:
+                output_filename = os.path.join(self.output_directory, output_filename + self.output_extension)
+
+            output_filenames += [output_filename]
+
+        return output_filenames
 
     def postprocess(self, input_data):
         """
@@ -198,15 +212,15 @@ class Output(object):
             Description
         """
         if self.save_to_file and (self.save_initial or self.postprocessors == []):
-            self.save_output()
+            self.save_output(raw_data=input_data)
 
         for p_idx, postprocessor in enumerate(self.postprocessors):
             postprocessor.execute(self, raw_data=input_data)
-            if self.save_all_steps and p_idx != len(self.postprocessors) - 1:
-                self.save_output(p_idx)
+            if self.save_all_steps and p_idx != len(self.postprocessors) - 1 and postprocessor.transform_output:
+                self.save_output(p_idx, raw_data=input_data)
 
         if self.save_to_file and self.postprocessors != []:
-            self.save_output(len(self.postprocessors) - 1)
+            self.save_output(len(self.postprocessors) - 1, raw_data=input_data)
 
     def open_csv(self, filepath):
 
@@ -219,72 +233,64 @@ class Output(object):
         for key, open_file in self.open_files:
             open_file.close()
 
-        self.open_files = []
+        self.open_files = defaultdict(lambda: None)
 
-    def save_output(self, postprocessor_idx=None):
+    def save_output(self, postprocessor_idx=None, raw_data=None):
 
         # Currently assumes Nifti output. TODO: Make automatically detect output or determine with a class variable.
         # Ideally, split also this out into a saving.py function in utils.
-        # Case naming is a little wild here, TODO: make more simple.
-        # Some bad practice with abspath here. TODO: abspath all files on input
 
         for input_data in self.return_objects:
 
-            if self.output_extension in ['csv']:
-                if os.path.exists(save_filepath) and not self.replace_existing:
-                    continue                
-            else:
-                # Code for concatenating postprocessor and augmentation strings. Could be condensed.
-                postprocessor_string = self.postprocessor_string
-                if postprocessor_idx is not None:
-                    string_idx = postprocessor_idx
-                    while string_idx >= 0:
-                        if self.postprocessors[string_idx].postprocessor_string is not None:
-                            postprocessor_string += self.postprocessors[string_idx].postprocessor_string
-                        string_idx -= 1
-                save_filepath = replace_suffix(self.output_filename, '', self.augmentation_string + postprocessor_string)
+            output_filenames = self.generate_filenames(raw_data, postprocessor_idx)
 
-                # If prediction already exists, skip it. Useful if process is interrupted.
-                if os.path.exists(save_filepath) and not self.replace_existing:
-                    continue
+            if self.output_extension in ['.csv']:
+                self.save_to_csv(input_data, output_filenames)  
+            else:
+                self.save_to_disk(input_data, output_filenames, raw_data)
 
             if self.show_output:
                 # This function call will need to be updated as Outputs is extended for more data types.
                 check_data({'prediction': input_data}, batch_size=1, **self.kwargs)
 
-            # Squeeze data here covers for user errors, but could result in unintended outcomes.
-            output_shape = input_data.shape
-            input_data = np.squeeze(input_data)
+        return
 
+    def save_to_csv(self, input_data, output_filenames):
+
+        if os.path.exists(self.output_filename_base) and not self.replace_existing:
+            return              
+
+        if self.open_files[self.lead_key] is None:
+            self.open_files[self.lead_key] = open(self.output_filename_base, 'w')
+
+        writer = csv.writer(self.open_files[self.lead_key])
+
+        for row_idx, row in enumerate(input_data):
+            output_row = [output_filenames[row_idx]] + list(row)
+            writer.writerow(output_row)
+
+        return
+
+    def save_to_disk(self, input_data, output_filenames, raw_data):
+
+        for batch_idx, batch in enumerate(input_data):
+
+            # Squeeze data here covers for user errors, but could result in unintended outcomes.
+            output_shape = batch.shape
+            batch = np.squeeze(batch)
+            input_affine = raw_data[self.lead_key + '_affine'][batch_idx]
+
+            output_filename = output_filenames[batch_idx]
             return_filenames = []
 
             # If there is only one channel, only save one file. Otherwise, attempt to stack outputs or save
             # separate files.
-            if output_shape[-1] == 1 or self.stack_outputs:
-                self.return_filenames += [save_data(input_data, save_filepath, reference_data=self.input_affine)]
+            if output_shape[-1] == 1 or (output_shape[-1] == 3 and batch.ndim == 3) or self.stack_outputs:
+                self.return_filenames += [save_data(batch, output_filename, reference_data=input_affine)]
             else:
                 for channel in range(output_shape[-1]):
-                    return_filenames += [save_data(input_data[..., channel], replace_suffix(save_filepath, input_suffix='', output_suffix='_channel_' + str(channel)), reference_data=self.input_affine)]
+                    return_filenames += [save_data(batch[..., channel], replace_suffix(output_filename, input_suffix='', output_suffix='_channel_' + str(channel)), reference_data=input_affine)]
                 self.return_filenames += [return_filenames]
-
-        return
-
-    def save_to_file(self, input_data, output_filepath):
-
-        # Squeeze data here covers for user errors, but could result in unintended outcomes.
-        output_shape = input_data.shape
-        input_data = np.squeeze(input_data)
-
-        return_filenames = []
-
-        # If there is only one channel, only save one file. Otherwise, attempt to stack outputs or save
-        # separate files.
-        if output_shape[-1] == 1 or self.stack_outputs:
-            self.return_filenames += [save_data(input_data, output_filepath, reference_data=self.input_affine)]
-        else:
-            for channel in range(output_shape[-1]):
-                return_filenames += [save_data(input_data[..., channel], replace_suffix(output_filepath, input_suffix='', output_suffix='_channel_' + str(channel)), reference_data=self.input_affine)]
-            self.return_filenames += [return_filenames]
 
         return
 

@@ -46,6 +46,8 @@ class ModelInference(Output):
             Description
         """
         
+        input_data = input_data[self.lead_key]
+
         if model is not None:
             self.model = model
 
@@ -56,10 +58,8 @@ class ModelInference(Output):
             input_data = np.take(input_data, self.input_channels, self.channels_dim)
 
         self.output_shape = [1] + list(self.model.model_output_shape)[1:]  # Weird
-        for i in range(len(self.patch_dimensions)):
-            self.output_shape[self.output_patch_dimensions[i]] = input_data.shape[self.patch_dimensions[i]]
 
-        output_data = self.predict(input_data, model)
+        output_data = self.predict(input_data)
 
         if self.output_channels is not None:
             output_data = np.take(output_data, self.output_channels, self.channels_dim)

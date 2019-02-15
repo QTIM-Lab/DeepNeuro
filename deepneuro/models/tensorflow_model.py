@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 from deepneuro.models.model import DeepNeuroModel
 from deepneuro.utilities.util import add_parameter
-from deepneuro.models.callbacks import get_callbacks
 
 
 class TensorFlowModel(DeepNeuroModel):
@@ -76,7 +75,7 @@ class TensorFlowModel(DeepNeuroModel):
 
             self.callback_process('on_train_end')
 
-        except KeyBoardInterrupt:
+        except KeyboardInterrupt:
 
             self.callback_process('on_train_end')
         except:
@@ -177,3 +176,9 @@ class TensorFlowModel(DeepNeuroModel):
                         print((layer.name, self.graph.get_tensor_by_name(layer.name + ':0').get_shape()))
                 except:
                     continue
+
+    def load_model(self, input_model_path, batch_size=1):
+
+        self.build_tensorflow_model(batch_size)
+        self.init_sess()
+        self.saver.restore(self.sess, os.path.join(input_model_path, 'model.ckpt'))
