@@ -1,0 +1,2 @@
+Bootstrap: docker
+From: qtimlab/deepneuro_segment_mets:latest

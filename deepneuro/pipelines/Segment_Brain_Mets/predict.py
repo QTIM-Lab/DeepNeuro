@@ -1,5 +1,9 @@
 import os
 
+#--------------------------------------------------------------------#
+# Step 0, Import DeepNeuro Commands
+#--------------------------------------------------------------------#
+
 from deepneuro.outputs.segmentation import PatchesInference
 from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
@@ -11,24 +15,25 @@ from deepneuro.utilities.util import docker_print
 
 
 def predict_brain_mets(output_folder, 
-    T2=None, 
-    T1POST=None, 
-    T1PRE=None, 
-    FLAIR=None, 
-    ground_truth=None, 
-    input_directory=None, 
-    bias_corrected=True,
-    registered=False, 
-    skullstripped=False, 
-    preprocessed=False, 
-    save_preprocess=False, 
-    save_all_steps=False, 
-    output_segmentation_filename='segmentation.nii.gz', 
-    verbose=True, 
-    input_data=None, 
-    registration_reference='FLAIR'):
+                        T2=None, 
+                        T1POST=None, 
+                        T1PRE=None, 
+                        FLAIR=None, 
+                        ground_truth=None, 
+                        input_directory=None, 
+                        bias_corrected=True,
+                        registered=False, 
+                        skullstripped=False, 
+                        preprocessed=False, 
+                        output_segmentation_filename='segmentation.nii.gz',
+                        output_probabilities=False, 
+                        quiet=False, 
+                        input_data=None,
+                        save_only_segmentations=False, 
+                        save_all_steps=False):
 
-    registration_reference_channel = 1
+    verbose = not quiet
+    save_preprocessed = not save_only_segmentations
 
     #--------------------------------------------------------------------#
     # Step 1, Load Data
@@ -45,9 +50,11 @@ def predict_brain_mets(output_folder,
                         'batch_size': 50,
                         'patch_overlaps': 8,
                         'output_patch_shape': (28, 28, 28, 1),
-                        'output_channels': [1]}
+                        'output_channels': [1],
+                        'case_in_filename': False,
+                        'verbose': verbose}
 
-    mets_model = load_model_with_output(model_name='mets_enhancing', outputs=[PatchesInference(**mets_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')], wcc_weights={0: 0.1, 1: 3.0})
+    mets_model = load_model_with_output(model_name='mets_enhancing', outputs=[PatchesInference(**mets_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')], wcc_weights={0: 0.1, 1: 3.0})
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
@@ -73,17 +80,17 @@ def predict_brain_mets(output_folder,
             preprocessing_steps += [N4BiasCorrection(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=registration_reference_channel)]
+            preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not skullstripped:
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
             preprocessing_steps += [SkullStrip_Model(data_groups=['input_data'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[3, 1])]
 
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocessed, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
 
         else:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocessed, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -98,6 +105,8 @@ def predict_brain_mets(output_folder,
         docker_print('======================')
     
     mets_model.generate_outputs(data_collection, output_folder)
+
+    data_collection.clear_preprocessor_outputs()
 
 
 if __name__ == '__main__':

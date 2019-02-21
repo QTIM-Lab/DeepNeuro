@@ -2,32 +2,18 @@ import argparse
 import sys
 import os
 
-from deepneuro.docker.docker_cli import nvidia_docker_wrapper
+from deepneuro.pipelines.shared import DeepNeuroCLI
 
 
-class Skull_Stripping_cli(object):
+class Skull_Stripping_cli(DeepNeuroCLI):
 
-    def __init__(self):
+    def load(self):
 
-        parser = argparse.ArgumentParser(
-            description='A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center',
-            usage='''skull_stripping <command> [<args>]
+        self.command_name = 'skull_stripping'
+        self.docker_container = 'qtimlab/deepneuro_skull_strip:latest'
+        self.filepath_arguments = ['output_folder', 'T1POST', 'FLAIR', 'input_directory']
 
-                    The following commands are available:
-                       pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
-                       docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
-                ''')
-
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-
-        if not hasattr(self, args.command):
-            print('Sorry, that\'s not one of the commands.')
-            parser.print_help()
-            exit(1)
-
-        # use dispatch pattern to invoke method with same name
-        getattr(self, args.command)()
+        super(Skull_Stripping_cli, self).load()
 
     def parse_args(self):
 
@@ -74,12 +60,6 @@ class Skull_Stripping_cli(object):
         from deepneuro.pipelines.Skull_Stripping.predict import skull_strip
 
         skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
-
-    def docker_pipeline(self):
-
-        args = self.parse_args()
-
-        nvidia_docker_wrapper(['skull_strip', 'pipeline'], vars(args), ['output_folder', 'T1POST', 'FLAIR', 'input_directory'], docker_container='qtimlab/deepneuro_skull_strip:latest')
 
 
 def main():

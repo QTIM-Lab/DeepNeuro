@@ -111,7 +111,7 @@ class SkullStrip_Model(Preprocessor):
         if type(self.reference_channel) is not list:
             self.reference_channel = [self.reference_channel]
 
-    def execute(self, data_collection):
+    def execute(self, data_collection, return_array=False):
 
         if self.mask_numpy is None:
 
@@ -131,7 +131,7 @@ class SkullStrip_Model(Preprocessor):
 
             self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
 
-        super(SkullStrip_Model, self).execute(data_collection)
+        super(SkullStrip_Model, self).execute(data_collection, return_array)
 
     def preprocess(self, data_group):
 

@@ -6,33 +6,18 @@ import argparse
 import sys
 import os
 
-from deepneuro.docker.docker_cli import nvidia_docker_wrapper
+from deepneuro.pipelines.shared import DeepNeuroCLI
 
 
-class Segment_Mets_cli(object):
+class Segment_Mets_cli(DeepNeuroCLI):
 
-    def __init__(self):
+    def load(self):
 
-        parser = argparse.ArgumentParser(
-            description='A number of pre-packaged commands used by the Quantiative Tumor Imaging Lab at the Martinos Center',
-            usage='''segment_mets <command> [<args>]
+        self.command_name = 'segment_mets'
+        self.docker_container = 'qtimlab/deepneuro_segment_mets:latest'
+        self.filepath_arguments = ['output_folder', 'T1', 'T2', 'T1POST', 'FLAIR', 'input_directory']
 
-                    The following commands are available:
-                       pipeline               Run the entire segmentation pipeline, with options to leave certain pre-processing steps out.
-                       docker_pipeline        Run the previous command via a Docker container via nvidia-docker.
-                ''')
-
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-
-        if not hasattr(self, args.command):
-            print('Sorry, that\'s not one of the commands.')
-            parser.print_help()
-            exit(1)
-
-        getattr(self, args.command)()
-
-        return
+        super(Segment_Mets_cli, self).load()
 
     def parse_args(self):
 
@@ -61,14 +46,16 @@ class Segment_Mets_cli(object):
         parser.add_argument('-FLAIR', type=str)
         parser.add_argument('-input_directory', type=str)
         parser.add_argument('-segmentation_output', nargs='?', type=str, const='segmentation.nii.gz', default='segmentation.nii.gz')
-        parser.add_argument('-gpu_num', nargs='?', const='0', default='0', type=str)
-        parser.add_argument('-debiased', action='store_true')  
-        parser.add_argument('-resampled', action='store_true')
+
+        parser.add_argument('-debiased', action='store_true')
         parser.add_argument('-registered', action='store_true')
         parser.add_argument('-skullstripped', action='store_true') 
         parser.add_argument('-preprocessed', action='store_true') 
-        parser.add_argument('-save_preprocess', action='store_true')
+        
+        parser.add_argument('-gpu_num', nargs='?', const='0', default='0', type=str)
+        parser.add_argument('-save_only_segmentations', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
+        parser.add_argument('-quiet', action='store_true')
         parser.add_argument('-output_probabilities', action='store_true')
         args = parser.parse_args(sys.argv[2:])
 
@@ -83,13 +70,22 @@ class Segment_Mets_cli(object):
 
         from deepneuro.pipelines.Segment_Brain_Mets.predict import predict_brain_mets
 
-        predict_brain_mets(args.output_folder, T2=args.T2, T1POST=args.T1POST, T1PRE=args.T1, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, registered=args.registered, skullstripped=args.skullstripped, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
-
-    def docker_pipeline(self):
-
-        args = self.parse_args()
-
-        nvidia_docker_wrapper(['segment_mets', 'pipeline'], vars(args), ['output_folder', 'T1', 'T1POST', 'FLAIR', 'T2', 'input_directory'], docker_container='qtimlab/deepneuro_segment_mets:latest')
+        predict_brain_mets(args.output_folder, 
+            T2=args.T2, 
+            T1POST=args.T1POST, 
+            T1PRE=args.T1, 
+            FLAIR=args.FLAIR, 
+            ground_truth=None,
+            bias_corrected=args.debiased, 
+            registered=args.registered, 
+            skullstripped=args.skullstripped, 
+            preprocessed=args.preprocessed, 
+            save_only_segmentations=args.save_only_segmentations, 
+            output_probabilities=args.output_probabilities,
+            save_all_steps=args.save_all_steps, 
+            output_wholetumor_filename=args.wholetumor_output, 
+            output_enhancing_filename=args.enhancing_output, 
+            quiet=args.quiet)
 
 
 def main():

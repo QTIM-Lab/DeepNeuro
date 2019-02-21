@@ -296,9 +296,12 @@ class DataCollection(object):
         """ Executes all queued preprocessor functions in this DataCollection.
         """
 
-        for preprocessor in self.preprocessors:
+        for idx, preprocessor in enumerate(self.preprocessors):
             preprocessor.reset()
-            preprocessor.execute(self)
+            if idx == len(self.preprocessors) - 1:
+                preprocessor.execute(self, return_array=True)
+            else:
+                preprocessor.execute(self, return_array=False)
 
     # @profile
     def load_case_data(self, case):

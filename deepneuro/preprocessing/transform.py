@@ -8,7 +8,7 @@ import numpy as np
 import itertools
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.util import add_parameter, quotes
+from deepneuro.utilities.util import add_parameter, quotes, docker_print
 
 FNULL = open(os.devnull, 'w')
 
@@ -290,6 +290,12 @@ class CropValues(Preprocessor):
 
         mask_value: int
             Value to be cropped. Currently, only 0 supported.
+        lead_data_group: str
+            If provided, multiple data groups will be cropped according
+            to the bounding box determined in the lead_data_group. Only
+            applicable if different data_groups have the same shape. None
+            by default, meaning that all data groups are cropped on an
+            individual basis.
     """
 
     def load(self, kwargs):
@@ -299,23 +305,51 @@ class CropValues(Preprocessor):
 
         # Dropping Parameters
         add_parameter(self, kwargs, 'mask_value', 0)
+        add_parameter(self, kwargs, 'lead_data_group', None)
 
         assert self.mask_value == 0, 'Nonzero mask_value has not yet been implemented.'
 
+        self.slice_boundaries = []
         self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(CropValues, self).initialize(data_collection)
+
+        if self.lead_data_group is not None:
+            # Complex code to bring the lead data group to the front.
+            lead_idx = None
+            for idx, value in enumerate(self.data_groups_iterator):
+                if value[0] == self.lead_data_group:
+                    lead_idx = idx
+
+            self.data_groups_iterator.insert(0, self.data_groups_iterator.pop(lead_idx))
+
+        return
+
+    def execute(self, data_collection, return_array=False):
+
+        super(CropValues, self).execute(data_collection, return_array)
+
+        self.slice_boundaries = []
 
     def preprocess(self, data_group):
 
         input_data = data_group.preprocessed_case
 
-        num_dims = input_data.ndim
-        slice_boundaries = []
-        for axis in itertools.combinations(range(num_dims), num_dims - 1):
-            nonzero = np.any(input_data, axis=axis)
-            slice_boundary = list(np.where(nonzero)[0][[0, -1]])
-            slice_boundaries = [slice(slice_boundary[0], slice_boundary[1] + 1, 1)] + slice_boundaries
+        if self.lead_data_group is None or self.slice_boundaries == []:
+            num_dims = input_data.ndim
+            slice_boundaries = []
+            for axis in itertools.combinations(range(num_dims), num_dims - 1):
+                nonzero = np.any(input_data, axis=axis)
+                slice_boundary = list(np.where(nonzero)[0][[0, -1]])
+                slice_boundaries = [slice(slice_boundary[0], slice_boundary[1] + 1, 1)] + slice_boundaries
+                self.output_data = input_data[tuple(slice_boundaries)]
+        else:
+            self.output_data = input_data[tuple(self.slice_boundaries)]
 
-        self.output_data = input_data[tuple(slice_boundaries)]
+        if self.slice_boundaries == [] and self.lead_data_group is not None:
+            self.slice_boundaries = tuple(slice_boundaries)
 
         data_group.preprocessed_case = self.output_data
 

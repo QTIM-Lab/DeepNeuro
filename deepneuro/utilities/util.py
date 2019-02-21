@@ -118,14 +118,14 @@ def replace_extension(input_filepath, extension):
     Parameters
     ----------
     input_filepath : str
-        Description
+        Filepath to switch extensions on.
     extension : str
-        Description
+        Extension to switch in.
     
     Returns
     -------
-    TYPE
-        Description
+    str
+        Filepath with switched extension.
     """
 
     input_filepath = os.path.abspath(input_filepath)
@@ -138,9 +138,6 @@ def replace_suffix(input_filepath, input_suffix, output_suffix, suffix_delimiter
 
     """ Replaces an input_suffix in a filename with an output_suffix. Can be used
         to generate or remove suffixes by leaving one or the other option blank.
-
-        TODO: Make suffixes accept regexes. Can likely replace suffix_delimiter after this.
-        TODO: Decide whether suffixes should extend across multiple directory levels.
 
         Parameters
         ----------
@@ -212,7 +209,6 @@ def quotes(input_string):
 def cli_sanitize(input_filepath, save=False, delete=False):
 
     """ Copies out a filename without spaces, or deletes that file.
-        Filename invertibility is not 
         Will not work for directories with spaces in their names.
     """
 
@@ -230,8 +226,6 @@ def cli_sanitize(input_filepath, save=False, delete=False):
 def docker_print(*args):
 
     """ Docker doesn't flush stdout in some circumstances, so one needs to do so manually.
-
-    Have not checked behavior after 2to3.
     
     Parameters
     ----------
