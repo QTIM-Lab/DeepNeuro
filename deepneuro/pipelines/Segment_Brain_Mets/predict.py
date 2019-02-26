@@ -4,14 +4,11 @@ import os
 # Step 0, Import DeepNeuro Commands
 #--------------------------------------------------------------------#
 
-from deepneuro.outputs.segmentation import PatchesInference
-from deepneuro.preprocessing.preprocessor import DICOMConverter
-from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
-from deepneuro.preprocessing.transform import Coregister
-from deepneuro.preprocessing.skullstrip import SkullStrip_Model
-from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
+from deepneuro.outputs import PatchesInference
+from deepneuro.preprocessing import DICOMConverter, N4BiasCorrection, ZeroMeanNormalization, Coregister, SkullStrip_Model
+from deepneuro.postprocessing import BinarizeLabel, LargestComponents, FillHoles
 from deepneuro.pipelines.shared import load_data, load_model_with_output
-from deepneuro.utilities.util import docker_print
+from deepneuro.utilities import docker_print
 
 
 def predict_brain_mets(output_folder, 

@@ -37,14 +37,16 @@ class Skull_Stripping_cli(DeepNeuroCLI):
         parser.add_argument('-T1POST', type=str)
         parser.add_argument('-FLAIR', type=str)
         parser.add_argument('-input_directory', type=str)
-        parser.add_argument('-mask_output', nargs='?', type=str, const='skullstrip_mask', default='skullstrip_mask.nii.gz')
-        parser.add_argument('-gpu_num', nargs='?', const='0', default='0', type=str)
-        parser.add_argument('-debiased', action='store_true')  
-        parser.add_argument('-resampled', action='store_true')
+        parser.add_argument('-segmentation_output', nargs='?', type=str, const='segmentation.nii.gz', default='segmentation.nii.gz')
+
+        parser.add_argument('-debiased', action='store_true')
         parser.add_argument('-registered', action='store_true')
         parser.add_argument('-preprocessed', action='store_true') 
-        parser.add_argument('-save_preprocess', action='store_true')
+        
+        parser.add_argument('-gpu_num', nargs='?', const='0', default='0', type=str)
+        parser.add_argument('-save_only_segmentations', action='store_true')
         parser.add_argument('-save_all_steps', action='store_true')
+        parser.add_argument('-quiet', action='store_true')
         parser.add_argument('-output_probabilities', action='store_true')
         args = parser.parse_args(sys.argv[2:])
 
@@ -59,7 +61,7 @@ class Skull_Stripping_cli(DeepNeuroCLI):
 
         from deepneuro.pipelines.Skull_Stripping.predict import skull_strip
 
-        skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, resampled=args.resampled, registered=args.registered, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, mask_output=args.mask_output)
+        skull_strip(output_folder=args.output_folder, T1POST=args.T1POST, FLAIR=args.FLAIR, ground_truth=None, input_directory=args.input_directory, bias_corrected=args.debiased, registered=args.registered, preprocessed=args.preprocessed, save_only_segmentations=args.save_only_segmentations, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output, quiet=args.quiet)
 
 
 def main():

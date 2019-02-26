@@ -63,7 +63,7 @@ class Output(object):
         add_parameter(self, kwargs, 'save_to_file', True)
         add_parameter(self, kwargs, 'save_initial', False)
         add_parameter(self, kwargs, 'save_all_steps', False)
-        add_parameter(self, kwargs, 'output_directory', None)
+        add_parameter(self, kwargs, 'output_directory', './')
         add_parameter(self, kwargs, 'output_filename', None)
         add_parameter(self, kwargs, 'output_filename_base', 'prediction.png')
         add_parameter(self, kwargs, 'stack_outputs', False)
@@ -128,7 +128,7 @@ class Output(object):
         self.generate_output_directory()
 
         if self.case is not None:
-            return self.generate_invidual_case(self.case)
+            return self.generate_individual_case(self.case)
 
         data_generator = self.data_collection.data_generator(verbose=True, batch_size=self.batch_size)
 
@@ -146,7 +146,7 @@ class Output(object):
         return_dict = {'data': self.return_objects, 'filenames': self.return_filenames}
         return return_dict
 
-    def generate_invidual_case(self, case):
+    def generate_individual_case(self, case):
 
         self.return_objects = []
         self.return_filenames = []
@@ -254,7 +254,7 @@ class Output(object):
             return              
 
         if self.open_files[self.lead_key] is None:
-            self.open_files[self.lead_key] = open(self.output_filename_base, 'w')
+            self.open_files[self.lead_key] = open(self.output_filename_base + self.output_extension, 'w')
 
         writer = csv.writer(self.open_files[self.lead_key])
 
