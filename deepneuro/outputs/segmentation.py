@@ -46,6 +46,7 @@ class PatchesInference(ModelInference):
         add_parameter(self, kwargs, 'output_patch_shape', None)
         add_parameter(self, kwargs, 'check_empty_patch', True)
         add_parameter(self, kwargs, 'pad_borders', True)
+        add_parameter(self, kwargs, 'keep_channels', None)
 
         add_parameter(self, kwargs, 'patch_dimensions', None)
         add_parameter(self, kwargs, 'output_patch_dimensions', self.patch_dimensions)
@@ -188,6 +189,9 @@ class PatchesInference(ModelInference):
                 # Might not work for odd-shaped patches; check.
                 output_slice[dim] = slice(self.input_patch_shape[dim] // 2, -self.input_patch_shape[dim] // 2, 1)
             output_data = output_data[tuple(output_slice)]
+
+        if self.keep_channels is not None:
+            output_data = np.take(output_data, self.keep_channels, axis=-1)
 
         return output_data
 

@@ -9,30 +9,11 @@ import os
 
 from collections import OrderedDict
 
-from deepneuro.utilities.conversion import save_data
+from deepneuro.utilities.conversion import save_data, read_image_files
 from deepneuro.utilities.util import replace_suffix, nifti_splitext
 
 
-def check_data(output_data=None, 
-    data_collection=None, 
-    batch_size=4, 
-    merge_batch=True, 
-    show_output=True, 
-    output_filepath=None, 
-    viz_rows=None, 
-    viz_mode_2d=None, 
-    viz_mode_3d='2d_slice', 
-    color_range=None, 
-    output_groups=None, 
-    combine_outputs=False, 
-    rgb_output=True, 
-    colorbar=True, 
-    subplot_rows=None, 
-    title=None, 
-    subplot_titles=None, 
-    output_directory=None, 
-    case_name=None, 
-    **kwargs):
+def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_slice', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, output_directory=None, case_name=None, **kwargs):
 
     """Summary
     
@@ -98,6 +79,10 @@ def check_data(output_data=None,
 
     # Very bad, reformat.
     output_data = {label: data for label, data in list(output_data.items()) if '_affine' not in label and '_augmentation_string' not in label and 'casename' not in label}
+
+    for label, data in list(output_data.items()):
+        if type(data) is str:
+            output_data[label] = read_image_files(data)[np.newaxis, ...]
 
     if color_range is None:
         color_range = {label: [np.min(data), np.max(data)] for label, data in list(output_data.items())}
@@ -167,18 +152,18 @@ def check_data(output_data=None,
         if subplot_rows is None:
             subplot_rows = int(np.ceil(np.sqrt(plots)))
         plot_columns = int(np.ceil(plots / float(subplot_rows)))
-        fig, axarr = plt.subplots(subplot_rows, plot_columns)
+        fig, axarr = plt.subplots(plot_columns, subplot_rows)
 
         # matplotlib is so annoying
         if subplot_rows == 1 and plot_columns == 1:
             axarr = np.array([axarr]).reshape(1, 1)
         elif subplot_rows == 1 or plot_columns == 1:
-            axarr = axarr.reshape(subplot_rows, plot_columns)
+            axarr = axarr.reshape(plot_columns, subplot_rows)
 
         for plot_idx, (label, data) in enumerate(output_images.items()):
 
-            image_column = plot_idx % plot_columns
-            image_row = plot_idx // plot_columns
+            image_row = plot_idx % plot_columns
+            image_column = plot_idx // plot_columns
 
             if data.shape[-1] == 3:
 
@@ -200,8 +185,8 @@ def check_data(output_data=None,
             axarr[image_row, image_column].set_title(label)
 
         for plot_idx in range(len(output_images), subplot_rows * plot_columns):
-            image_column = plot_idx % plot_columns
-            image_row = plot_idx // plot_columns
+            image_row = plot_idx % plot_columns
+            image_column = plot_idx // plot_columns
             fig.delaxes(axarr[image_row, image_column])
 
         if title is not None:
@@ -272,7 +257,7 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_slice', label=None,
         if viz_mode_3d == '2d_slice':
 
             if slice_index is None:
-                input_data_slice = input_data[..., int(input_data.shape[-1] / 2), i][..., np.newaxis]
+                input_data_slice = input_data[..., int(input_data.shape[-2] / 2), i][..., np.newaxis]
             else:
                 input_data_slice = input_data[..., slice_index, i][..., np.newaxis]
             input_data_slice = merge_data(input_data_slice, [viz_rows, viz_columns], 1)
@@ -305,7 +290,7 @@ def display_3d_data(input_data, color_range, viz_mode_3d='2d_slice', label=None,
                 subplot_title = subplot_titles[label][i]
 
             input_dict[subplot_title] = input_data_slice
-            color_range[subplot_title] = color_range[label]
+            color_range[subplot_title] = [np.min(input_data[..., i]), np.max(input_data[..., i])]
 
     return input_dict, color_range
 

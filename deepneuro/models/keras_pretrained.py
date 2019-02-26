@@ -39,14 +39,14 @@ class KerasPreTrainedModel(KerasModel):
         add_parameter(self, kwargs, 'input_shape', None)
         add_parameter(self, kwargs, 'output_classes', None)
         add_parameter(self, kwargs, 'bottleneck_layers_num', None)
-        add_parameter(self, kwargs, 'finetuning_dense_features', 4096)
+        add_parameter(self, kwargs, 'finetuning_dense_features', 128)
 
         self.models = {
             "vgg16": VGG16,
             "vgg19": VGG19,
             "inception": InceptionV3,
             "xception": Xception,
-            "resnet": ResNet50
+            "resnet50": ResNet50
         }
 
         self.output_activation = False
@@ -74,8 +74,13 @@ class KerasPreTrainedModel(KerasModel):
                 model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
                 predictions = Dense(self.output_classes, activation='softmax')(model_output)
                 self.model = Model(self.model.input, predictions)
-            else:
-                raise NotImplementedError
+            elif self.model_type in ['resnet50']:
+                # self.model.layers.pop()
+                model_output = self.model.output
+                model_output = GlobalAveragePooling2D()(model_output)
+                model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
+                predictions = Dense(self.output_classes, activation='softmax')(model_output)
+                self.model = Model(self.model.input, predictions)
 
         if self.bottleneck_layers_num is not None:
             for layer in self.model.layers[:self.bottleneck_layers_num]:

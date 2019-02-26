@@ -84,19 +84,17 @@ In order to use Singularity, you must mount the directory containing all of your
 
 ## Python Container Wrapper Usage
 
-To avoid adjusting your  you may want to avoid using nvidia-docker directly. I've also created a python utility that wraps around the nvidia-docker command above, and is slightly easier to use. In order to use this utlity, you will need to clone this repository. ("git clone https://github.com/QTIM-Lab/DeepNeuro"), and install it ("python setup.py install", in the directory you cloned the repository).
+If you don't want to type out Docker/Singularity commands directly, don't want to avoid figuring out precisely which drives to mount, or want to integrate DeepNeuro commands into a Python processing script, you can also easily run DeepNeuro containers from a Python script. also created a python utility that wraps around the nvidia-docker command above, and is slightly easier to use. 
 
-Once you have installed the repository, you can use the following command on the command-line:
+You will need to install DeepNeuro, or be running a DeepNeuro Singularity/Docker container, before you can use this command. Once you have installed the repository, you can use the following command structure to use this module:
 
 ```
-segment_gbm docker_pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
-
-segment_gbm singularity_pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+from deepneuro.pipelines import Segment_GBM
 ```
 
 Parameters should be exactly the same as in the Docker use-case, except now you will not have to modify filepaths to be relative to the mounted folder.
 
-## Docker Example
+## Docker/Singularity Example
 
 Let's say you stored some DICOM data on your computer at the path /home/my_user/Data/, and wanted to segment data located at /home/my_user/Data/Patient_1. The nvidia-docker command would look like this:
 

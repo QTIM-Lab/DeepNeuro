@@ -81,7 +81,10 @@ class DataGroup(object):
             else:
                 preprocessed_affine = None
         else:
-            preprocessed_case, preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
+            if type(self.preprocessed_case) is np.ndarray:
+                preprocessed_case, preprocessed_affine = self.preprocessed_case, self.preprocessed_affine
+            else:
+                preprocessed_case, preprocessed_affine = read_image_files(self.preprocessed_case, return_affine=True)
 
         if return_affine:
             return preprocessed_case, preprocessed_affine

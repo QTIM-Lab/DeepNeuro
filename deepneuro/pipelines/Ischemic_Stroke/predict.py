@@ -1,6 +1,6 @@
 import os
 
-from deepneuro.outputs.inference import ModelPatchesInference
+from deepneuro.outputs import PatchesInference
 from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Coregister
@@ -17,13 +17,15 @@ def predict_ischemic_stroke(output_folder,
                             input_directory=None,
                             registered=False,
                             preprocessed=False, 
-                            save_preprocess=False, 
+                            save_only_segmentations=False, 
                             save_all_steps=False, 
-                            output_segmentation_filename='segmentation.nii.gz', 
-                            verbose=True, 
+                            output_segmentation_filename='segmentation.nii.gz',
                             input_data=None, 
-                            registration_reference='FLAIR'):
+                            registration_reference='FLAIR',
+                            quiet=False):
 
+    verbose = not quiet
+    save_preprocessed = not save_only_segmentations
     registration_reference_channel = 1
 
     #--------------------------------------------------------------------#
@@ -37,14 +39,15 @@ def predict_ischemic_stroke(output_folder,
     #--------------------------------------------------------------------#
 
     stroke_prediction_parameters = {'inputs': ['input_data'], 
-                        'output_filename': os.path.join(output_folder, output_segmentation_filename),
+                        'output_directory': output_folder,
+                        'output_filename': output_segmentation_filename,
                         'batch_size': 50,
                         'patch_overlaps': 8,
                         'output_patch_shape': (62, 62, 6, 1),
                         'case_in_filename': False,
                         'verbose': verbose}
 
-    stroke_model = load_model_with_output(model_name='ischemic_stroke', outputs=[ModelPatchesInference(**stroke_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')])
+    stroke_model = load_model_with_output(model_name='ischemic_stroke', outputs=[PatchesInference(**stroke_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')])
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
@@ -57,8 +60,8 @@ def predict_ischemic_stroke(output_folder,
         if not registered:
             preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=registration_reference_channel)]
 
-        else:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocess, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
+        if not preprocessed:
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocessed, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 

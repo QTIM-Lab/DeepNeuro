@@ -10,7 +10,7 @@ def docker_wrapper(**kwargs):
     return
 
 
-def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, container='deepneuro'):
+def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
 
     if filename_args is not None:
         filename_args = [arg for arg in filename_args if cli_args[arg] is not None]
@@ -22,10 +22,10 @@ def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactiv
         pass  # TODO: Default behavior when mounted directory not needed.
 
     if interactive:
-        docker_command = ['nvidia-docker', 'run', '-it', '-v', mounted_dir + ':/INPUT_DATA', container, 'bash']
+        docker_command = ['nvidia-docker', 'run', '-it', '-v', mounted_dir + ':/INPUT_DATA', docker_container, 'bash']
 
     else:
-        docker_command = ['nvidia-docker', 'run', '--rm', '-v', mounted_dir + ':/INPUT_DATA', container] + command
+        docker_command = ['nvidia-docker', 'run', '--rm', '-v', mounted_dir + ':/INPUT_DATA', docker_container] + command
 
         # This presumes everything is an optional arg, which is wrong.
         # Rewrite this to accept command line strings, instead of Python variables.

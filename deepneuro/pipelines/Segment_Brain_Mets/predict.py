@@ -46,7 +46,8 @@ def predict_brain_mets(output_folder,
     #--------------------------------------------------------------------#
 
     mets_prediction_parameters = {'inputs': ['input_data'], 
-                        'output_filename': os.path.join(output_folder, output_segmentation_filename),
+                        'output_directory': output_folder,
+                        'output_filename': output_segmentation_filename,
                         'batch_size': 50,
                         'patch_overlaps': 8,
                         'output_patch_shape': (28, 28, 28, 1),

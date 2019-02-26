@@ -21,8 +21,6 @@ RUN git branch -f winter_development_2018 origin/winter_development_2018
 RUN git checkout winter_development_2018
 RUN python3 /home/DeepNeuro/setup.py develop
 
-RUN python3 /home/DeepNeuro/setup.py develop
-
 # Commands at startup.
 WORKDIR "/"
 RUN chmod 777 /home/DeepNeuro/entrypoint.sh

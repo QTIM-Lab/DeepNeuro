@@ -160,14 +160,6 @@ class Output(object):
         return return_dict
 
     def generate_output_directory(self):
-        
-        """Summary
-        
-        Returns
-        -------
-        TYPE
-            Description
-        """
 
         self.output_directory = os.path.abspath(self.output_directory)
 
@@ -191,8 +183,9 @@ class Output(object):
 
             if augmentation_string != '':
                 fileparts = fileparts + [augmentation_string]
-            if [self.postprocessors[postprocessor_idx].postprocessor_string] != '':
-                fileparts = fileparts + [self.postprocessors[postprocessor_idx].postprocessor_string]
+            if postprocessor_idx is not None:
+                if [self.postprocessors[postprocessor_idx].postprocessor_string] != '':
+                    fileparts = fileparts + [self.postprocessors[postprocessor_idx].postprocessor_string]
 
             output_filename = '_'.join(fileparts)
 

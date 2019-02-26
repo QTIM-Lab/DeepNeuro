@@ -322,6 +322,11 @@ class DataCollection(object):
 
         for data_group in data_groups:
 
+            if type(data_group.preprocessed_case) is np.ndarray:
+                data_group.preprocessed_case, data_group.preprocessed_affine = data_group.preprocessed_case, data_group.preprocessed_affine
+            else:
+                data_group.preprocessed_case, data_group.preprocessed_affine = read_image_files(data_group.preprocessed_case, return_affine=True)
+
             data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
 
             if self.preprocessors == []:
@@ -383,6 +388,7 @@ class DataCollection(object):
                 data_batch[data_group.label] = data_group.augmentation_cases[-1]
             data_batch[data_group.label + '_augmentation_string'] = np.stack([data_group.augmentation_strings[-1]])
             data_batch[data_group.label + '_affine'] = np.stack([data_group.preprocessed_affine])
+
         return data_batch
 
     # @profile
@@ -526,6 +532,9 @@ class DataCollection(object):
             hdf5_file.close()
             os.remove(output_filepath)
             raise e
+
+        newDataCollection = DataCollection(data_sources={'hdf5': output_filepath})
+        self.__dict__.update(newDataCollection.__dict__)
 
     def create_hdf5_file(self, output_filepath, data_group_labels=None):
 

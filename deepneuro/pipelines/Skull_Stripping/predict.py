@@ -4,7 +4,7 @@ import os
 # Step 0, Import DeepNeuro Commands
 #--------------------------------------------------------------------#
 
-from deepneuro.outputs.inference import ModelPatchesInference
+from deepneuro.outputs.inference import PatchesInference
 from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Coregister
@@ -46,7 +46,7 @@ def skull_strip(output_folder,
             'case_in_filename': False,
             'verbose': verbose}
 
-    skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[ModelPatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents(postprocessor_string='label')])
+    skullstripping_model = load_model_with_output(model_name='skullstrip_mri', outputs=[PatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents(postprocessor_string='label')])
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors

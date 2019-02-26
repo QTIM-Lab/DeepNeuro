@@ -6,6 +6,9 @@ import numpy as np
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, quotes
+from deepneuro.outputs.segmentation import PatchesInference
+from deepneuro.postprocessing.label import BinarizeLabel, FillHoles, LargestComponents
+from deepneuro.pipelines.shared import load_model_with_output
 
 FNULL = open(os.devnull, 'w')
 
@@ -97,7 +100,10 @@ class SkullStrip_Model(Preprocessor):
         """
 
         add_parameter(self, kwargs, 'reference_channel', [0, 1])
-        add_parameter(self, kwargs, 'model', None)  # TODO: Replace with load(skull_strip_model)
+        add_parameter(self, kwargs, 'model', None)
+
+        # Data Output Parameters
+        add_parameter(self, kwargs, 'output_filename', 'skullstrip_mask.nii.gz')
 
         add_parameter(self, kwargs, 'name', 'SkullStrip_Model')
         add_parameter(self, kwargs, 'preprocessor_string', '_SkullStripped')
@@ -110,6 +116,22 @@ class SkullStrip_Model(Preprocessor):
 
         if type(self.reference_channel) is not list:
             self.reference_channel = [self.reference_channel]
+
+    def initialize(self, data_collection):
+
+        super(SkullStrip_Model, self).initialize(data_collection)
+
+        if self.model is None:
+            skullstripping_prediction_parameters = {'inputs': ['input_data'], 
+                'output_filename': self.output_filename,
+                'batch_size': 50,
+                'patch_overlaps': 3,
+                'output_patch_shape': (56, 56, 6, 1),
+                'save_to_file': False,
+                'data_collection': data_collection,
+                'verbose': self.verbose}
+
+            self.model = load_model_with_output(model_name='skullstrip_mri', outputs=[PatchesInference(**skullstripping_prediction_parameters)], postprocessors=[BinarizeLabel(), FillHoles(), LargestComponents()])
 
     def execute(self, data_collection, return_array=False):
 

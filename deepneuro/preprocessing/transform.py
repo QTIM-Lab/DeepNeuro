@@ -169,6 +169,8 @@ class OneHotEncode(Preprocessor):
 
         # Class Parameters
         add_parameter(self, kwargs, 'num_classes', 3)
+        add_parameter(self, kwargs, 'input_classes', None)
+        add_parameter(self, kwargs, 'class_dictionary', {})
 
         self.output_shape = {}
         self.array_input = True
@@ -176,6 +178,10 @@ class OneHotEncode(Preprocessor):
     def initialize(self, data_collection):
 
         super(OneHotEncode, self).initialize(data_collection)
+
+        if self.class_dictionary == {} and self.input_classes is not None:
+            for idx, class_name in enumerate(self.input_classes):
+                self.class_dictionary[class_name] = idx
 
         for label, data_group in list(self.data_groups.items()):
             data_shape = list(data_group.get_shape())
@@ -186,12 +192,55 @@ class OneHotEncode(Preprocessor):
 
         # Relatively brittle, only works for 1-dimensional data.
         input_data = data_group.preprocessed_case
-        classes = np.unique(input_data)
 
         # Probably not the most efficient.
         output_data = np.zeros(self.num_classes)
         for item in input_data:
-            output_data[int(item)] = 1
+            if self.class_dictionary != {}:
+                output_data[self.class_dictionary[item]] = 1
+            else:
+                output_data[int(item)] = 1
+
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
+
+
+class CopyChannels(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'CopyChannels')
+
+        # Class Parameters
+        add_parameter(self, kwargs, 'channel_multiplier', 3)
+        add_parameter(self, kwargs, 'new_channel_dim', False)
+
+        self.output_shape = {}
+        self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(CopyChannels, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+            data_shape = list(data_group.get_shape())
+
+            if self.new_channel_dim:
+                data_shape += [self.channel_multiplier]
+            else:
+                data_shape[-1] = self.channel_multiplier * data_shape[-1]
+
+            self.output_shape[label] = tuple(data_shape)
+
+    def preprocess(self, data_group):
+
+        input_data = data_group.preprocessed_case
+
+        if self.new_channel_dim:
+            output_data = np.tile(input_data[..., np.newaxis], (1, 1, self.channel_multiplier))
+        else:
+            output_data = np.tile(input_data, (1, 1, self.channel_multiplier))
 
         data_group.preprocessed_case = output_data
         self.output_data = output_data
@@ -434,7 +483,7 @@ class Coregister(Preprocessor):
         add_parameter(self, kwargs, 'sampling_percentage', .06)
 
         # Reference Parameters
-        add_parameter(self, kwargs, 'reference_channel', None)
+        add_parameter(self, kwargs, 'reference_channel', 0)
         add_parameter(self, kwargs, 'reference_file', None)
 
         # Output Parameters

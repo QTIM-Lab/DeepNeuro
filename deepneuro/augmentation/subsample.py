@@ -113,7 +113,7 @@ class ExtractPatches(Augmentation):
             corner_idx = None
         else:
             region = self.patch_regions[self.region_list[self.iteration]]
-
+            # print(self.region_list[self.iteration])
             # TODO: Make errors like these more ubiquitous.
             if len(region[0]) == 0:
                 # raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
@@ -159,6 +159,11 @@ class ExtractPatches(Augmentation):
                 pad_dims[patch_dim] = tuple(pad)
 
             self.patches[label] = np.lib.pad(self.patches[label], tuple(pad_dims), 'edge')
+
+            # print(self.patches[label].shape)
+            # if label == 'ground_truth':
+            #     for i in range(4):
+            #         print(np.sum(self.patches[label][..., i]))
             # print(label, np.sum(self.patches[label]))
 
         return

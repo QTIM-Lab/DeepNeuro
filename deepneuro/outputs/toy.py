@@ -1,10 +1,10 @@
 import numpy as np
 
 from deepneuro.utilities.util import add_parameter
-from deepneuro.outputs.inference import ModelPatchesInference
+from deepneuro.outputs.segmentation import PatchesInference
 
 
-class PatchDiagram(ModelPatchesInference):
+class PatchDiagram(PatchesInference):
 
     def load(self, kwargs):
 

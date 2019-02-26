@@ -91,7 +91,7 @@ def dice_cost_function(input_data, ground_truth):
     im2 = np.asarray(ground_truth).astype(np.bool)
 
     if im1.shape != im2.shape:
-        raise ValueError("Shape mismatch: input_data and ground_truth must have the same shape.")
+        raise ValueError("Shape mismatch: Predicted data and ground truth must have the same shape.")
 
     im_sum = im1.sum() + im2.sum()
     if im_sum == 0:

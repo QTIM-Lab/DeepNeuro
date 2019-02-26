@@ -81,6 +81,7 @@ class Flip_Rotate_2D(Augmentation):
         add_parameter(self, kwargs, 'rotate', True)
         add_parameter(self, kwargs, 'flip_axis', 2)
         add_parameter(self, kwargs, 'rotate_axis', (1, 2))
+        add_parameter(self, kwargs, 'shuffle', True)
 
         # TODO: This is incredibly over-elaborate, return to fix.
         self.transforms_list = []
@@ -101,7 +102,8 @@ class Flip_Rotate_2D(Augmentation):
 
     def reset(self, augmentation_num):
 
-        np.random.shuffle(self.available_transforms)
+        if self.shuffle:
+            np.random.shuffle(self.available_transforms)
 
     def augment(self, augmentation_num=0):
 

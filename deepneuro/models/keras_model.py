@@ -51,7 +51,7 @@ class KerasModel(DeepNeuroModel):
             if validation_data_collection is None:
                 self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, callbacks=self.callbacks)
             else:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks, workers=0)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()
@@ -178,7 +178,8 @@ class KerasModel(DeepNeuroModel):
                         self.model = Model(inputs=self.inputs, outputs=Activation('softmax')(self.output_layer))
                     else:
                         self.model = Model(inputs=self.inputs, outputs=self.output_layer)
-                    self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
             elif self.cost_function == 'weighted_categorical_crossentropy':
 

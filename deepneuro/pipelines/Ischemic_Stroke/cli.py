@@ -63,7 +63,7 @@ class Segment_Ischemic_Stroke_cli(DeepNeuroCLI):
 
         from deepneuro.pipelines.Ischemic_Stroke.predict import predict_ischemic_stroke
 
-        predict_ischemic_stroke(args.output_folder, DWI=args.DWI, B0=args.B0, ground_truth=None, input_directory=args.input_directory, registered=args.registered, preprocessed=args.preprocessed, save_preprocess=args.save_preprocess, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output)
+        predict_ischemic_stroke(args.output_folder, DWI=args.DWI, B0=args.B0, ground_truth=None, input_directory=args.input_directory, registered=args.registered, preprocessed=args.preprocessed, save_all_steps=args.save_all_steps, output_segmentation_filename=args.segmentation_output, quiet=args.quiet, save_only_segmentations=args.save_only_segmentations)
 
 
 def main():

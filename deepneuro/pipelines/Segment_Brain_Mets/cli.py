@@ -82,9 +82,8 @@ class Segment_Mets_cli(DeepNeuroCLI):
             preprocessed=args.preprocessed, 
             save_only_segmentations=args.save_only_segmentations, 
             output_probabilities=args.output_probabilities,
-            save_all_steps=args.save_all_steps, 
-            output_wholetumor_filename=args.wholetumor_output, 
-            output_enhancing_filename=args.enhancing_output, 
+            save_all_steps=args.save_all_steps,
+            output_segmentation_filename=args.segmentation_output, 
             quiet=args.quiet)
 
 

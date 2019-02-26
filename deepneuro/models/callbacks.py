@@ -161,6 +161,7 @@ class EpochPredict(Callback):
 
         add_parameter(self, kwargs, 'deepneuro_model', None)
         
+        add_parameter(self, kwargs, 'show_callback_output', False)
         add_parameter(self, kwargs, 'epoch_prediction_output_mode', 'gif')
 
         self.kwargs = kwargs
@@ -170,9 +171,13 @@ class EpochPredict(Callback):
 
         self.predictions = []
 
+        # Investigate why this doesn't happen by default.
+        if self.epoch_prediction_batch_size is None:
+            self.epoch_prediction_batch_size = 1
+
         # There's a more concise way to do this..
         self.predict_data = next(self.epoch_prediction_data_collection.data_generator(perpetual=True, verbose=False, just_one_batch=True, batch_size=self.epoch_prediction_batch_size))
- 
+
     def on_train_end(self, logs={}):
 
         if self.predictions != []:
@@ -213,7 +218,7 @@ class EpochPredict(Callback):
         else:
             prediction = self.epoch_prediction_object.process_case(self.predict_data, model=self.deepneuro_model)
 
-        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
+        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=self.show_callback_output, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
 
         if len(output_images.keys()) > 1:
             self.predictions += [[output_images['prediction_' + str(idx)].astype('uint8') for idx in range(len(output_images.keys()))]]
