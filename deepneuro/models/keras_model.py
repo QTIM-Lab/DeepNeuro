@@ -1,7 +1,7 @@
 from keras.engine import Input, Model
 from keras.layers import Activation, Lambda
 from keras.layers.merge import concatenate
-from keras.optimizers import Nadam, SGD, Adam
+from keras.optimizers import Nadam, SGD, Adam, RMSprop, Adagrad, Adamax, Adadelta
 from keras import backend as K
 
 from deepneuro.models.cost_functions import dice_coef_loss, dice_coef
@@ -25,7 +25,7 @@ class KerasModel(DeepNeuroModel):
         # Specific Cost Function Params
         add_parameter(self, kwargs, 'categorical_weighting', {0: 0.1, 1: 3.0})
 
-        self.keras_optimizer_dict = {'Nadam': Nadam, 'Adam': Adam, 'SGD': SGD}
+        self.keras_optimizer_dict = {'Nadam': Nadam, 'Adam': Adam, 'SGD': SGD, 'RMSprop': RMSprop, 'Adagrad': Adagrad, 'Adamax': Adamax, 'Adadelta': Adadelta}
 
         if self.input_tensor is None:
             self.inputs = Input(self.input_shape)
@@ -148,7 +148,8 @@ class KerasModel(DeepNeuroModel):
 
             # Not Implemented
             elif self.cost_function == 'multi_dice':
-                raise NotImplementedError
+
+                raise NotImplementedError('Multi-dice coefficient not yet implemented.')
                 
                 if compute_output:
                     if self.output_activation:
@@ -207,6 +208,12 @@ class KerasModel(DeepNeuroModel):
             self.model_output_shape = self.model.layers[-1].output_shape
 
             return self.output_layer
+
+    def load_weights(self, weights_file):
+
+        self.model.load_weights(weights_file)
+
+        return
 
 
 if __name__ == '__main__':

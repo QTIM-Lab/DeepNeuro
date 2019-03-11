@@ -5,7 +5,7 @@
 import csv
 
 from deepneuro.models.cost_functions import cost_function_dict
-from deepneuro.utilities.util import add_parameter
+from deepneuro.utilities.util import add_parameter, nifti_splitext
 
 
 class DeepNeuroModel(object):
@@ -77,7 +77,7 @@ class DeepNeuroModel(object):
         add_parameter(self, kwargs, 'cost_function', 'mse')
         add_parameter(self, kwargs, 'dropout', .1)
         add_parameter(self, kwargs, 'batch_norm', True)
-        add_parameter(self, kwargs, 'initial_learning_rate', .00001)
+        add_parameter(self, kwargs, 'initial_learning_rate', .0001)
         add_parameter(self, kwargs, 'num_outputs', 1)
 
         # Logging Parameters - Temporary
@@ -92,6 +92,7 @@ class DeepNeuroModel(object):
         # Misc
         add_parameter(self, kwargs, 'verbose', True)
         add_parameter(self, kwargs, 'hyperverbose', False)
+        add_parameter(self, kwargs, 'initial_build', True)
 
         # Callbacks -- Refactor later.
         self.callbacks = []
@@ -106,7 +107,7 @@ class DeepNeuroModel(object):
 
         self.load(kwargs)
 
-        if self.model is None:
+        if self.model is None and self.initial_build:
             self.build_model()
 
         self.outputs = []
@@ -242,12 +243,21 @@ def load_old_model(model_file, backend='keras', model_name=None, custom_object_d
 
     if backend == 'keras':
 
-        from keras.models import load_model
+        from keras.models import load_model, model_from_json
         from deepneuro.models.keras_model import KerasModel
 
         custom_objects = cost_function_dict(**kwargs)
 
-        model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
+        model_file_extension = nifti_splitext(model_file)[1]
+
+        if model_file_extension == '.json':
+            model = KerasModel(initial_build=False, **kwargs)
+            with open(model_file, 'r') as json_file:
+                loaded_model_json = json_file.read()
+                model.model = model_from_json(loaded_model_json, custom_objects=custom_objects)
+            model.build_model(compute_output=False)
+        else:
+            model = KerasModel(model=load_model(model_file, custom_objects=custom_objects))
         
         # Necessary?
         model.build_model(compute_output=False)
