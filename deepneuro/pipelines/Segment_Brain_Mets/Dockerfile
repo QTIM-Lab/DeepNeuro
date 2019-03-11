@@ -1,4 +1,4 @@
-FROM qtimlab/deepneuro_development:latest
+FROM qtimlab/deepneuro:latest
 LABEL maintainer "Andrew Beers <andrew_beers@alumni.brown.edu>"
 
 # Copy in models -- do this with Python module in future.
