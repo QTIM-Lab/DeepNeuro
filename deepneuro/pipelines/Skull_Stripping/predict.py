@@ -5,7 +5,8 @@
 from deepneuro.outputs import PatchesInference
 from deepneuro.preprocessing import DICOMConverter, N4BiasCorrection, ZeroMeanNormalization, Coregister
 from deepneuro.postprocessing import BinarizeLabel, LargestComponents, FillHoles
-from deepneuro.pipelines.shared import load_data, load_model_with_output
+from deepneuro.pipelines.shared import load_data
+from deepneuro.models.model import load_model_with_output
 from deepneuro.utilities import docker_print
 
 

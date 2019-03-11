@@ -6,7 +6,7 @@ import csv
 
 from deepneuro.models.cost_functions import cost_function_dict
 from deepneuro.utilities.util import add_parameter, nifti_splitext
-
+from deepneuro.load.load import load
 
 class DeepNeuroModel(object):
     
@@ -273,3 +273,24 @@ def load_old_model(model_file, backend='keras', model_name=None, custom_object_d
         saver = tf.train.import_meta_graph(model_file)
         saver.restore(sess, tf.train.latest_checkpoint('./'))
         return sess
+
+
+def load_model_with_output(model_path=None, model_name=None, outputs=None, postprocessors=None, **kwargs):
+
+    if model_path is not None:
+        model = load_old_model(model_path, **kwargs)
+
+    elif model_name is not None:
+        model = load_old_model(load(model_name), **kwargs)
+
+    else:
+        print('Error. No model provided.')
+        return
+    
+    for output in outputs:
+        model.append_output([output])
+
+        for postprocessor in postprocessors:
+            output.append_postprocessor([postprocessor]) 
+
+    return model

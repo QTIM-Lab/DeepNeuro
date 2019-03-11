@@ -8,8 +8,6 @@ import argparse
 from shutil import copy
 
 from deepneuro.data.data_collection import DataCollection
-from deepneuro.models.model import load_old_model
-from deepneuro.load.load import load
 from deepneuro.container.container_cli import nvidia_docker_wrapper
 
 
@@ -91,27 +89,6 @@ def load_data(inputs, output_folder, input_directory=None, ground_truth=None, in
         print('File loading completed.')
 
     return data_collection
-
-
-def load_model_with_output(model_path=None, model_name=None, outputs=None, postprocessors=None, **kwargs):
-
-    if model_path is not None:
-        model = load_old_model(model_path, **kwargs)
-
-    elif model_name is not None:
-        model = load_old_model(load(model_name), **kwargs)
-
-    else:
-        print('Error. No model provided.')
-        return
-    
-    for output in outputs:
-        model.append_output([output])
-
-        for postprocessor in postprocessors:
-            output.append_postprocessor([postprocessor]) 
-
-    return model
 
 
 def create_Dockerfile(output_directory, models_included=None, module_name=None, deepneuro_branch='master'):

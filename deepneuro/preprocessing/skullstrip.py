@@ -8,7 +8,7 @@ from deepneuro.utilities.conversion import read_image_files, save_numpy_2_nifti
 from deepneuro.utilities.util import add_parameter, quotes
 from deepneuro.outputs.segmentation import PatchesInference
 from deepneuro.postprocessing.label import BinarizeLabel, FillHoles, LargestComponents
-from deepneuro.pipelines.shared import load_model_with_output
+from deepneuro.models.model import load_model_with_output
 
 FNULL = open(os.devnull, 'w')
 

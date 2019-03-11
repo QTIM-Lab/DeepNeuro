@@ -10,7 +10,8 @@ from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalizati
 from deepneuro.preprocessing.transform import Coregister
 from deepneuro.preprocessing.skullstrip import SkullStrip_Model
 from deepneuro.postprocessing.label import BinarizeLabel, LargestComponents, FillHoles
-from deepneuro.pipelines.shared import load_data, load_model_with_output
+from deepneuro.pipelines.shared import load_data
+from deepneuro.models.model import load_model_with_output
 from deepneuro.utilities.util import docker_print
 
 
