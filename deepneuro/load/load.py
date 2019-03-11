@@ -12,13 +12,26 @@ from six.moves.urllib.request import urlretrieve
 current_dir = os.path.realpath(os.path.dirname(__file__))
 
 # Perhaps one day replace this with config files distributed at the level of modules.
-data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Skullstrip_MRI_Model.h5'), "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"],
-                'gbm_wholetumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Wholetumor_Model.h5'), "https://www.dropbox.com/s/bnbdi1yogq2yye3/GBM_Wholetumor_Public.h5?dl=1"],
-                'gbm_enhancingtumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Enhancing_Model.h5'), "https://www.dropbox.com/s/hgsqi0vj7cfuk1g/GBM_Enhancing_Public.h5?dl=1"],
-                'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"],
-                'ischemic_stroke': [os.path.join(current_dir, 'Segment_Ischemic_Stroke', 'Ischemic_Stroke_Model.h5'), 'https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1'],
-                'sample_gbm_nifti': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_NIFTI', 'TCGA_GBM_NIFTI.zip'), 'https://www.dropbox.com/s/bqclpqzwfsreolb/GBM_NIFTI.zip?dl=1'],
-                'sample_gbm_dicom': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_DICOM', 'TCGA_GBM_DICOM.zip'), 'https://www.dropbox.com/s/mbdq7m0vxutuwcs/GBM_DICOM.zip?dl=1']}
+data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Skullstrip_MRI_Model.h5'), 
+                "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"],
+
+                'gbm_wholetumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Wholetumor_Model.h5'), 
+                "https://www.dropbox.com/s/bnbdi1yogq2yye3/GBM_Wholetumor_Public.h5?dl=1"],
+
+                'gbm_enhancingtumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Enhancing_Model.h5'),
+                 "https://www.dropbox.com/s/hgsqi0vj7cfuk1g/GBM_Enhancing_Public.h5?dl=1"],
+
+                'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), 
+                "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"],
+
+                'ischemic_stroke': [os.path.join(current_dir, 'Segment_Ischemic_Stroke', 'Ischemic_Stroke_Model.h5'),
+                 'https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1'],
+
+                'sample_gbm_nifti': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_NIFTI', 'TCGA_GBM_NIFTI.zip'),
+                 'https://www.dropbox.com/s/bqclpqzwfsreolb/GBM_NIFTI.zip?dl=1'],
+                 
+                'sample_gbm_dicom': [os.path.join(current_dir, 'Sample_Data', 'TCGA_GBM_DICOM', 'TCGA_GBM_DICOM.zip'), 
+                'https://www.dropbox.com/s/mbdq7m0vxutuwcs/GBM_DICOM.zip?dl=1']}
 
 
 def load(dataset, output_datapath=None):

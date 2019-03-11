@@ -1,5 +1,6 @@
 import numpy as np
 
+from random import shuffle
 from scipy.sparse import csr_matrix
 
 from deepneuro.utilities.util import add_parameter
@@ -51,6 +52,7 @@ class ExtractPatches(Augmentation):
                     end_idx = start_idx + int(np.ceil(patch_region_condition[1] * self.multiplier))
                     self.region_list[start_idx:end_idx] = [condition_idx] * (end_idx - start_idx)
                     start_idx = end_idx
+                shuffle(self.region_list)
 
             for label, data_group in list(self.data_groups.items()):
                 self.input_shape[label] = data_group.get_shape()
@@ -83,8 +85,8 @@ class ExtractPatches(Augmentation):
 
         if self.patch_region_conditions is not None:
             for region_condition in self.patch_region_conditions:
-                # self.patch_regions += [np.where(region_condition[0](region_input_data))]
-                self.patch_regions += self.get_indices_sparse(region_condition[0](region_input_data))
+                self.patch_regions += [np.where(region_condition[0](region_input_data))]
+                # self.patch_regions += self.get_indices_sparse(region_condition[0](region_input_data))
 
         return
 
@@ -107,20 +109,18 @@ class ExtractPatches(Augmentation):
 
         # TODO: Escape clause in case acceptable patches cannot be found.
 
-        # acceptable_patch = False
-
         if self.patch_region_conditions is None:
             corner_idx = None
         else:
             region = self.patch_regions[self.region_list[self.iteration]]
-
+            # print(self.region_list[self.iteration])
             # TODO: Make errors like these more ubiquitous.
             if len(region[0]) == 0:
                 # raise ValueError('The region ' + str(self.patch_region_conditions[self.region_list[self.iteration]][0]) + ' has no voxels to select patches from. Please modify your patch-sampling region')
                 # Tempfix -- Eek
                 region = self.patch_regions[self.region_list[1]]
             if len(region[0]) == 0:
-                print('emergency brain region..')
+                print('Provided patch extraction region has selected 0 voxels. Selecting non-zero patch.')
                 region = np.where(self.data_groups['input_data'].augmentation_cases[augmentation_num] != 0)
                 self.patch_regions[self.region_list[0]] = region
             
@@ -130,6 +130,8 @@ class ExtractPatches(Augmentation):
 
         # Pad edge patches.
         for label, data_group in list(self.data_groups.items()):
+
+            input_data = self.data_groups[label].augmentation_cases[augmentation_num]
 
             # TODO: Some redundancy here
             if corner_idx is None:
@@ -142,9 +144,9 @@ class ExtractPatches(Augmentation):
             for idx, patch_dim in enumerate(self.patch_dimensions[label]):
                 patch_slice[patch_dim] = slice(max(0, corner[idx] - self.patch_shape[idx] // 2), corner[idx] + self.patch_shape[idx] // 2, 1)
 
-            input_shape = self.data_groups[label].augmentation_cases[augmentation_num].shape
+            input_shape = input_data.shape
 
-            self.patches[label] = self.data_groups[label].augmentation_cases[augmentation_num][tuple(patch_slice)]
+            self.patches[label] = input_data[tuple(patch_slice)]
 
             # More complicated padding needed for center-voxel based patches.
             pad_dims = [(0, 0)] * len(self.patches[label].shape)
@@ -157,6 +159,12 @@ class ExtractPatches(Augmentation):
                 pad_dims[patch_dim] = tuple(pad)
 
             self.patches[label] = np.lib.pad(self.patches[label], tuple(pad_dims), 'edge')
+
+            # print(self.patches[label].shape)
+            # if label == 'ground_truth':
+            #     for i in range(4):
+            #         print(np.sum(self.patches[label][..., i]))
+            # print(label, np.sum(self.patches[label]))
 
         return
 

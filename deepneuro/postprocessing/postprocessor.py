@@ -12,7 +12,9 @@ class Postprocessor(object):
 
         # Naming Variables
         add_parameter(self, kwargs, 'name', 'Postprocesser')
-        add_parameter(self, kwargs, 'postprocessor_string', '_postprocess')
+        add_parameter(self, kwargs, 'postprocessor_string', 'postprocess')
+
+        self.transform_output = True
 
         self.load(kwargs)
 
@@ -30,9 +32,9 @@ class Postprocessor(object):
             if self.verbose:
                 print(('Postprocessing with...', self.name))
 
-            # Hacky.
-            if self.ground_truth in list(output.data_collection.data_groups.keys()):
-                casename = output.data_collection.data_groups[self.ground_truth].base_casename
+            # This piece of code has not yet been refactored.
+            if self.ground_truth in list(raw_data.keys()):
+                casename = raw_data['casename'][0]
             else:
                 casename = None
 

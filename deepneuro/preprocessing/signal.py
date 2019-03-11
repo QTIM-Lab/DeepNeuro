@@ -5,7 +5,7 @@ import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.conversion import read_image_files
-from deepneuro.utilities.util import add_parameter
+from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
 
@@ -24,11 +24,40 @@ class N4BiasCorrection(Preprocessor):
     def preprocess(self, data_group):
 
         for file_idx, filename in enumerate(data_group.preprocessed_case):
-            specific_command = self.command + ['N4ITKBiasFieldCorrection', filename, self.output_filenames[file_idx]]
+            specific_command = self.command + ['N4ITKBiasFieldCorrection', quotes(filename), quotes(self.output_filenames[file_idx])]
             subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
         self.output_data = self.output_filenames
         data_group.preprocessed_case = self.output_filenames
+
+
+class MaskValues(Preprocessor):
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'MaskValues')
+        add_parameter(self, kwargs, 'preprocessor_string', 'Masked')
+
+        # Masking Parameters
+        add_parameter(self, kwargs, 'mask_threshold', 0)
+        add_parameter(self, kwargs, 'mask_value', 0)
+        add_parameter(self, kwargs, 'mask_mode', 'lower')
+
+        self.array_input = True
+
+    def preprocess(self, data_group):
+
+        if self.mask_mode == 'lower':
+            data_group.preprocessed_case[data_group.preprocessed_case < self.mask_threshold] = self.mask_value
+        elif self.mask_mode == 'higher':
+            data_group.preprocessed_case[data_group.preprocessed_case > self.mask_threshold] = self.mask_value
+        elif self.mask_mode == 'equal':
+            data_group.preprocessed_case[data_group.preprocessed_case == self.mask_threshold] = self.mask_value
+        else:
+            raise NotImplementedError
+
+        self.output_data = data_group.preprocessed_case
 
 
 class Normalization(Preprocessor):

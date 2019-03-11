@@ -111,6 +111,17 @@ RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VER
   cd .. && rm -rf Python-${PYTHON_VERSION}*
 
 # Build and install dcmqi
+
+WORKDIR /usr/src
+ENV PYTHON_VERSION 2.7.10
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+  tar xvzf Python-${PYTHON_VERSION}.tgz && \
+  cd Python-${PYTHON_VERSION} && \
+  ./configure && \
+  make -j$(grep -c processor /proc/cpuinfo) && \
+  make install && \
+  cd .. && rm -rf Python-${PYTHON_VERSION}*
+
 WORKDIR /usr/src
 RUN git clone https://github.com/QIICR/dcmqi.git && \
   mkdir dcmqi-superbuild && \

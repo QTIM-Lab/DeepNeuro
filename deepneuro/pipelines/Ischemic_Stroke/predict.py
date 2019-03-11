@@ -1,6 +1,6 @@
 import os
 
-from deepneuro.outputs.inference import ModelPatchesInference
+from deepneuro.outputs import PatchesInference
 from deepneuro.preprocessing.preprocessor import DICOMConverter
 from deepneuro.preprocessing.signal import N4BiasCorrection, ZeroMeanNormalization
 from deepneuro.preprocessing.transform import Coregister
@@ -10,8 +10,22 @@ from deepneuro.pipelines.shared import load_data, load_model_with_output
 from deepneuro.utilities.util import docker_print
 
 
-def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_directory=None, bias_corrected=True, resampled=False, registered=False, normalized=False, preprocessed=False, save_preprocess=False, save_all_steps=False, output_segmentation_filename='segmentation.nii.gz', verbose=True, input_data=None, registration_reference='FLAIR'):
+def predict_ischemic_stroke(output_folder, 
+                            B0, 
+                            DWI, 
+                            ground_truth=None, 
+                            input_directory=None,
+                            registered=False,
+                            preprocessed=False, 
+                            save_only_segmentations=False, 
+                            save_all_steps=False, 
+                            output_segmentation_filename='segmentation.nii.gz',
+                            input_data=None, 
+                            registration_reference='FLAIR',
+                            quiet=False):
 
+    verbose = not quiet
+    save_preprocessed = not save_only_segmentations
     registration_reference_channel = 1
 
     #--------------------------------------------------------------------#
@@ -25,12 +39,15 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
     #--------------------------------------------------------------------#
 
     stroke_prediction_parameters = {'inputs': ['input_data'], 
-                        'output_filename': os.path.join(output_folder, output_segmentation_filename),
+                        'output_directory': output_folder,
+                        'output_filename': output_segmentation_filename,
                         'batch_size': 50,
-                        'patch_overlaps': 8,
-                        'output_patch_shape': (62, 62, 6, 1)}
+                        'patch_overlaps': 6,
+                        'output_patch_shape': (62, 62, 6, 1),
+                        'case_in_filename': False,
+                        'verbose': verbose}
 
-    stroke_model = load_model_with_output(model_name='ischemic_stroke', outputs=[ModelPatchesInference(**stroke_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='_label')])
+    stroke_model = load_model_with_output(model_name='ischemic_stroke', outputs=[PatchesInference(**stroke_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')])
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
@@ -41,13 +58,10 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
         preprocessing_steps = [DICOMConverter(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
         if not registered:
-            preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=(save_preprocess or save_all_steps), verbose=verbose, output_folder=output_folder, reference_channel=registration_reference_channel)]
+            preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=registration_reference_channel)]
 
-        if not normalized:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, preprocessor_string='_preprocessed')]
-
-        else:
-            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
+        if not preprocessed:
+            preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocessed, verbose=verbose, output_folder=output_folder, mask_zeros=True, preprocessor_string='_preprocessed')]
 
         data_collection.append_preprocessor(preprocessing_steps)
 
@@ -55,13 +69,15 @@ def predict_ischemic_stroke(output_folder, B0, DWI, ground_truth=None, input_dir
     # Step 4, Run Inference
     #--------------------------------------------------------------------#
 
-    for case in data_collection.cases:
-
+    if verbose:
         docker_print('Starting New Case...')
         
         docker_print('Ischemic Stroke Prediction')
         docker_print('======================')
-        stroke_model.generate_outputs(data_collection, case)[0]['filenames'][-1]
+    
+    stroke_model.generate_outputs(data_collection, output_folder)
+
+    data_collection.clear_preprocessor_outputs()
 
 
 if __name__ == '__main__':

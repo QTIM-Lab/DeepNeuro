@@ -18,10 +18,10 @@ class GAN(TensorFlowModel):
 
         """ Parameters
             ----------
+            latent_size : int, optional
+                Size of the latent vector for image synthesis. Default is 128.
             depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
+                Specifies the number of layers
             max_filter: int, optional
                 Specifies the number of filters at the bottom level of the U-Net.
 

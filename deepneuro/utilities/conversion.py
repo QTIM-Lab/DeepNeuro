@@ -53,7 +53,7 @@ def read_image_files(input_data, return_affine=False, channels=True, batch=True)
     if data_format in ['image_jpg_png', 'image_other', 'numpy']:
         array = np.concatenate([image for image in data_list], axis=-1)
     elif data_format in ['float_string']:
-        array = np.array(data_list)[np.newaxis, ...]
+        array = np.array(data_list)
     elif data_list[0].ndim == 4:
         array = np.swapaxes(np.stack([image for image in data_list], axis=-1), 3, 4)
     else:
@@ -435,7 +435,7 @@ def check_format(filepath):
                     break
 
     if format_type is None:
-        raise ValueError
+        raise ValueError('The provided file extension at {} is not an acceptable file extension for DeepNeuro.'.format(filepath))
     else:
         return format_type
 

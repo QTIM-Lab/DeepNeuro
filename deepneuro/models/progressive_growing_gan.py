@@ -27,12 +27,8 @@ class PGGAN(GAN):
 
         """ Parameters
             ----------
-            depth : int, optional
-                Specified the layers deep the proposed U-Net should go.
-                Layer depth is symmetric on both upsampling and downsampling
-                arms.
-            max_filter: int, optional
-                Specifies the number of filters at the bottom level of the U-Net.
+            initial_size : tuple
+
 
         """
 
@@ -40,12 +36,23 @@ class PGGAN(GAN):
 
         add_parameter(self, kwargs, 'initial_size', (4, 4))
 
+        # Dummy training variables.
+        add_parameter(self, kwargs, 'num_epochs', 1)
+        add_parameter(self, kwargs, 'training_steps_per_epoch', 1)
+        add_parameter(self, kwargs, 'training_batch_size', 16)
+        add_parameter(self, kwargs, 'batch_size', None)
+
+        if self.batch_size is not None:
+            self.training_batch_size = self.batch_size
+
         if type(self.initial_size) not in [list, tuple]:
             self.initial_size = (4,) * self.dim
 
         # PGGAN Parameters
         self.starting_depth = 1
         self.transition_dict = {True: '_Transition', False: ''}
+        self.progressive_depth = self.depth
+        self.transition = False
 
         if self.dim == 3:
             raise NotImplementedError 
@@ -286,9 +293,10 @@ class PGGAN(GAN):
 
     def load_model(self, input_model_path, batch_size=1):
 
-        self.build_tensorflow_model(batch_size)
         self.init_sess()
-        self.saver.restore(self.sess, os.path.join(input_model_path, 'model.ckpt'))
+        self.build_tensorflow_model(batch_size)
+        model = os.path.join(input_model_path, '{}'.format(str(float(self.depth))), 'model.ckpt')
+        self.saver.restore(self.sess, model)
 
     def get_callbacks(self, callbacks=[], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', **kwargs):
 

@@ -14,7 +14,7 @@ class BinarizeLabel(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'Binarization')
-        add_parameter(self, kwargs, 'postprocessor_string', '_binarized')
+        add_parameter(self, kwargs, 'postprocessor_string', 'binarized')
 
         add_parameter(self, kwargs, 'binarization_threshold', 0.5)
 
@@ -32,7 +32,7 @@ class Rescale(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'Rescale')
-        add_parameter(self, kwargs, 'postprocessor_string', '_rescaled')
+        add_parameter(self, kwargs, 'postprocessor_string', 'rescaled')
 
         add_parameter(self, kwargs, 'input_intensity_range', None)
         add_parameter(self, kwargs, 'output_intensity_range', [0, 255])
@@ -65,7 +65,7 @@ class LargestComponents(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'Binarization')
-        add_parameter(self, kwargs, 'postprocessor_string', '_largest_components')
+        add_parameter(self, kwargs, 'postprocessor_string', 'largest_components')
 
         add_parameter(self, kwargs, 'component_number', 1)
         add_parameter(self, kwargs, 'connectivity', 2)
@@ -108,7 +108,7 @@ class FillHoles(Postprocessor):
 
         # Naming parameter
         add_parameter(self, kwargs, 'name', 'FillHoles')
-        add_parameter(self, kwargs, 'postprocessor_string', '_holes_filled')
+        add_parameter(self, kwargs, 'postprocessor_string', 'holes_filled')
 
         # Hole-Filling Parameters
         add_parameter(self, kwargs, 'slice_dimension', -2)  # Currently not operational

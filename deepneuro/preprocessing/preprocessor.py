@@ -13,8 +13,7 @@ class Preprocessor(object):
         add_parameter(self, kwargs, 'overwrite', True)
         add_parameter(self, kwargs, 'save_output', False)
         add_parameter(self, kwargs, 'output_folder', None)
-        add_parameter(self, kwargs, 'return_array', False)
-
+        
         # Input Parameters
         add_parameter(self, kwargs, 'file_input', False)
 
@@ -24,7 +23,7 @@ class Preprocessor(object):
 
         # Internal Parameters
         add_parameter(self, kwargs, 'data_groups', None)
-        add_parameter(self, kwargs, 'verbose', True)
+        add_parameter(self, kwargs, 'verbose', False)
 
         # Derived Parameters
         self.array_input = True
@@ -54,20 +53,24 @@ class Preprocessor(object):
         return
 
     # @profile
-    def execute(self, data_collection):
+    def execute(self, data_collection, return_array=False):
 
-        """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
+        """ This function serves operates the main logic of preprocessors.
+            Its purpose is to check if data needs to be saved to disk before
+            preprocessing (e.g. by an external program), or load data from
+            disk if it is to be processed in Python. After processing data
+            it can similarly return data in memory or on disk.
         """
 
         if self.verbose:
             docker_print('Working on Preprocessor:', self.name)
 
-        for label, data_group in list(self.data_groups.items()):
+        for label, data_group in self.data_groups_iterator:
 
             self.generate_output_filenames(data_collection, data_group)
 
             if self.array_input and type(data_group.preprocessed_case) is list:
-                data_group.get_data()
+                data_group.preprocessed_case, data_group.preprocessed_affine = data_group.get_data(return_affine=True)
             elif not self.array_input and type(data_group.preprocessed_case) is list:
                 pass
             elif not self.array_input:
@@ -80,7 +83,7 @@ class Preprocessor(object):
             if self.save_output:
                 self.save_to_file(data_group)
 
-            if self.return_array:
+            if return_array:
                 self.convert_to_array_data(data_group)
 
     def convert_to_array_data(self, data_group):
@@ -96,16 +99,18 @@ class Preprocessor(object):
 
     def preprocess(self, data_group):
 
-        # Currently a nonsense function.
+        # Toy function for base class.
 
         self.output_data = data_group.preprocessed_case
-
-        # Processing happens here.
-
         data_group.preprocessed_case = self.output_data
 
     # @profile
     def generate_output_filenames(self, data_collection, data_group, file_extension='.nii.gz'):
+
+        """ Generates logical filenames by appending input data filenames
+            with preprocessor_string. These strings will accumulate over
+            multiple preprocessors
+        """
 
         self.output_filenames = []
 
@@ -136,7 +141,7 @@ class Preprocessor(object):
             if os.path.isdir(filename):
                 output_filename = os.path.join(filename, os.path.basename(os.path.dirname(filename) + suffix + file_extension))
             else:
-                output_filename = replace_suffix(filename, '', suffix, file_extension=file_extension)
+                output_filename = replace_suffix(filename, '', suffix)
         else:
             if os.path.isdir(filename):
                 output_filename = os.path.join(self.output_folder, os.path.basename(filename + suffix + file_extension))
@@ -146,10 +151,6 @@ class Preprocessor(object):
         return cli_sanitize(output_filename)
 
     def save_to_file(self, data_group):
-
-        """ No idea how this will work if the amount of output files is changed in a preprocessing step
-            Also missing affines is a problem.
-        """
 
         if type(self.output_data) is not list:
             for file_idx, output_filename in enumerate(self.output_filenames):
@@ -164,18 +165,33 @@ class Preprocessor(object):
 
         return
 
-    def clear_outputs(self, data_collection, data_group, clear_files_only=False):
+    def clear_outputs(self, data_collection):
 
-        raise NotImplementedError
+        """ Remove intermediate preprocessor outputs if save_to_file is set to False.
+        """
+
+        for label, data_group in list(self.data_groups.items()):
+
+            self.generate_output_filenames(data_collection, data_group)
+
+            for file_idx, output_filename in enumerate(self.output_filenames):
+                if os.path.exists(output_filename):
+                    os.remove(output_filename)
 
         return
 
     def initialize(self, data_collection):
 
+        """ Called by DataCollection objects when Preprocessors
+            are appended.
+        """
+
         if self.data_groups is None:
             self.data_groups = data_collection.data_groups
         else:
             self.data_groups = {label: data_group for label, data_group in list(data_collection.data_groups.items()) if label in self.data_groups}
+
+        self.data_groups_iterator = list(self.data_groups.items())
 
         return
 
@@ -203,7 +219,7 @@ class DICOMConverter(Preprocessor):
 
         return
 
-    def execute(self, data_collection):
+    def execute(self, data_collection, return_array=False):
 
         """ There is a lot of repeated code in the preprocessors. Think about preprocessor structures and work on this class.
         """
@@ -231,6 +247,6 @@ class DICOMConverter(Preprocessor):
                 data_group.preprocessed_case = self.output_filenames
                 self.output_data = data_group.preprocessed_case
 
-            if self.return_array:
+            if return_array:
                 self.convert_to_array_data(data_group)
 

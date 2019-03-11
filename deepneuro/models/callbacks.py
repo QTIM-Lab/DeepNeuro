@@ -149,14 +149,20 @@ class CyclicLR(Callback):
 
 class EpochPredict(Callback):
 
+    """
+    """
+
     def __init__(self, **kwargs):
 
         add_parameter(self, kwargs, 'epoch_prediction_data_collection', None)
         add_parameter(self, kwargs, 'epoch_prediction_object', None)
-        add_parameter(self, kwargs, 'deepneuro_model', None)
-        add_parameter(self, kwargs, 'epoch_prediction_dir', None)
-        add_parameter(self, kwargs, 'output_gif', None)
         add_parameter(self, kwargs, 'epoch_prediction_batch_size', 1)
+        add_parameter(self, kwargs, 'epoch_prediction_dir', None)
+
+        add_parameter(self, kwargs, 'deepneuro_model', None)
+        
+        add_parameter(self, kwargs, 'show_callback_output', False)
+        add_parameter(self, kwargs, 'epoch_prediction_output_mode', 'gif')
 
         self.kwargs = kwargs
 
@@ -165,17 +171,44 @@ class EpochPredict(Callback):
 
         self.predictions = []
 
+        # Investigate why this doesn't happen by default.
+        if self.epoch_prediction_batch_size is None:
+            self.epoch_prediction_batch_size = 1
+
         # There's a more concise way to do this..
         self.predict_data = next(self.epoch_prediction_data_collection.data_generator(perpetual=True, verbose=False, just_one_batch=True, batch_size=self.epoch_prediction_batch_size))
- 
+
     def on_train_end(self, logs={}):
+
         if self.predictions != []:
-            if type(self.predictions[0]) is list:
-                for output in range(len(self.predictions[0])):
-                    current_predictions = [item[output] for item in self.predictions]
-                    imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+
+            if self.epoch_prediction_output_mode == 'gif':
+
+                if type(self.predictions[0]) is list:
+                    for output in range(len(self.predictions[0])):
+                        current_predictions = [item[output] for item in self.predictions]
+                        imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+                else:
+                    imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+
+            elif self.epoch_prediction_output_mode == 'mosaic':
+
+                raise NotImplementedError('Training callback mosaics are not yet implemented. (epoch_prediction_output_mode = \'mosaic\'')
+
+                if type(self.predictions[0]) is list:
+                    for output in range(len(self.predictions[0])):
+                        current_predictions = [item[output] for item in self.predictions]
+                        prediction_array = np.array(current_predictions)
+                        check_data({'Training Progress': prediction_array}, show_output=True, **self.kwargs)
+                        print(prediction_array.shape)
+                        # imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction_' + str(output) + '.gif'), current_predictions)
+                else:
+                    output_mosaic = np.array(self.predictions)
+                    print(output_mosaic.shape)
+
             else:
-                imageio.mimsave(os.path.join(self.epoch_prediction_dir, 'epoch_prediction.gif'), self.predictions)
+                raise NotImplementedError  
+
         return
  
     def on_epoch_end(self, epoch, logs={}):
@@ -183,9 +216,9 @@ class EpochPredict(Callback):
         if self.epoch_prediction_object is None:
             prediction = self.deepneuro_model.predict(self.predict_data[self.deepneuro_model.input_data])
         else:
-            prediction = self.epoch_prediction_object.process_case(self.predict_data[self.deepneuro_model.input_data], model=self.deepneuro_model)
+            prediction = self.epoch_prediction_object.process_case(self.predict_data, model=self.deepneuro_model)
 
-        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=False, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
+        output_filepaths, output_images = check_data({'prediction': prediction}, output_filepath=os.path.join(self.epoch_prediction_dir, 'epoch_{}.png'.format(epoch)), show_output=self.show_callback_output, batch_size=self.epoch_prediction_batch_size, **self.kwargs)
 
         if len(output_images.keys()) > 1:
             self.predictions += [[output_images['prediction_' + str(idx)].astype('uint8') for idx in range(len(output_images.keys()))]]

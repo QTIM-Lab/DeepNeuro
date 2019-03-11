@@ -14,7 +14,6 @@ from keras.layers import Dense, GlobalAveragePooling2D
 from keras.engine import Model
 
 from deepneuro.models.keras_model import KerasModel
-from deepneuro.models.dn_ops import DnConv, DnMaxPooling, DnDeConv, DnUpsampling
 from deepneuro.utilities.util import add_parameter
 
 
@@ -39,14 +38,14 @@ class KerasPreTrainedModel(KerasModel):
         add_parameter(self, kwargs, 'input_shape', None)
         add_parameter(self, kwargs, 'output_classes', None)
         add_parameter(self, kwargs, 'bottleneck_layers_num', None)
-        add_parameter(self, kwargs, 'finetuning_dense_features', 4096)
+        add_parameter(self, kwargs, 'finetuning_dense_features', 128)
 
         self.models = {
             "vgg16": VGG16,
             "vgg19": VGG19,
             "inception": InceptionV3,
             "xception": Xception,
-            "resnet": ResNet50
+            "resnet50": ResNet50
         }
 
         self.output_activation = False
@@ -58,7 +57,7 @@ class KerasPreTrainedModel(KerasModel):
 
     def build_model(self):
         
-        self.model = self.models[self.model_type](weights=self.pretrained_weights, include_top=self.include_top)
+        self.model = self.models[self.model_type](weights=self.pretrained_weights, include_top=False)
 
         if self.output_classes is not None:
 
@@ -68,17 +67,23 @@ class KerasPreTrainedModel(KerasModel):
                 self.model.layers[-1].outbound_nodes = []
                 self.model.add(Dense(self.output_classes, activation='softmax'))
 
-            elif self.modeltype in ['inception']:
+            elif self.model_type in ['inception']:
                 model_output = self.model.output
                 model_output = GlobalAveragePooling2D()(model_output)
                 model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
                 predictions = Dense(self.output_classes, activation='softmax')(model_output)
-                self.model = Model(self.inputs, predictions)
-            else:
-                raise NotImplementedError
+                self.model = Model(self.model.input, predictions)
+            elif self.model_type in ['resnet50']:
+                # self.model.layers.pop()
+                model_output = self.model.output
+                model_output = GlobalAveragePooling2D()(model_output)
+                predictions = Dense(self.output_classes, activation='softmax')(model_output)
+                self.model = Model(self.model.input, predictions)
 
         if self.bottleneck_layers_num is not None:
             for layer in self.model.layers[:self.bottleneck_layers_num]:
                 layer.trainable = False
 
-        super(KerasPreTrainedModel, self).build_model()
+        self.inputs = self.model.input
+
+        super(KerasPreTrainedModel, self).build_model(compute_output=False)
