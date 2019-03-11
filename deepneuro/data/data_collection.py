@@ -529,8 +529,11 @@ class DataCollection(object):
 
         except Exception as e:
 
-            hdf5_file.close()
-            os.remove(output_filepath)
+            try:
+                hdf5_file.close()
+                os.remove(output_filepath)
+            except:
+                pass
             raise e
 
         newDataCollection = DataCollection(data_sources={'hdf5': output_filepath})

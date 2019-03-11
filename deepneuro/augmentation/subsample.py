@@ -120,7 +120,7 @@ class ExtractPatches(Augmentation):
                 # Tempfix -- Eek
                 region = self.patch_regions[self.region_list[1]]
             if len(region[0]) == 0:
-                print('emergency brain region..')
+                print('Provided patch extraction region has selected 0 voxels. Selecting non-zero patch.')
                 region = np.where(self.data_groups['input_data'].augmentation_cases[augmentation_num] != 0)
                 self.patch_regions[self.region_list[0]] = region
             

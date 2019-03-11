@@ -36,11 +36,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     cmake
 
 # Cleanup Installs
-RUN	apt-get clean && \
-	apt-get autoremove && \
-	rm -rf /var/lib/apt/lists/* && \
+RUN apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* && \
 # Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
-	update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
+    update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
 
 # Install pip
 RUN pip3 install --upgrade \
@@ -49,30 +49,30 @@ RUN pip3 install --upgrade \
 
 # Add SNI support to Python
 RUN pip3 --no-cache-dir install \
-		pyopenssl \
-		ndg-httpsclient \
-		pyasn1
+        pyopenssl \
+        ndg-httpsclient \
+        pyasn1
 
 # Install other useful Python packages using pip
 RUN pip3 --no-cache-dir install --upgrade ipython && \
-	pip3 --no-cache-dir install \
-		Cython \
-		ipykernel \
-		jupyter \
-		path.py \
-		Pillow \
-		pygments \
-		six \
-		sphinx \
-		wheel \
-		zmq \
-		&& \
-	python3 -m ipykernel.kernelspec
+    pip3 --no-cache-dir install \
+        Cython \
+        ipykernel \
+        jupyter \
+        path.py \
+        Pillow \
+        pygments \
+        six \
+        sphinx \
+        wheel \
+        zmq \
+        && \
+    python3 -m ipykernel.kernelspec
 
 # Install TensorFlow
 # For specific installations -- TODO, peg a version of Tensorflow.
 # RUN pip --no-cache-dir install \
-	# https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+    # https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
 # Generic.
 RUN pip3 --no-cache-dir install tensorflow-gpu
 

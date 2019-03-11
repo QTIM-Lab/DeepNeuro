@@ -14,7 +14,6 @@ from keras.layers import Dense, GlobalAveragePooling2D
 from keras.engine import Model
 
 from deepneuro.models.keras_model import KerasModel
-from deepneuro.models.dn_ops import DnConv, DnMaxPooling, DnDeConv, DnUpsampling
 from deepneuro.utilities.util import add_parameter
 
 
@@ -78,7 +77,6 @@ class KerasPreTrainedModel(KerasModel):
                 # self.model.layers.pop()
                 model_output = self.model.output
                 model_output = GlobalAveragePooling2D()(model_output)
-                model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
                 predictions = Dense(self.output_classes, activation='softmax')(model_output)
                 self.model = Model(self.model.input, predictions)
 

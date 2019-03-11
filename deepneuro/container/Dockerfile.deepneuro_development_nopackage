@@ -3,7 +3,7 @@ LABEL maintainer "Andrew Beers <andrew_beers@alumni.brown.edu>"
 
 ARG TENSORFLOW_VERSION=1.11.0
 ARG TENSORFLOW_ARCH=gpu
-ARG KERAS_VERSION=2.2.2
+ARG KERAS_VERSION=2.2.4
 
 # Install some dependencies
 # Install basic packages and miscellaneous dependencies
@@ -36,11 +36,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     cmake
 
 # Cleanup Installs
-RUN	apt-get clean && \
-	apt-get autoremove && \
-	rm -rf /var/lib/apt/lists/* && \
+RUN apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* && \
 # Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
-	update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
+    update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
 
 # Install pip
 RUN pip3 install --upgrade \
@@ -49,30 +49,30 @@ RUN pip3 install --upgrade \
 
 # Add SNI support to Python
 RUN pip3 --no-cache-dir install \
-		pyopenssl \
-		ndg-httpsclient \
-		pyasn1
+        pyopenssl \
+        ndg-httpsclient \
+        pyasn1
 
 # Install other useful Python packages using pip
 RUN pip3 --no-cache-dir install --upgrade ipython && \
-	pip3 --no-cache-dir install \
-		Cython \
-		ipykernel \
-		jupyter \
-		path.py \
-		Pillow \
-		pygments \
-		six \
-		sphinx \
-		wheel \
-		zmq \
-		&& \
-	python3 -m ipykernel.kernelspec
+    pip3 --no-cache-dir install \
+        Cython \
+        ipykernel \
+        jupyter \
+        path.py \
+        Pillow \
+        pygments \
+        six \
+        sphinx \
+        wheel \
+        zmq \
+        && \
+    python3 -m ipykernel.kernelspec
 
 # Install TensorFlow
 # For specific installations -- TODO, peg a version of Tensorflow.
 # RUN pip --no-cache-dir install \
-	# https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+    # https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow_${TENSORFLOW_ARCH}-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
 # Generic.
 RUN pip3 --no-cache-dir install tensorflow-gpu
 
@@ -93,11 +93,11 @@ RUN pip3 --no-cache-dir install nibabel pydicom lycon tqdm pynrrd tables imageio
     mv /tmp/Slicer* /opt/slicer
 
 # Install ANTS
-WORKDIR /home
-RUN wget "https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14.04.tar.bz2" && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes bzip2 && \
-  tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
-  rm Linux_Ubuntu14.04.tar.bz2
+# WORKDIR /home
+# RUN wget "https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14.04.tar.bz2" && \
+  # DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes bzip2 && \
+  # tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
+  # rm Linux_Ubuntu14.04.tar.bz2
 
 # Python 2.7
 WORKDIR /usr/src
@@ -133,30 +133,5 @@ RUN git clone https://github.com/QIICR/dcmqi.git && \
 ENV PATH "$PATH:/opt/slicer"
 ENV PATH "$PATH:/usr/local/ANTs.2.1.0.Debian-Ubuntu_X64"
 
-# Install DeepNeuro. Scikit-image has installation problems with EasyInstall and setup.py
-RUN git clone https://github.com/QTIM-Lab/DeepNeuro /home/DeepNeuro
-WORKDIR /home/DeepNeuro
-
-# Copy in models -- do this with Python module in future.
-RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_GBM
-RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/Segment_GBM_Wholetumor_Model.h5 "https://www.dropbox.com/s/bnbdi1yogq2yye3/GBM_Wholetumor_Public.h5?dl=1"
-RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_GBM/Segment_GBM_Enhancing_Model.h5 "https://www.dropbox.com/s/hgsqi0vj7cfuk1g/GBM_Enhancing_Public.h5?dl=1"
-
-RUN mkdir -p /home/DeepNeuro/deepneuro/load/SkullStripping
-RUN wget -O /home/DeepNeuro/deepneuro/load/SkullStripping/Skullstrip_MRI_Model.h5 "https://www.dropbox.com/s/cucffmytzhp5byn/Skullstrip_MRI_Model.h5?dl=1"
-
-RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_Mets
-RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_Mets/Segment_Mets_Model.h5 "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"
-
-RUN mkdir -p /home/DeepNeuro/deepneuro/load/Segment_Ischemic_Stroke
-RUN wget -O /home/DeepNeuro/deepneuro/load/Segment_Ischemic_Stroke/Ischemic_Stroke_Model.h5 "https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1"
-
-# TODO: Check if Docker has solved this checkpointing problem.
-RUN echo 56
-RUN git pull
-RUN python3 /home/DeepNeuro/setup.py develop
-
 # Commands at startup.
 WORKDIR "/"
-RUN chmod 777 /home/DeepNeuro/entrypoint.sh
-ENTRYPOINT ["/home/DeepNeuro/entrypoint.sh"]

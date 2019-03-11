@@ -20,6 +20,7 @@ class KerasModel(DeepNeuroModel):
 
         # Basic Keras Model Params
         add_parameter(self, kwargs, 'output_activation', True)
+        add_parameter(self, kwargs, 'class_weights', True)
 
         # Specific Cost Function Params
         add_parameter(self, kwargs, 'categorical_weighting', {0: 0.1, 1: 3.0})
@@ -38,10 +39,6 @@ class KerasModel(DeepNeuroModel):
             Specifies which named data groups (e.g. "ground_truth") enter which input
             data slot in your model.
         """
-
-        # Todo: investigate call-backs more thoroughly.
-        # Also, maybe something more general for the difference between training and validation.
-        # Todo: list-checking for callbacks
 
         self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
 

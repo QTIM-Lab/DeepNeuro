@@ -17,7 +17,7 @@ This command-line module creates segmentations of "whole tumor" (edema + contras
 If you have installed DeepNeuro locally on your workstation, without the use of Docker or Singularity, you can run this module directly from the command line. The basic format of the command is as follows:
 
 ```
-segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet]
 ```
 
 This functions basic parameters are as follows:
@@ -45,7 +45,6 @@ You can also turn on additional miscellaneous parameters with the following flag
 | -save_all_steps | If flagged, input volumes will be saved out after each preprocessing step, allowing to evaluate the differences between raw and pre-processed data. |
 | -save_only_segmentations | By default, this module will output preprocessed data volumes in addition to segmentations. Turn this flag on in order to ONLY output segmentations. |
 | -quiet | If flagged, this module will run in quiet mode, with no command-line output. |
-| -output_probabilities | By default, DeepNeuro binarizes outputs of neural networks into 0 and 1 labelmaps. Set this flag to output the original pseudoprobability maps, which range from 0 to 1. |
 
 In order to run this command-line locally, you must have installed and added to your path 3DSlicer, and have it added to your workstation's system path. If you are not able to install 3DSlicer, or do not have the technical skills to add it to you system path, we advise you use either a Docker or Singularity container as detailed below.
 
@@ -58,7 +57,7 @@ Before you can use this container, you must first pull the Segment_GBM Docker co
 You can then create a command for this module using the following template:
 
 ```
-nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+nvidia-docker run --rm -v [MOUNTED_DIRECTORY]:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet]
 ```
 
 Notice that the parameters used here are the same parameters used in the section above, [Command Line Usage](#command-line-usage). Please refer to this section for details on each of this commands parameters.
@@ -75,7 +74,7 @@ singularity exec --nv docker://tensorflow/tensorflow:latest-gpu \
     python ./models/tutorials/image/mnist/convolutional.py
 
 ```
-singularity exec --nv docker://qtimlab/deepneuro_segment_gbm -B [MOUNTED_DIRECTORY]:/INPUT_DATA segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet -output_probabilities]
+singularity exec --nv docker://qtimlab/deepneuro_segment_gbm -B [MOUNTED_DIRECTORY]:/INPUT_DATA segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet]
 ```
 
 Notice that the parameters used here are the same parameters used in the section above, [Command Line Usage](#command-line-usage). Please refer to this section for details on each of this commands parameters.
@@ -89,10 +88,25 @@ If you don't want to type out Docker/Singularity commands directly, don't want t
 You will need to install DeepNeuro, or be running a DeepNeuro Singularity/Docker container, before you can use this command. Once you have installed the repository, you can use the following command structure to use this module:
 
 ```
-from deepneuro.pipelines import Segment_GBM
+from deepneuro.pipelines import predict_GBM
+
+predict_GBM(output_folder, 
+                T1POST, 
+                FLAIR, 
+                T1PRE, 
+                bias_corrected=False, 
+                resampled=False, 
+                registered=False, 
+                skullstripped=False, 
+                preprocessed=False, 
+                save_only_segmentations=False, 
+                save_all_steps=False, 
+                output_wholetumor_filename='wholetumor_segmentation.nii.gz', 
+                output_enhancing_filename='enhancing_segmentation.nii.gz',
+                quiet=False):
 ```
 
-Parameters should be exactly the same as in the Docker use-case, except now you will not have to modify filepaths to be relative to the mounted folder.
+The parameters in this Python function should correspond to the parameters for the Docker/Singularity containers above.
 
 ## Docker/Singularity Example
 
@@ -100,6 +114,8 @@ Let's say you stored some DICOM data on your computer at the path /home/my_user/
 
 ```
 nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 /INPUT_DATA/Patient_1/T1pre -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
+
+singularity exec --nv docker://qtimlab/deepneuro_segment_gbm -B /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 /INPUT_DATA/Patient_1/T1pre -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder
 ```
 
 First, note that the "/INPUT_DATA" designation on the right-hand side of the "-v" option will never change. "INPUT_DATA" is a folder within the Docker container that will not change between runs.

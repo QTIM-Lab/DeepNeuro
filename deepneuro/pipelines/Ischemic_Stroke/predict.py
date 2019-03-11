@@ -42,7 +42,7 @@ def predict_ischemic_stroke(output_folder,
                         'output_directory': output_folder,
                         'output_filename': output_segmentation_filename,
                         'batch_size': 50,
-                        'patch_overlaps': 8,
+                        'patch_overlaps': 6,
                         'output_patch_shape': (62, 62, 6, 1),
                         'case_in_filename': False,
                         'verbose': verbose}
