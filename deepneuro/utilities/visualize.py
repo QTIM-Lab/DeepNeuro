@@ -15,57 +15,6 @@ from deepneuro.utilities.util import replace_suffix, nifti_splitext
 
 def check_data(output_data=None, data_collection=None, batch_size=4, merge_batch=True, show_output=True, output_filepath=None, viz_rows=None, viz_mode_2d=None, viz_mode_3d='2d_slice', color_range=None, output_groups=None, combine_outputs=False, rgb_output=True, colorbar=True, subplot_rows=None, title=None, subplot_titles=None, output_directory=None, case_name=None, **kwargs):
 
-    """Summary
-    
-    Parameters
-    ----------
-    output_data : None, optional
-        Description
-    data_collection : None, optional
-        Description
-    batch_size : int, optional
-        Description
-    merge_batch : bool, optional
-        Description
-    show_output : bool, optional
-        Description
-    output_filepath : None, optional
-        Description
-    viz_rows : None, optional
-        Description
-    viz_mode_2d : None, optional
-        Description
-    viz_mode_3d : str, optional
-        Description
-    color_range : None, optional
-        Description
-    output_groups : None, optional
-        Description
-    combine_outputs : bool, optional
-        Description
-    rgb_output : bool, optional
-        Description
-    colorbar : bool, optional
-        Description
-    subplot_rows : None, optional
-        Description
-    title : None, optional
-        Description
-    subplot_titles : None, optional
-        Description
-    output_directory : None, optional
-        Description
-    case_name : None, optional
-        Description
-    **kwargs
-        Description
-    
-    Returns
-    -------
-    TYPE
-        Description
-    """
-
     if data_collection is not None:
         if batch_size > data_collection.total_cases * data_collection.multiplier:
             batch_size = data_collection.total_cases * data_collection.multiplier
@@ -234,7 +183,7 @@ def display_1d_data(input_data, viz_rows=2, viz_columns=2):
 
     raise NotImplementedError
 
-    return
+    return output_data
 
 
 def display_2d_data(input_data):

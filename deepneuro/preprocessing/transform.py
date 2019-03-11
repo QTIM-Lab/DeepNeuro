@@ -8,7 +8,7 @@ import numpy as np
 import itertools
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.util import add_parameter, quotes, docker_print
+from deepneuro.utilities.util import add_parameter, quotes
 
 FNULL = open(os.devnull, 'w')
 

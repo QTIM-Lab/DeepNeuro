@@ -1,7 +1,7 @@
 import numpy as np
 
 from deepneuro.outputs.inference import ModelInference
-from deepneuro.utilities.util import add_parameter, docker_print
+from deepneuro.utilities.util import add_parameter
 
 
 class GANInference(ModelInference):

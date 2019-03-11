@@ -6,10 +6,8 @@ This command-line module creates segmentations of "whole tumor" (edema + contras
 - [Local Command-Line Usage](#command-line-usage)
 - [Docker Usage](#docker-usage)
 - [Singularity Usage](#singularity-usage)
-- [Python Container Wrapper Usage](#python-docker-wrapper-usage)
-- [Docker Example](#docker-example)
-- [Singularity Example](#singularity-example)
-- [Interactive Python Usage](#interactive-python-usage)
+- [Python Wrapper Usage](#python-wrapper-usage)
+- [Docker and Singularity Example](#docker-and-singularity-example)
 - [Citation](#citation)
 
 ## Command Line Usage
@@ -26,7 +24,7 @@ This functions basic parameters are as follows:
 | ------------- |-------------|
 | -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
 | -T1, -T1POST, -FLAIR      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
-| -wholetumor_output, -enhancing_output | Optional. Name of output filepaths for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz". Files with these names will be output into your output_directory.      |
+| -wholetumor_output, -enhancing_output | Optional. Name of output filepaths for wholetumor and enhancing labels, respectively. Should not be a filepath, like '/home/user/enhancing.nii.gz', but just a name, like "enhancing.nii.gz". Files with these names will be output into your output_folder.      |
 
 This DeepNeuro pipeline assumes that your data will need to be preprocessed before it is preprocessed. However, you may have already performed some of these preprocessing steps yourself. You can skip some preprocessing steps by adding the following flags to your command:
 
@@ -70,9 +68,6 @@ Singularity is a software that operates very similarly to Docker, but is more pr
 
 You can then create a command for this module using the following template:
 
-singularity exec --nv docker://tensorflow/tensorflow:latest-gpu \
-    python ./models/tutorials/image/mnist/convolutional.py
-
 ```
 singularity exec --nv docker://qtimlab/deepneuro_segment_gbm -B [MOUNTED_DIRECTORY]:/INPUT_DATA segment_gbm pipeline -T1 <file> -T1POST <file> -FLAIR <file> -output_folder <directory> -wholetumor_output <string> -enhancing_output <string> [-debiased -registered -skullstripped -preprocessed -gpu_num <int> -save_all_steps -save_only_segmentations -quiet]
 ```
@@ -81,7 +76,7 @@ Notice that the parameters used here are the same parameters used in the section
 
 In order to use Singularity, you must mount the directory containing all of your data and your output. All filepaths input to DeepNeuro must be relative to this mounted directory. For example, if you mounted the directory /home/my_users/data/, and wanted to input the file /home/my_users/data/patient_1/FLAIR.nii.gz as a parameter, you should input /INPUT_DATA/patient_1/FLAIR.nii.gz. For more detail on how to mount a directory, see [Docker Example](docker-example)
 
-## Python Container Wrapper Usage
+## Python Wrapper Usage
 
 If you don't want to type out Docker/Singularity commands directly, don't want to avoid figuring out precisely which drives to mount, or want to integrate DeepNeuro commands into a Python processing script, you can also easily run DeepNeuro containers from a Python script. also created a python utility that wraps around the nvidia-docker command above, and is slightly easier to use. 
 
@@ -108,9 +103,9 @@ predict_GBM(output_folder,
 
 The parameters in this Python function should correspond to the parameters for the Docker/Singularity containers above.
 
-## Docker/Singularity Example
+## Docker and Singularity Example
 
-Let's say you stored some DICOM data on your computer at the path /home/my_user/Data/, and wanted to segment data located at /home/my_user/Data/Patient_1. The nvidia-docker command would look like this:
+Let's say you stored some DICOM data on your computer at the path /home/my_user/Data/, and wanted to segment data located at /home/my_user/Data/Patient_1. The commands would look like this:
 
 ```
 nvidia-docker run --rm -v /home/my_user/Data:/INPUT_DATA qtimlab/deepneuro_segment_gbm segment_gbm pipeline -T1 /INPUT_DATA/Patient_1/T1pre -T1POST /INPUT_DATA/Patient_1/T1post -FLAIR /INPUT_DATA/Patient_1/FLAIR -output_folder /INPUT_DATA/Patient_1/Output_Folder

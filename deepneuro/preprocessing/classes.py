@@ -1,9 +1,8 @@
-import subprocess
 import os
 import numpy as np
 
 from deepneuro.preprocessing.preprocessor import Preprocessor
-from deepneuro.utilities.util import add_parameter, quotes
+from deepneuro.utilities.util import add_parameter
 
 FNULL = open(os.devnull, 'w')
 
@@ -33,16 +32,18 @@ class GetCentroid(Preprocessor):
             data_shape = list(data_group.get_shape())
 
             if self.channels is None:
-                self.output_shape[label] = (len(data_shape) - 1, max_centroid, 1)
+                self.output_shape[label] = (len(data_shape) - 1, self.max_centroid, 1)
             else:
                 if type(self.channels) is not list:
                     self.channels = [self.channels]
-                self.output_shape[label] = (len(data_shape) - 1, max_centroid, len(self.channels))
+                self.output_shape[label] = (len(data_shape) - 1, self.max_centroid, len(self.channels))
 
     def preprocess(self, data_group):
 
-        if self.channels is None:
+        raise NotImplementedError
 
+        if self.channels is None:
+            pass
 
         input_data = data_group.preprocessed_case
         output_data = np.take(input_data, self.channels, axis=-1)

@@ -7,4 +7,4 @@ def split_data(input_data_collection):
 
 if __name__ == '__main__':
 
-    return
+    pass
