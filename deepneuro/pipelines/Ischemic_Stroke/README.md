@@ -1,6 +1,6 @@
 # Ischemic_Stroke
 
-This module creates segmentations of ischemic stroke lesions given pre-contrast T1, post-contrast T1, T2, and B0 MR sequences as input volumes. These segmentations are created by deep neural networks trained on 991 patients from the Massachusetts General Hospital as part of the NIH-funded Heart-Brain Interactions in Human Acute Ischemic Stroke Study. The following pre-processing steps are included in module: Image Registration, and Zero-Mean normalization. This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
+This module creates segmentations of ischemic stroke lesions given diffusion maps from DWI MR, and B0 maps as input volumes. These segmentations are created by deep neural networks trained on 991 patients from the Massachusetts General Hospital as part of the NIH-funded Heart-Brain Interactions in Human Acute Ischemic Stroke Study. The following pre-processing steps are included in module: Image Registration, and Zero-Mean normalization. This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
 
 ## Table of Contents
 - [Docker Usage](#docker-usage)
@@ -12,7 +12,7 @@ This module creates segmentations of ischemic stroke lesions given pre-contrast 
 
 The best way to use this module is with a Docker container. If you are not familiar with Docker, you can download it [here](https://docs.docker.com/engine/installation/) and read a tutorial on proper usage [here](https://docker-curriculum.com/).
 
-Pull the Segment_GBM Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_ischemic_stroke/. Use the command "docker pull qtimlab/deepneuro_segment_ischemic_stroke".
+Pull the Ischemic_Stroke Docker container from https://hub.docker.com/r/qtimlab/deepneuro_segment_ischemic_stroke/. Use the command "docker pull qtimlab/deepneuro_segment_ischemic_stroke".
 
 You can then enter a command using the following template to generate a segmentation:
 
@@ -26,7 +26,7 @@ A brief explanation of this function's parameters follows:
 
 | Parameter       | Documenation           |
 | ------------- |-------------|
-| -output_folder | A filepath to your output folder. Two nifti files will be generated "enhancingtumor.nii.gz" and "wholetumor.nii.gz" |
+| -output_folder | A filepath to your output folder. Output segmentations will be placed here with filenames specified in -segmentation_output |
 | -B0, DWI      | Filepaths to input MR modalities. Inputs can be either nifti files or DICOM folders. Note that DICOM folders should only contain one volume each.      |
 | -segmentation_output | Optional. Name of output for enhancing tumor labels. Should not be a filepath, like '/home/user/segmentation.nii.gz', but just a name, like "segmentation.nii.gz"      |
 | -gpu_num | Optional. Which CUDA GPU ID # to use. Defaults to 0, i.e. the first gpu. |
