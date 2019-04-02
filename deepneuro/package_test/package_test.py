@@ -4,20 +4,8 @@
 
 def test_function():
 
-    """Some test documentation for automatic documentation.
-
-    Parameters
-    ----------
-    in: str
-        Description.
-
-    Returns
-    -------
-    out: str
-        Description
-        
-    """
-
+    import deepneuro
+    
     return
 
 
