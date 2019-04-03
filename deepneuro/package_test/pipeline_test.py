@@ -2,7 +2,7 @@
 """
 
 
-def test_glioblastoma_module(testing_directory="./tmp", gpu_num='0'):
+def test_glioblastoma_module(testing_directory="/home/DeepNeuro/tmp", gpu_num='0'):
 
     import numpy as np
     import os
