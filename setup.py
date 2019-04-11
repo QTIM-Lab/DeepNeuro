@@ -16,12 +16,12 @@ import os
 
 os.environ["MPLCONFIGDIR"] = "."
 
-if sys.version_info[:2] < (2, 7):
-    raise RuntimeError("Python version 2.7 or greater required.")
+if sys.version_info[:2] < (3, 5):
+    raise RuntimeError("Python version 3.5 or greater required.")
 
 setup(
   name='deepneuro',
-  version='0.2.1',
+  version='0.2.2',
   description=DOCLINES[0],
   packages=find_packages(),
   entry_points= {
