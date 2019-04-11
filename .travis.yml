@@ -1,12 +1,11 @@
 language: python
 
 python:
-  - "2.7"
   - "3.5"
 
 env:
   - TOX_ENV=flake8
-  - TOX_ENV=py27
+  - TOX_ENV=py35
 
 before_install:
   - pip install --upgrade pip setuptools wheel
