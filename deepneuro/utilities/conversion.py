@@ -72,7 +72,22 @@ def get_dicom_pixel_array(dicom, filename):
     return dicom.pixel_array
 
 
-def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_all=False):
+def dcm_2_numpy(input_image, return_all=False):
+    
+    """ Loads a single DICOM image and return data.
+        As of yet, does not apply orientation information.
+    """
+
+    ds = pydicom.dcmread(input_image)
+    output_array = ds.pixel_array.astype(float)
+
+    if return_all:
+        return output_array, None, None
+    else:
+        return output_array
+
+
+def dcm_dir_2_numpy(input_folder, verbose=False, harden_orientation=False, return_all=False):
 
     """ Uses pydicom to stack an alphabetical list of DICOM files. TODO: Make it
         take slice_order into account.
@@ -113,12 +128,11 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
         # Bad behavior: Currently outputs first DICOM found.
         # Unsure about error-checking with DICOM.
 
-        if True:
-        # try:
+        # if True:
+        try:
             # Grab DICOMs for a certain Instance
             current_files = unique_dicoms[UID]
             current_dicoms = [pydicom.read_file(dcm) for dcm in unique_dicoms[UID]]
-            # print current_files
 
             # Sort DICOMs by Instance.
             dicom_instances = [x.data_element('InstanceNumber').value for x in current_dicoms]
@@ -129,12 +143,11 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
             if verbose:
                 print(('Loading...', input_folder))
 
-        # except:
-        #     print 'Could not read DICOM volume SeriesDescription. Skipping UID...', str(UID)
-        #     continue
+        except:
+            print('Could not read DICOM volume SeriesDescription. Skipping UID...', str(UID))
+            continue
 
-        if True:
-        # try:
+        try:
             # Extract patient position information for affine creation.
             output_affine = np.eye(4)
             image_position_patient = np.array(first_dicom.data_element('ImagePositionPatient').value).astype(float)
@@ -160,7 +173,8 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
             for i in range(len(current_dicoms)):
                 try:
                     output_numpy += [get_dicom_pixel_array(current_dicoms[i], current_files[i])]
-                except:
+                except Exception as e:
+                    print("{}".format(e.msg))
                     print(('Warning, error at slice', i, 'in folder', input_folder))
             output_numpy = np.stack(output_numpy, -1)
 
@@ -191,8 +205,8 @@ def dcm_2_numpy(input_folder, verbose=False, harden_orientation=False, return_al
             else:
                 return output_numpy
 
-        # except:
-            # print 'Could not read DICOM at folder...', input_folder
+        except:
+            print('Could not read DICOM at folder...', input_folder)
 
 
 def itk_transform_2_numpy(input_filepath, return_all=False):
@@ -403,7 +417,9 @@ FORMAT_LIST = {'dicom': ('.dcm', '.ima'),
                 'itk_transform': ('.txt', '.tfm'),
                 'numpy': ('.npy')}
 
-NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy, 
+NUMPY_CONVERTER_LIST = {
+                'dicom': dcm_2_numpy,
+                'dicom_dir': dcm_dir_2_numpy, 
                 'nifti': nifti_2_numpy, 
                 'nrrd': nrrd_2_numpy, 
                 'image_jpg_png': image_jpg_png_2_numpy, 
@@ -422,7 +438,7 @@ def check_format(filepath):
     format_type = None
 
     if os.path.isdir(filepath):
-        format_type = 'dicom'
+        format_type = 'dicom_dir'
     else:
         try:
             float(filepath)
