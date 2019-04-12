@@ -16,12 +16,12 @@ import os
 
 os.environ["MPLCONFIGDIR"] = "."
 
-if sys.version_info[:2] < (2, 7):
-    raise RuntimeError("Python version 2.7 or greater required.")
+if sys.version_info[:2] < (3, 5):
+    raise RuntimeError("Python version 3.5 or greater required.")
 
 setup(
   name='deepneuro',
-  version='0.2.1',
+  version='0.2.2',
   description=DOCLINES[0],
   packages=find_packages(),
   entry_points= {
@@ -33,8 +33,8 @@ setup(
   author='Andrew Beers',
   author_email='abeers@mgh.harvard.edu',
   url='https://github.com/QTIM-Lab/DeepNeuro',  # use the URL to the github repo
-  download_url='https://github.com/QTIM-Lab/DeepNeuro/tarball/0.2.1',
+  download_url='https://github.com/QTIM-Lab/DeepNeuro/tarball/0.2.2',
   keywords=['neuroimaging', 'neuroncology', 'neural networks', 'neuroscience', 'neurology', 'deep learning', 'fmri', 'pet', 'mri', 'dce', 'dsc', 'dti', 'machine learning', 'computer vision', 'learning', 'keras', 'theano', 'tensorflow', 'nifti', 'nrrd', 'dicom'],
-  install_requires=['tables', 'pydicom', 'pynrrd', 'nibabel', 'pyyaml', 'six', 'imageio', 'matplotlib', 'pydot', 'scipy', 'scikit-image==0.12.3', 'tqdm', 'numpy'],
+  install_requires=['tables', 'pydicom', 'pynrrd', 'nibabel', 'pyyaml', 'six', 'imageio', 'matplotlib', 'pydot', 'scipy', 'numpy', 'scikit-image', 'tqdm'],
   classifiers=[],
 )
