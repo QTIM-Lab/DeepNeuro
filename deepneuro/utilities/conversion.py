@@ -417,8 +417,7 @@ FORMAT_LIST = {'dicom': ('.dcm', '.ima'),
                 'itk_transform': ('.txt', '.tfm'),
                 'numpy': ('.npy')}
 
-NUMPY_CONVERTER_LIST = {
-                'dicom': dcm_2_numpy,
+NUMPY_CONVERTER_LIST = {'dicom': dcm_2_numpy,
                 'dicom_dir': dcm_dir_2_numpy, 
                 'nifti': nifti_2_numpy, 
                 'nrrd': nrrd_2_numpy, 
