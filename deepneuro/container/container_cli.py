@@ -1,5 +1,6 @@
 import os
 
+from pprint import pprint
 from subprocess import call
 
 from deepneuro.utilities.util import quotes
@@ -13,8 +14,12 @@ def docker_wrapper(**kwargs):
 def nvidia_docker_wrapper(command, cli_args=None, filename_args=None, interactive=False, docker_container='deepneuro'):
 
     if filename_args is not None:
+        print(filename_args)
+        pprint(cli_args)
         filename_args = [arg for arg in filename_args if cli_args[arg] is not None]
-        mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([cli_args[arg] for arg in filename_args])))
+        print([cli_args[arg] for arg in filename_args])
+        mounted_dir = os.path.abspath(os.path.dirname(os.path.commonprefix([os.path.abspath(cli_args[arg]) for arg in filename_args])))
+        print(mounted_dir)
         for arg in filename_args:
             after_mounted = os.path.abspath(cli_args[arg]).split(mounted_dir, 1)[1].lstrip(os.sep)
             cli_args[arg] = quotes(os.path.join('/INPUT_DATA', after_mounted))

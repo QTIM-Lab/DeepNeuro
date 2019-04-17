@@ -56,8 +56,33 @@ class DeepNeuroCLI(object):
 
 def load_data(inputs, output_folder, input_directory=None, ground_truth=None, input_data=None, verbose=True):
 
-    """ A convenience function when building single-input pipelines. This function
-        quickly builds DataCollections
+    """A convenience function when building single-input pipelines. This function
+    quickly builds DataCollections
+    
+    Parameters
+    ----------
+    inputs : TYPE
+        Description
+    output_folder : TYPE
+        Description
+    input_directory : None, optional
+        Description
+    ground_truth : None, optional
+        Description
+    input_data : None, optional
+        Description
+    verbose : bool, optional
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    
+    Raises
+    ------
+    ValueError
+        Description
     """
 
     if any(data is None for data in inputs):

@@ -2,10 +2,13 @@
     They will process data passed in by these models, and save their output
     to a provided file location. They may also store metadata about data they
     process longitduinally, to create summary statistics.
+
+    TODO: Refactor outputs in DeepNeuro, this file is a mess.
 """
 
 import os
 import csv
+import json
 import numpy as np
 
 from collections import defaultdict
@@ -94,6 +97,7 @@ class Output(object):
         self.case_directory_output = False
         self.output_filename_base, self.output_extension = nifti_splitext(self.output_filename_base)
         self.open_files = defaultdict(lambda: None)
+        self.open_jsons = None
 
         self.load(kwargs)
 
@@ -133,7 +137,7 @@ class Output(object):
         data_generator = self.data_collection.data_generator(verbose=True, batch_size=self.batch_size)
 
         input_data = next(data_generator)
-        
+
         while input_data is not None:
             self.return_objects = []
             self.return_filenames = []
@@ -215,15 +219,9 @@ class Output(object):
         if self.save_to_file and self.postprocessors != []:
             self.save_output(len(self.postprocessors) - 1, raw_data=input_data)
 
-    def open_csv(self, filepath):
-
-        open_file = None
-
-        return open_file
-
     def close_output(self):
 
-        for key, open_file in self.open_files:
+        for key, open_file in self.open_files.items():
             open_file.close()
 
         self.open_files = defaultdict(lambda: None)
@@ -239,6 +237,8 @@ class Output(object):
 
             if self.output_extension in ['.csv']:
                 self.save_to_csv(input_data, output_filenames)  
+            elif self.output_extension in ['.json']:
+                self.save_to_json(input_data, output_filenames)
             else:
                 self.save_to_disk(input_data, output_filenames, raw_data)
 
@@ -249,6 +249,22 @@ class Output(object):
         return
 
     def save_to_csv(self, input_data, output_filenames):
+
+        if os.path.exists(self.output_filename_base) and not self.replace_existing:
+            return              
+
+        if self.open_files[self.lead_key] is None:
+            self.open_files[self.lead_key] = open(self.output_filename_base + self.output_extension, 'w')
+
+        writer = csv.writer(self.open_files[self.lead_key])
+
+        for row_idx, row in enumerate(input_data):
+            output_row = [output_filenames[row_idx]] + list(row)
+            writer.writerow(output_row)
+
+        return
+
+    def save_to_json(self, input_data, output_filenames):
 
         if os.path.exists(self.output_filename_base) and not self.replace_existing:
             return              

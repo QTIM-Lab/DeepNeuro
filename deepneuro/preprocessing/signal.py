@@ -78,6 +78,8 @@ class Normalization(Preprocessor):
         # Normalization Parameters
         add_parameter(self, kwargs, 'normalize_by_channel', True)
         add_parameter(self, kwargs, 'channels', None)
+        add_parameter(self, kwargs, 'mean', 0)
+        add_parameter(self, kwargs, 'std', 1)
 
         self.array_input = True
 
@@ -114,6 +116,20 @@ class Normalization(Preprocessor):
 
     def normalize(self, normalize_numpy, mask_numpy=None):
 
+        normalize_numpy = normalize_numpy.astype(float)
+
+        if mask_numpy is not None:
+            mask = mask_numpy > 0
+        elif self.mask_zeros:
+            mask = np.nonzero(normalize_numpy)
+        else:
+            mask = None
+
+        if mask is None:
+            normalize_numpy = (normalize_numpy - self.mean) / self.std
+        else:
+            raise NotImplementedError
+
         return normalize_numpy
 
 
@@ -125,7 +141,6 @@ class RangeNormalization(Normalization):
 
         add_parameter(self, kwargs, 'intensity_range', [-1, 1])
         add_parameter(self, kwargs, 'input_intensity_range', None)
-
         add_parameter(self, kwargs, 'outlier_percent', None)  # Not Implemented
 
         # Naming Parameters

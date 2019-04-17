@@ -250,3 +250,27 @@ class DICOMConverter(Preprocessor):
             if return_array:
                 self.convert_to_array_data(data_group)
 
+
+class Lambda_Preprocessor(Preprocessor):
+
+    """ Not yet implemented. A function for users to quickly make their own
+        preprocessor functions.
+    """
+
+    def load(self, kwargs):
+
+        # Naming Parameters
+        add_parameter(self, kwargs, 'name', 'Conversion')
+        add_parameter(self, kwargs, 'preprocessor_string', '_convert')
+
+        # Not yet implemented
+        add_parameter(self, kwargs, 'output_dictionary', None)
+
+        self.array_input = False
+
+        return
+
+
+if __name__ == '__main__':
+
+    pass

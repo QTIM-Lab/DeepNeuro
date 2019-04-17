@@ -81,6 +81,9 @@ def dcm_2_numpy(input_image, return_all=False):
     ds = pydicom.dcmread(input_image)
     output_array = ds.pixel_array.astype(float)
 
+    if '1' in ds.PhotometricInterpretation:
+        output_array *= -1
+
     if return_all:
         return output_array, None, None
     else:
@@ -409,7 +412,7 @@ def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
 
 
 # Consider merging these into one dictionary. Separating them is easier to visaulize though.
-FORMAT_LIST = {'dicom': ('.dcm', '.ima'), 
+FORMAT_LIST = {'dicom': ('.dcm', '.ima', ''), 
                 'nifti': ('.nii', '.nii.gz'), 
                 'nrrd': ('.nrrd', '.nhdr'), 
                 'image_jpg_png': ('.jpg', '.png'),
@@ -443,11 +446,15 @@ def check_format(filepath):
             float(filepath)
             format_type = 'float_string'
         except:
-            for data_type in FORMAT_LIST:
-                if filepath.lower().endswith(FORMAT_LIST[data_type]):
-                    format_type = data_type
-                if format_type is not None:
-                    break
+            # Skeptical of this if statement.
+            if '.' not in os.path.basename(filepath):
+                format_type = 'dicom'
+            else:
+                for data_type in FORMAT_LIST:
+                    if filepath.lower().endswith(FORMAT_LIST[data_type]):
+                        format_type = data_type
+                    if format_type is not None:
+                        break
 
     if format_type is None:
         raise ValueError('The provided file extension at {} is not an acceptable file extension for DeepNeuro.'.format(filepath))

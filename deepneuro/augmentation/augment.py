@@ -368,5 +368,45 @@ class Downsample(Augmentation):
             data_group.augmentation_strings[augmentation_num + 1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(self.factor) + '_' + str(axes).strip('[]').replace(' ', '')
 
 
+class Permute(Augmentation):
+
+    def load(self, kwargs):
+
+        # Add functionality for masking multiples axes.
+
+        # Mask Parameters
+        add_parameter(self, kwargs, 'mask_channels', {})
+        add_parameter(self, kwargs, 'num_masked', 1)
+        add_parameter(self, kwargs, 'masked_value', -10)
+        add_parameter(self, kwargs, 'random_sample', True)
+
+        # Derived Parameters
+        self.input_shape = {}
+        self.augmentation_string = '_permute_'
+
+    def iterate(self):
+
+        super(Permute, self).iterate()
+
+    def augment(self, augmentation_num=0):
+
+        for label, data_group in list(self.data_groups.items()):
+
+            if self.random_sample:
+                channels = np.random.choice(self.mask_channels[label], self.num_masked, replace=False)
+            else:
+                idx = [x % len(self.mask_channels[label]) for x in range(self.iteration, self.iteration + self.num_masked)]
+                channels = self.mask_channels[label][idx]
+
+            # Currently only works if applied to channels; revisit
+            masked_data = np.copy(data_group.augmentation_cases[augmentation_num])
+
+            # for channel in channels:
+            masked_data[..., channels] = self.masked_value
+            
+            data_group.augmentation_cases[augmentation_num + 1] = masked_data
+            data_group.augmentation_strings[augmentation_num + 1] = data_group.augmentation_strings[augmentation_num] + self.augmentation_string + str(channels).strip('[]').replace(' ', '')
+
+
 if __name__ == '__main__':
     pass

@@ -26,6 +26,10 @@ class DataCollection(object):
         add_parameter(self, kwargs, 'recursive', False)
         add_parameter(self, kwargs, 'file_identifying_chars', None)
 
+        # File loading variables
+        add_parameter(self, kwargs, 'force_extension', None)
+
+        # Derived Parameters
         self.open_hdf5 = None
         self.case_list = case_list
         self.verbose = verbose
@@ -164,13 +168,16 @@ class DataCollection(object):
                 self.data_groups[data_group_name] = DataGroup(data_group_name)
                 self.data_groups[data_group_name].source = 'directory'
 
+        if os.path.exists(case_name):
+            case_name = os.path.abspath(case_name)
+
         # Search for modality files, and skip those missing with files modalities.
         for data_group_name in list(self.data_groups.keys()):
             if data_group_name in list(case_dict.keys()):
                 self.data_groups[data_group_name].add_case(case_name, list(case_dict[data_group_name]))
             else:
                 self.data_groups[data_group_name].add_case(case_name, None)
-        
+
         self.cases.append(case_name)
         self.total_cases = len(self.cases)
 
@@ -326,7 +333,6 @@ class DataCollection(object):
                 data_group.preprocessed_case, data_group.preprocessed_affine = data_group.preprocessed_case, data_group.preprocessed_affine
             else:
                 data_group.preprocessed_case, data_group.preprocessed_affine = read_image_files(data_group.preprocessed_case, return_affine=True)
-
             data_group.base_case, data_group.base_affine = data_group.get_data(index=case, return_affine=True)
 
             if self.preprocessors == []:

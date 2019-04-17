@@ -11,7 +11,7 @@ class Segment_GBM_cli(DeepNeuroCLI):
 
         self.command_name = 'segment_gbm'
         self.docker_container = 'qtimlab/deepneuro_segment_gbm:latest'
-        self.filepath_arguments = ['output_folder', 'T1', 'T1POST', 'FLAIR', 'input_directory']
+        self.filepath_arguments = ['output_folder', 'T1', 'T1POST', 'FLAIR']
 
         super(Segment_GBM_cli, self).load()
 

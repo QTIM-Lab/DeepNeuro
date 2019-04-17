@@ -7,6 +7,8 @@ import os
 import numpy as np
 import itertools
 
+from skimage.transform import resize
+
 from deepneuro.preprocessing.preprocessor import Preprocessor
 from deepneuro.utilities.util import add_parameter, quotes
 
@@ -238,7 +240,7 @@ class CopyChannels(Preprocessor):
         input_data = data_group.preprocessed_case
 
         if self.new_channel_dim:
-            output_data = np.tile(input_data[..., np.newaxis], (1, 1, self.channel_multiplier))
+            output_data = np.stack([input_data] * self.channel_multiplier, -1)
         else:
             output_data = np.tile(input_data, (1, 1, self.channel_multiplier))
 
@@ -403,7 +405,7 @@ class CropValues(Preprocessor):
         data_group.preprocessed_case = self.output_data
 
 
-class Resize(Preprocessor):
+class ResizeImage(Preprocessor):
 
     def load(self, kwargs):
 
@@ -411,27 +413,32 @@ class Resize(Preprocessor):
         add_parameter(self, kwargs, 'name', 'Resize')
 
         # Registration Parameters
-        add_parameter(self, kwargs, 'output_shape', [1, 1, 1])
-        add_parameter(self, kwargs, 'interpolation', 'linear')
+        add_parameter(self, kwargs, 'output_dim', (224, 224))
+        add_parameter(self, kwargs, 'interpolation', 'bilinear')
 
         # Derived Parameters
         add_parameter(self, kwargs, 'preprocessor_string', '_Resized_' + str(self.output_shape).strip('[]').replace(' ', '').replace(',', ''))
         self.interpolation_dict = {'nearestNeighbor': 'nn', 'linear': 'linear'}
-        self.dimensions = str(self.dimensions).strip('[]').replace(' ', '')
 
+        self.output_shape = {}
         self.array_input = True
+
+    def initialize(self, data_collection):
+
+        super(ResizeImage, self).initialize(data_collection)
+
+        for label, data_group in list(self.data_groups.items()):
+            data_shape = list(data_group.get_shape())
+            self.output_shape[label] = list(self.output_dim) + [data_shape[-1]]
 
     def preprocess(self, data_group):
 
-        for file_idx, filename in enumerate(data_group.preprocessed_case):
-            if self.reference_channel is None:
-                specific_command = self.command + ['ResampleScalarVolume', '-i', self.interpolation, '-s', self.dimensions, quotes(filename), quotes(self.output_filenames[file_idx])]
-            else:
-                specific_command = self.command + ['ResampleScalarVectorDWIVolume', '-R', self.reference_channel, '--interpolation', self.interpolation_dict[self.interpolation], quotes(self.base_file), quotes(self.output_filename)]
-            subprocess.call(' '.join(specific_command), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+        input_data = data_group.preprocessed_case
+        
+        output_data = resize(input_data, self.output_dim)
 
-        self.output_data = self.output_filenames
-        data_group.preprocessed_case = self.output_filenames
+        data_group.preprocessed_case = output_data
+        self.output_data = output_data
 
 
 class Resample(Preprocessor):

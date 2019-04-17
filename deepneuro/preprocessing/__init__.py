@@ -1,4 +1,4 @@
-from .transform import ReorderAxes, SqueezeAxes, MergeChannels, OneHotEncode, SelectChannels, SplitData, Coregister, CropValues,CopyChannels
+from .transform import ReorderAxes, SqueezeAxes, MergeChannels, OneHotEncode, SelectChannels, SplitData, Coregister, CropValues, CopyChannels, ResizeImage
 from .preprocessor import DICOMConverter
-from .signal import N4BiasCorrection, MaskValues, RangeNormalization, BinaryNormalization, ZeroMeanNormalization
+from .signal import N4BiasCorrection, MaskValues, Normalization, RangeNormalization, BinaryNormalization, ZeroMeanNormalization
 from .skullstrip import SkullStrip, SkullStrip_Model

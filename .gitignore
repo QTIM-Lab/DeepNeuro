@@ -14,6 +14,7 @@ checkpoint
 *.bak
 *.
 deepneuro/local
+deepneuro/server
 *.zip
 *.tar.gz
 /_build

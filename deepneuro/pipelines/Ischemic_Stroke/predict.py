@@ -1,11 +1,3 @@
-from deepneuro.outputs import PatchesInference
-from deepneuro.preprocessing.preprocessor import DICOMConverter
-from deepneuro.preprocessing.signal import ZeroMeanNormalization
-from deepneuro.preprocessing.transform import Coregister
-from deepneuro.postprocessing.label import BinarizeLabel
-from deepneuro.pipelines.shared import load_data 
-from deepneuro.models.model import load_model_with_output
-from deepneuro.utilities.util import docker_print
 
 
 def predict_ischemic_stroke(output_folder, 
@@ -21,6 +13,15 @@ def predict_ischemic_stroke(output_folder,
                             input_data=None, 
                             registration_reference='FLAIR',
                             quiet=False):
+
+    from deepneuro.outputs import PatchesInference
+    from deepneuro.preprocessing.preprocessor import DICOMConverter
+    from deepneuro.preprocessing.signal import ZeroMeanNormalization
+    from deepneuro.preprocessing.transform import Coregister
+    from deepneuro.postprocessing.label import BinarizeLabel
+    from deepneuro.pipelines.shared import load_data 
+    from deepneuro.models.model import load_model_with_output
+    from deepneuro.utilities.util import docker_print
 
     verbose = not quiet
     save_preprocessed = not save_only_segmentations

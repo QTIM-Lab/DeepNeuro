@@ -73,19 +73,6 @@ class ModelInference(Output):
         return output_data
 
     def predict(self, input_data):
-        """Summary
-        
-        Parameters
-        ----------
-        input_data : TYPE
-            Description
-        
-        Returns
-        -------
-        TYPE
-            Description
-        """
-        # Vanilla prediction case is obivously not fleshed out.
 
         prediction = self.model.predict(input_data)
 
