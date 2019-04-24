@@ -78,6 +78,7 @@ def dcm_2_numpy(input_image, return_all=False):
         As of yet, does not apply orientation information.
     """
 
+    print(input_image)
     ds = pydicom.dcmread(input_image)
     output_array = ds.pixel_array.astype(float)
 
@@ -412,7 +413,7 @@ def save_numpy_2_image_other(input_numpy, output_filepath, **kwargs):
 
 
 # Consider merging these into one dictionary. Separating them is easier to visaulize though.
-FORMAT_LIST = {'dicom': ('.dcm', '.ima', ''), 
+FORMAT_LIST = {'dicom': ('.dcm', '.ima'), 
                 'nifti': ('.nii', '.nii.gz'), 
                 'nrrd': ('.nrrd', '.nhdr'), 
                 'image_jpg_png': ('.jpg', '.png'),

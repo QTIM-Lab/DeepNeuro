@@ -43,9 +43,11 @@ class KerasPreTrainedModel(KerasModel):
         self.models = {
             "vgg16": VGG16,
             "vgg19": VGG19,
+            "vgg": VGG16,
             "inception": InceptionV3,
             "xception": Xception,
-            "resnet50": ResNet50
+            "resnet50": ResNet50,
+            "resnet": ResNet50,
         }
 
         self.output_activation = False
@@ -61,22 +63,16 @@ class KerasPreTrainedModel(KerasModel):
 
         if self.output_classes is not None:
 
-            if self.model_type in ['vgg19', 'vgg16']:
-                self.model.layers.pop()
-                self.model.outputs = [self.model.layers[-1].output]
-                self.model.layers[-1].outbound_nodes = []
-                self.model.add(Dense(self.output_classes, activation='softmax'))
+            if self.model_type in ['vgg19', 'vgg16', 'vgg', 'resnet50', 'resnet']:
+                model_output = self.model.output
+                model_output = GlobalAveragePooling2D()(model_output)
+                predictions = Dense(self.output_classes, activation='softmax')(model_output)
+                self.model = Model(self.model.input, predictions)
 
             elif self.model_type in ['inception']:
                 model_output = self.model.output
                 model_output = GlobalAveragePooling2D()(model_output)
                 model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
-                predictions = Dense(self.output_classes, activation='softmax')(model_output)
-                self.model = Model(self.model.input, predictions)
-            elif self.model_type in ['resnet50']:
-                # self.model.layers.pop()
-                model_output = self.model.output
-                model_output = GlobalAveragePooling2D()(model_output)
                 predictions = Dense(self.output_classes, activation='softmax')(model_output)
                 self.model = Model(self.model.input, predictions)
 

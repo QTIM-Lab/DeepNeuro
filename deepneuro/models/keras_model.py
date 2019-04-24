@@ -48,7 +48,7 @@ class KerasModel(DeepNeuroModel):
             if validation_data_collection is None:
                 self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, callbacks=self.callbacks)
             else:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks, workers=0)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()
@@ -98,12 +98,12 @@ class KerasModel(DeepNeuroModel):
 
     def keras_generator(self, data_generator, input_data='input_data', targets='ground_truth'):
 
-        while True:
-            data = next(data_generator)
-            keras_data = (data[self.input_data], data[self.targets])
-            yield keras_data
+        # while True:
+            # data = next(data_generator)
+            # keras_data = (data[self.input_data], data[self.targets])
+            # yield data
 
-        return
+        return data_generator
 
     def get_layer_output_shape(self, layer_num):
 

@@ -13,6 +13,7 @@ class DataGroup(object):
         self.label = label
         self.augmentations = []
         self.data = {}
+        self.metadata = {}
         self.cases = []
         self.case_num = 0
 
@@ -39,6 +40,7 @@ class DataGroup(object):
         self.base_shape = None
 
     def add_case(self, case_name, item):
+        # self.metadata[case_name] = {}
         self.data[case_name] = item
         self.cases.append(case_name)
 

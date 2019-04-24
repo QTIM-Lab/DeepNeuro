@@ -6,6 +6,7 @@ import copy
 
 from tqdm import tqdm
 
+from deepneuro.data import sampling
 from deepneuro.augmentation.augment import Copy
 from deepneuro.utilities.conversion import read_image_files
 from deepneuro.data.data_group import DataGroup
@@ -28,6 +29,7 @@ class DataCollection(object):
 
         # File loading variables
         add_parameter(self, kwargs, 'force_extension', None)
+        add_parameter(self, kwargs, 'equal_sampling', False)
 
         # Derived Parameters
         self.open_hdf5 = None
@@ -313,6 +315,9 @@ class DataCollection(object):
     # @profile
     def load_case_data(self, case):
 
+        """ Load all associated data with a "case".
+        """
+
         data_groups = self.get_data_groups()
 
         # This is weird.
@@ -398,86 +403,15 @@ class DataCollection(object):
         return data_batch
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False, keras=True):
 
-        data_groups = self.get_data_groups(data_group_labels)
+        if not keras:
+            return sampling.data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False)
 
-        if case_list is None:
-            case_list = self.cases
-
-        if case_list is None or case_list == '':
-            print('No cases found. Yielding None.')
-            yield None
-
-        data_batch_labels = ['casename']
-        for data_group in data_groups:
-            data_batch_labels += [data_group.label, data_group.label + '_augmentation_string', data_group.label + '_affine']
-
-        data_batch = {label: [] for label in data_batch_labels}
-
-        while True:
-
-            np.random.shuffle(case_list)
-
-            for case_idx, case_name in enumerate(case_list):
-
-                if self.source == 'hdf5':
-                    case_name_string = data_groups[0].data_casenames[case_name][0].decode("utf-8")
-                else:
-                    case_name_string = case_name
-
-                if verbose:
-                    print(('Working on image.. ', case_idx, 'at', case_name_string))
-
-                # Is error-catching useful here?
-                if True:
-                # try:
-                    self.load_case_data(case_name)
-                # except KeyboardInterrupt:
-                    # raise
-                # except:
-                    # print 'Hit error on', case_name, 'skipping.'
-                    # yield False
-
-                recursive_augmentation_generator = self.recursive_augmentation(data_groups, augmentation_num=0)
-
-                for i in range(self.multiplier):
-                    next(recursive_augmentation_generator)
-
-                    if yield_data:
-                        # TODO: This section is terribly complex and repetitive. Revise!
-
-                        for data_idx, data_group in enumerate(data_groups):
-
-                            if len(self.augmentations) == 0:
-                                data_batch[data_group.label].append(data_group.preprocessed_case[0])
-                            else:
-                                data_batch[data_group.label].append(data_group.augmentation_cases[-1][0])
-
-                            data_batch[data_group.label + '_augmentation_string'].append(data_group.augmentation_strings[-1])
-                            data_batch[data_group.label + '_affine'].append(data_group.preprocessed_affine)
-
-                        data_batch['casename'].append(case_name_string)
-
-                        if len(data_batch[data_groups[0].label]) == batch_size:
-                            
-                            for label in data_batch:
-                                data_batch[label] = np.stack(data_batch[label])
-
-                            if just_one_batch:
-                                while True:
-                                    yield data_batch
-                            else:
-                                yield data_batch
-
-                            data_batch = {label: [] for label in data_batch_labels}   
-
-                    else:
-                        yield True
-
-            if not perpetual:
-                yield None
-                break
+        if self.equal_sampling:
+            return sampling.KerasSequence_EqualSampling(data_collection=self, data_group_labels=data_group_labels, perpetual=perpetual, case_list=case_list, yield_data=yield_data, verbose=verbose, batch_size=batch_size, just_one_batch=just_one_batch)
+        else:
+            return sampling.KerasSequence(data_collection=self, data_group_labels=data_group_labels, perpetual=perpetual, case_list=case_list, yield_data=yield_data, verbose=verbose, batch_size=batch_size, just_one_batch=just_one_batch)
 
     # @profile
     def recursive_augmentation(self, data_groups, augmentation_num=0):
@@ -578,7 +512,7 @@ class DataCollection(object):
 
         storage_cases, total_cases = self.cases, self.total_cases
 
-        storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False)
+        storage_data_generator = self.data_generator(data_group_labels, case_list=storage_cases, yield_data=False, keras=False)
 
         for i in tqdm(list(range(total_cases)), total=total_cases, unit="datasets"):
             for j in tqdm(list(range(self.multiplier)), total=self.multiplier, unit="augmentations", disable=(self.multiplier == 1)):

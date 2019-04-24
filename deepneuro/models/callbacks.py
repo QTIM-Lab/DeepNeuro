@@ -2,7 +2,7 @@ import os
 import imageio
 import numpy as np
 
-from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, Callback
+from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, Callback, ReduceLROnPlateau
 from keras import backend as K
 
 from deepneuro.utilities.util import add_parameter
@@ -287,9 +287,9 @@ class SaveModel(Callback):
         return
 
 
-def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', cyclic_base_learning_rate=.001, cyclic_max_learning_rate=.006, learning_rate_cycle=2000, **kwargs):
+def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_model_filepath=None, monitor='val_loss', model=None, data_collection=None, save_best_only=False, epoch_prediction_dir=None, batch_size=1, epoch_prediction_object=None, epoch_prediction_data_collection=None, epoch_prediction_batch_size=None, latent_size=128, backend='tensorflow', cyclic_base_learning_rate=.001, cyclic_max_learning_rate=.006, learning_rate_cycle=2000, patience=10, **kwargs):
 
-    """ Very disorganized currently. Replace with dictionary? Also address never-ending parameters
+    """ This needs to be totally refactored. Placeholder code.
     """
 
     return_callbacks = []
@@ -303,7 +303,10 @@ def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_mode
                 return_callbacks += [SaveModel(deepneuro_model=model)]
 
         if callback == 'early_stopping':
-            return_callbacks += [EarlyStopping(monitor=monitor, patience=10)]
+            return_callbacks += [EarlyStopping(monitor=monitor, patience=patience)]
+
+        if callback == 'lr_plateau':
+            return_callbacks += [ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=patience, min_lr=0.0)]
 
         if callback == 'log':
             return_callbacks += [CSVLogger(output_model_filepath.replace('.h5', '.log'))]
