@@ -53,7 +53,7 @@ class KerasPreTrainedModel(KerasModel):
             "densenet": DenseNet121
         }
 
-        self.output_activation = False
+        self.output_activation = True
 
         if self.input_shape is None:
             self.include_top = False

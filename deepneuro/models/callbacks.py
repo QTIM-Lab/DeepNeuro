@@ -303,7 +303,7 @@ def get_callbacks(callbacks=['save_model', 'early_stopping', 'log'], output_mode
                 return_callbacks += [SaveModel(deepneuro_model=model)]
 
         if callback == 'early_stopping':
-            return_callbacks += [EarlyStopping(monitor=monitor, patience=patience)]
+            return_callbacks += [EarlyStopping(monitor=monitor, patience=20)]
 
         if callback == 'lr_plateau':
             return_callbacks += [ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=patience, min_lr=0.0)]

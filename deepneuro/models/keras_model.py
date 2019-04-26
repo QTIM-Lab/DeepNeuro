@@ -136,7 +136,7 @@ class KerasModel(DeepNeuroModel):
 
                 self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
 
-            if self.cost_function == 'mae':
+            elif self.cost_function == 'mae':
 
                 if compute_output:
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
