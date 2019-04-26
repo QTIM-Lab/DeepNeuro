@@ -10,6 +10,7 @@ from keras.applications import InceptionV3
 from keras.applications import Xception
 from keras.applications import VGG16
 from keras.applications import VGG19
+from keras.applications import DenseNet121
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.engine import Model
 
@@ -48,6 +49,8 @@ class KerasPreTrainedModel(KerasModel):
             "xception": Xception,
             "resnet50": ResNet50,
             "resnet": ResNet50,
+            "inception": InceptionV3,
+            "densenet": DenseNet121
         }
 
         self.output_activation = False
@@ -63,23 +66,24 @@ class KerasPreTrainedModel(KerasModel):
 
         if self.output_classes is not None:
 
-            if self.model_type in ['vgg19', 'vgg16', 'vgg', 'resnet50', 'resnet']:
-                model_output = self.model.output
-                model_output = GlobalAveragePooling2D()(model_output)
-                predictions = Dense(self.output_classes, activation='softmax')(model_output)
-                self.model = Model(self.model.input, predictions)
+            # if self.model_type in ['vgg19', 'vgg16', 'vgg', 'resnet50', 'resnet']:
+            model_output = self.model.output
+            model_output = GlobalAveragePooling2D()(model_output)
+            predictions = Dense(self.output_classes)(model_output)
+            # self.model = Model(self.model.input, predictions)
 
-            elif self.model_type in ['inception']:
-                model_output = self.model.output
-                model_output = GlobalAveragePooling2D()(model_output)
-                model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
-                predictions = Dense(self.output_classes, activation='softmax')(model_output)
-                self.model = Model(self.model.input, predictions)
+            # elif self.model_type in ['inception']:
+            #     model_output = self.model.output
+            #     model_output = GlobalAveragePooling2D()(model_output)
+            #     model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
+            #     predictions = Dense(self.output_classes, activation='softmax')(model_output)
+            #     self.model = Model(self.model.input, predictions)
 
         if self.bottleneck_layers_num is not None:
             for layer in self.model.layers[:self.bottleneck_layers_num]:
                 layer.trainable = False
 
+        self.output_layer = predictions
         self.inputs = self.model.input
 
-        super(KerasPreTrainedModel, self).build_model(compute_output=False)
+        super(KerasPreTrainedModel, self).build_model(compute_output=True)

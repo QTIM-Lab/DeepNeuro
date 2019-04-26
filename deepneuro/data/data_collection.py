@@ -403,10 +403,10 @@ class DataCollection(object):
         return data_batch
 
     # @profile
-    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False, keras=True):
+    def data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False, keras=False):
 
         if not keras:
-            return sampling.data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=1, just_one_batch=False)
+            return sampling.data_generator(self, data_group_labels=None, perpetual=False, case_list=None, yield_data=True, verbose=False, batch_size=batch_size, just_one_batch=False)
 
         if self.equal_sampling:
             return sampling.KerasSequence_EqualSampling(data_collection=self, data_group_labels=data_group_labels, perpetual=perpetual, case_list=case_list, yield_data=yield_data, verbose=verbose, batch_size=batch_size, just_one_batch=just_one_batch)

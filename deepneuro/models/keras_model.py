@@ -40,7 +40,7 @@ class KerasModel(DeepNeuroModel):
             data slot in your model.
         """
 
-        self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+        self.create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch, keras=True)
 
         self.callbacks = get_callbacks(callbacks, output_model_filepath=output_model_filepath, data_collection=training_data_collection, model=self, batch_size=training_batch_size, backend='keras', **kwargs)
 
@@ -48,7 +48,7 @@ class KerasModel(DeepNeuroModel):
             if validation_data_collection is None:
                 self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, callbacks=self.callbacks)
             else:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks, use_multiprocessing=True, workers=20)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()
@@ -85,9 +85,9 @@ class KerasModel(DeepNeuroModel):
 
         return
 
-    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None):
+    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, keras=False):
 
-        super(KerasModel, self).create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch)
+        super(KerasModel, self).create_data_generators(training_data_collection, validation_data_collection, input_groups, training_batch_size, validation_batch_size, training_steps_per_epoch, validation_steps_per_epoch, keras)
 
         self.training_data_generator = self.keras_generator(self.training_data_generator)
 
@@ -135,6 +135,13 @@ class KerasModel(DeepNeuroModel):
                     self.model = Model(inputs=self.inputs, outputs=self.output_layer)
 
                 self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_squared_error', metrics=['mean_squared_error'])
+
+            if self.cost_function == 'mae':
+
+                if compute_output:
+                    self.model = Model(inputs=self.inputs, outputs=self.output_layer)
+
+                self.model.compile(optimizer=self.keras_optimizer_dict[self.optimizer](lr=self.initial_learning_rate), loss='mean_absolute_error', metrics=['mean_absolute_error'])
 
             elif self.cost_function == 'dice':
 

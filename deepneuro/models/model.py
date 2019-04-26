@@ -164,14 +164,14 @@ class DeepNeuroModel(object):
 
         return return_outputs
 
-    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None):
+    def create_data_generators(self, training_data_collection, validation_data_collection=None, input_groups=None, training_batch_size=32, validation_batch_size=32, training_steps_per_epoch=None, validation_steps_per_epoch=None, keras=False):
 
         if training_steps_per_epoch is None:
             self.training_steps_per_epoch = training_data_collection.total_cases // training_batch_size + 1
         else:
             self.training_steps_per_epoch = training_steps_per_epoch
 
-        self.training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size)
+        self.training_data_generator = training_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=training_batch_size, keras=keras)
 
         if validation_data_collection is not None:
 
@@ -180,7 +180,7 @@ class DeepNeuroModel(object):
             else:
                 self.validation_steps_per_epoch = validation_steps_per_epoch
 
-            self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size)
+            self.validation_data_generator = validation_data_collection.data_generator(perpetual=True, data_group_labels=input_groups, verbose=False, batch_size=validation_batch_size, keras=keras)
 
         else:
 

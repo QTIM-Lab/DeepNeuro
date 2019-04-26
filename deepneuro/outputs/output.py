@@ -137,7 +137,6 @@ class Output(object):
         data_generator = self.data_collection.data_generator(verbose=True, batch_size=self.batch_size)
 
         input_data = next(data_generator)
-
         while input_data is not None:
             self.return_objects = []
             self.return_filenames = []
@@ -177,26 +176,31 @@ class Output(object):
         output_filenames = []
         for idx in range(len(data['casename'])):
 
-            casename = data['casename'][idx]
-            augmentation_string = data[self.lead_key + '_augmentation_string'][idx]
+            if self.case_in_filename and self.output_extension == '.csv':
 
-            if self.case_in_filename:
-                fileparts = [casename, self.output_filename_base]
+                output_filenames += [data['casename'][idx]]
             else:
-                fileparts = [self.output_filename_base]
 
-            if augmentation_string != '':
-                fileparts = fileparts + [augmentation_string]
-            if postprocessor_idx is not None:
-                if [self.postprocessors[postprocessor_idx].postprocessor_string] != '':
-                    fileparts = fileparts + [self.postprocessors[postprocessor_idx].postprocessor_string]
+                casename = data['casename'][idx]
+                augmentation_string = data[self.lead_key + '_augmentation_string'][idx]
 
-            output_filename = '_'.join(fileparts)
+                if self.case_in_filename:
+                    fileparts = [casename, self.output_filename_base]
+                else:
+                    fileparts = [self.output_filename_base]
 
-            if self.output_extension not in ['.csv']:
-                output_filename = os.path.join(self.output_directory, output_filename + self.output_extension)
+                if augmentation_string != '':
+                    fileparts = fileparts + [augmentation_string]
+                if postprocessor_idx is not None:
+                    if [self.postprocessors[postprocessor_idx].postprocessor_string] != '':
+                        fileparts = fileparts + [self.postprocessors[postprocessor_idx].postprocessor_string]
 
-            output_filenames += [output_filename]
+                output_filename = '_'.join(fileparts)
+
+                if self.output_extension not in ['.csv']:
+                    output_filename = os.path.join(self.output_directory, output_filename + self.output_extension)
+
+                output_filenames += [output_filename]
 
         return output_filenames
 
@@ -259,6 +263,7 @@ class Output(object):
         writer = csv.writer(self.open_files[self.lead_key])
 
         for row_idx, row in enumerate(input_data):
+            print(output_filenames[row_idx])
             output_row = [output_filenames[row_idx]] + list(row)
             writer.writerow(output_row)
 
@@ -275,6 +280,7 @@ class Output(object):
         writer = csv.writer(self.open_files[self.lead_key])
 
         for row_idx, row in enumerate(input_data):
+            print(output_filenames[row_idx])
             output_row = [output_filenames[row_idx]] + list(row)
             writer.writerow(output_row)
 
