@@ -39,7 +39,8 @@ class KerasPreTrainedModel(KerasModel):
         add_parameter(self, kwargs, 'input_shape', None)
         add_parameter(self, kwargs, 'output_classes', None)
         add_parameter(self, kwargs, 'bottleneck_layers_num', None)
-        add_parameter(self, kwargs, 'finetuning_dense_features', 128)
+        add_parameter(self, kwargs, 'additional_dense_layers', 0)
+        add_parameter(self, kwargs, 'additional_dense_feature_num', 128)
 
         self.models = {
             "vgg16": VGG16,
@@ -66,18 +67,14 @@ class KerasPreTrainedModel(KerasModel):
 
         if self.output_classes is not None:
 
-            # if self.model_type in ['vgg19', 'vgg16', 'vgg', 'resnet50', 'resnet']:
+            # This may need to be made architecture-specific.
             model_output = self.model.output
             model_output = GlobalAveragePooling2D()(model_output)
-            predictions = Dense(self.output_classes)(model_output)
-            # self.model = Model(self.model.input, predictions)
 
-            # elif self.model_type in ['inception']:
-            #     model_output = self.model.output
-            #     model_output = GlobalAveragePooling2D()(model_output)
-            #     model_output = Dense(self.finetuning_dense_features, activation='relu')(model_output)
-            #     predictions = Dense(self.output_classes, activation='softmax')(model_output)
-            #     self.model = Model(self.model.input, predictions)
+            for i in range(self.additional_dense_layers):
+                model_output = Dense(self.additional_dense_feature_num, activation='relu')(model_output)
+
+            predictions = Dense(self.output_classes)(model_output)
 
         if self.bottleneck_layers_num is not None:
             for layer in self.model.layers[:self.bottleneck_layers_num]:

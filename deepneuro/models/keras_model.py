@@ -48,7 +48,7 @@ class KerasModel(DeepNeuroModel):
             if validation_data_collection is None:
                 self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, callbacks=self.callbacks)
             else:
-                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks, use_multiprocessing=True, workers=20)
+                self.model.fit_generator(generator=self.training_data_generator, steps_per_epoch=self.training_steps_per_epoch, epochs=num_epochs, validation_data=self.validation_data_generator, validation_steps=self.validation_steps_per_epoch, callbacks=self.callbacks, use_multiprocessing=False, workers=0)
         except KeyboardInterrupt:
             for callback in self.callbacks:
                 callback.on_train_end()

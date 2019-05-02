@@ -211,7 +211,9 @@ class KerasSequence(Sequence):
     def __getitem__(self, index):
 
         x_batch, y_batch = [], []
-        for case_idx, case_name in enumerate(self.case_list):
+        counter = index * self.batch_size % (len(self.case_list) - self.batch_size)
+
+        for case_idx, case_name in enumerate(self.case_list[counter:counter + self.batch_size]):
 
             if self.data_collection.source == 'hdf5':
                 case_name_string = self.data_groups[0].data_casenames[case_name][0].decode("utf-8")
@@ -284,7 +286,7 @@ class KerasSequence_EqualSampling(KerasSequence):
 
             # I'm going to hell for writing code like this
             class_case_list = self.class_indexes[current_class]
-            class_counter = counter % len(class_case_list)
+            class_counter = counter % ((len(class_case_list) - self.class_batch_size))
             class_batch = class_case_list[class_counter:class_counter + self.class_batch_size]
 
             for case_idx, case_name in enumerate(class_batch):
@@ -318,8 +320,11 @@ class KerasSequence_EqualSampling(KerasSequence):
     
     def on_epoch_end(self):
 
-        np.random.shuffle(self.case_list)
+        # np.random.shuffle(self.case_list)
 
         self.class_indexes = {val: self.case_list[self.class_data_group.metadata['distribution_indexes'][val]] for val in self.classes}
+        for key, item in self.class_indexes.items():
+            np.random.shuffle(item)
+
         self.class_counters = {val: 0 for val in self.classes}
         self.class_batch_size = self.batch_size // len(self.classes)

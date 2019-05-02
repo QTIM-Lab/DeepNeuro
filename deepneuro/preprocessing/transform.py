@@ -161,52 +161,6 @@ class MergeChannels(Preprocessor):
         data_group.preprocessed_case = output_data
         self.output_data = output_data
 
-
-class OneHotEncode(Preprocessor):
-
-    def load(self, kwargs):
-
-        # Naming Parameters
-        add_parameter(self, kwargs, 'name', 'OneHotEncode')
-
-        # Class Parameters
-        add_parameter(self, kwargs, 'num_classes', 3)
-        add_parameter(self, kwargs, 'input_classes', None)
-        add_parameter(self, kwargs, 'class_dictionary', {})
-
-        self.output_shape = {}
-        self.array_input = True
-
-    def initialize(self, data_collection):
-
-        super(OneHotEncode, self).initialize(data_collection)
-
-        if self.class_dictionary == {} and self.input_classes is not None:
-            for idx, class_name in enumerate(self.input_classes):
-                self.class_dictionary[class_name] = idx
-
-        for label, data_group in list(self.data_groups.items()):
-            data_shape = list(data_group.get_shape())
-            data_shape[-1] = self.num_classes
-            self.output_shape[label] = tuple(data_shape)
-
-    def preprocess(self, data_group):
-
-        # Relatively brittle, only works for 1-dimensional data.
-        input_data = data_group.preprocessed_case
-
-        # Probably not the most efficient.
-        output_data = np.zeros(self.num_classes)
-        for item in input_data:
-            if self.class_dictionary != {}:
-                output_data[self.class_dictionary[item]] = 1
-            else:
-                output_data[int(item)] = 1
-
-        data_group.preprocessed_case = output_data
-        self.output_data = output_data
-
-
 class CopyChannels(Preprocessor):
 
     def load(self, kwargs):
