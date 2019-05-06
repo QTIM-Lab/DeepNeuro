@@ -321,8 +321,6 @@ class KerasSequence_EqualSampling(KerasSequence):
     
     def on_epoch_end(self):
 
-        # np.random.shuffle(self.case_list)
-
         self.class_indexes = {val: self.case_list[self.class_data_group.metadata['distribution_indexes'][val]] for val in self.classes}
         for key, item in self.class_indexes.items():
             np.random.shuffle(item)
