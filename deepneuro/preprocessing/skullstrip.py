@@ -78,7 +78,7 @@ class SkullStrip(Preprocessor):
         data_group.preprocessed_data = self.output_data
 
 
-class SkullStrip_Model(Preprocessor):
+class SkullStrip_Model(SkullStrip):
 
     """ Performs skull-stripping using a model trained in DeepNeuro.
     """
@@ -154,12 +154,3 @@ class SkullStrip_Model(Preprocessor):
             self.mask_numpy = read_image_files(self.mask_filename, return_affine=False)
 
         super(SkullStrip_Model, self).execute(data_collection, return_array)
-
-    def preprocess(self, data_group):
-
-        self.output_data = data_group.preprocessed_case
-
-        # Ineffective numpy broadcasting happening here..
-        self.output_data[self.mask_numpy[..., 0] == 0] = 0
-
-        data_group.preprocessed_data = self.output_data

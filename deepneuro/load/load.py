@@ -24,6 +24,9 @@ data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Sku
                 'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), 
                 "https://www.dropbox.com/s/ea4xaput2lubuyw/Brain_Mets_Segmentation_Model.h5?dl=1"],
 
+                'mets_enhancing_T1POST': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model_T1POST.h5'),
+                "https://www.dropbox.com/s/qgubfhvik95m5zp/Brain_Mets_Segmentation_Model_T1POST.h5?dl=1"],
+
                 'ischemic_stroke': [os.path.join(current_dir, 'Segment_Ischemic_Stroke', 'Ischemic_Stroke_Model.h5'),
                  'https://www.dropbox.com/s/4qpxvfac204xzhf/Ischemic_Stroke_Segmentation_Model.h5?dl=1'],
 

@@ -1,4 +1,6 @@
 # DeepNeuro ignores
+*.json
+*server/
 *.h5
 *.nii.gz
 *.nii

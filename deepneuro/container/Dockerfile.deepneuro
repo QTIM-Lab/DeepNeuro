@@ -99,6 +99,14 @@ RUN pip3 --no-cache-dir install nibabel pydicom lycon tqdm pynrrd tables imageio
   # tar -C /usr/local -xjf Linux_Ubuntu14.04.tar.bz2 && \
   # rm Linux_Ubuntu14.04.tar.bz2
 
+# Install NeuroDebian
+# RUN wget -O- http://neuro.debian.net/lists/trusty.us-nh.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+# RUN sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
+# RUN apt-get update
+
+# Install FSL with NeuroDebian
+# RUN sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes fsl-5.0-complete
+
 # Python 2.7
 WORKDIR /usr/src
 ENV PYTHON_VERSION 2.7.10

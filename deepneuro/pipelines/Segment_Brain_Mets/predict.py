@@ -5,7 +5,7 @@ import os
 #--------------------------------------------------------------------#
 
 from deepneuro.outputs import PatchesInference
-from deepneuro.preprocessing import DICOMConverter, N4BiasCorrection, ZeroMeanNormalization, Coregister, SkullStrip_Model
+from deepneuro.preprocessing import DICOMConverter, N4BiasCorrection, ZeroMeanNormalization, Coregister, SkullStrip_Model, SkullStrip
 from deepneuro.postprocessing import BinarizeLabel, LargestComponents, FillHoles
 from deepneuro.pipelines.shared import load_data
 from deepneuro.models.model import load_model_with_output
@@ -37,7 +37,16 @@ def predict_brain_mets(output_folder,
     # Step 1, Load Data
     #--------------------------------------------------------------------#
 
-    data_collection = load_data(inputs=[T1PRE, T1POST, T2, FLAIR], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
+    if T1POST is not None and all([x is None for x in [T2, T1PRE, FLAIR]]):
+        if verbose:
+            docker_print('Running single sequence T1 post-contrast model...')
+        data_collection = load_data(inputs=[T1POST], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
+        model_name = 'mets_enhancing_T1POST'
+    else:
+        if verbose:
+            docker_print('Running multi-sequence T1 post-contrast model...')
+        data_collection = load_data(inputs=[T1PRE, T1POST, T2, FLAIR], output_folder=output_folder, input_directory=input_directory, ground_truth=ground_truth, input_data=input_data, verbose=verbose)
+        model_name = 'mets_enhancing'
 
     #--------------------------------------------------------------------#
     # Step 2, Load Models
@@ -53,7 +62,7 @@ def predict_brain_mets(output_folder,
                         'case_in_filename': False,
                         'verbose': verbose}
 
-    mets_model = load_model_with_output(model_name='mets_enhancing', outputs=[PatchesInference(**mets_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')], wcc_weights={0: 0.1, 1: 3.0})
+    mets_model = load_model_with_output(model_name=model_name, outputs=[PatchesInference(**mets_prediction_parameters)], postprocessors=[BinarizeLabel(postprocessor_string='label')], wcc_weights={0: 0.1, 1: 3.0})
 
     #--------------------------------------------------------------------#
     # Step 3, Add Data Preprocessors
@@ -78,13 +87,16 @@ def predict_brain_mets(output_folder,
         if not bias_corrected:
             preprocessing_steps += [N4BiasCorrection(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
-        if not registered:
+        if not registered and model_name == 'mets_enhancing':
             preprocessing_steps += [Coregister(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=1)]
 
         if not skullstripped:
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
-            preprocessing_steps += [SkullStrip_Model(data_groups=['input_data'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[3, 1])]
+            if model_name == 'mets_enhancing':
+                preprocessing_steps += [SkullStrip_Model(data_groups=['input_data'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder, reference_channel=[3, 1])]
+            else:
+                preprocessing_steps += [SkullStrip(data_groups=['input_data'], model=skullstripping_model, save_output=save_all_steps, verbose=verbose, output_folder=output_folder)]
 
             preprocessing_steps += [ZeroMeanNormalization(data_groups=['input_data'], save_output=save_preprocessed, verbose=verbose, output_folder=output_folder, mask_preprocessor=preprocessing_steps[-1], preprocessor_string='_preprocessed')]
 

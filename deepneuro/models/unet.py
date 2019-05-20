@@ -58,11 +58,11 @@ class UNet(KerasModel):
 
                 left_outputs += [DnConv(self.inputs, filter_num, kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_{}'.format(level, 0), backend='keras')]
 
-                if self.dropout is not None and self.dropout != 0:
-                    left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
+                # if self.dropout is not None and self.dropout != 0:
+                #     left_outputs[level] = Dropout(self.dropout)(left_outputs[level])
 
-                if self.batch_norm:
-                    left_outputs[level] = BatchNormalization()(left_outputs[level])
+                # if self.batch_norm:
+                #     left_outputs[level] = BatchNormalization()(left_outputs[level])
 
                 for block_num in range(1, self.num_blocks):
                     left_outputs[level] = DnConv(left_outputs[level], filter_num * (self.block_filter_growth_ratio ** block_num), kernel_size=self.kernel_size, stride_size=(1,) * self.dim, activation=self.activation, padding=self.padding, dim=self.dim, name='downsampling_conv_{}_{}'.format(level, block_num), backend='keras')
