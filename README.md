@@ -101,4 +101,4 @@ Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy
 
 ## Acknowledgements
 
-The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to high-powered graphical processing units. The DeepNeuro project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)
+The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to graphics processing units. The DeepNeuro project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)
