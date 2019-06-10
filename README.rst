@@ -9,17 +9,18 @@ DeepNeuro
 
 A deep learning python package for neuroimaging data. Focused on validated command-line tools you
 can use today. Created by the Quantitative Tumor Imaging Lab at the Martinos Center (Harvard-MIT
-Program in Health, Sciences, and Technology / Massachussets General Hospital).
+Program in Health, Sciences, and Technology / Massachusetts General Hospital).
 
 Table of Contents
 -----------------
 
--  `About <#about>`__
--  `Installation <#installation>`__
--  `Modules <#modules>`__
--  `Contact <#contact>`__
--  `Citation <#citation>`__
--  `Acknowledgements <#acknowledgements>`__
+-  `:question: About <#about>`__
+-  `:floppy\_disk: Installation <#installation>`__
+-  `:mortar\_board: Tutorials <#tutorials>`__
+-  `:gift: Modules <#modules>`__
+-  `:speech\_balloon: Contact <#contact>`__
+-  `:mega: Citation <#citation>`__
+-  `:yellow\_heart: Acknowledgements <#acknowledgements>`__
 
 About
 -----
@@ -36,28 +37,65 @@ goals for this package:
 -  Provide implementations of popular models for medical imaging data, and pre-processed datasets
    for educational purposes.
 
-This package is in an initial testing phase, and will be released soon. Currently, out glioblastoma
-segmentation package is available -- see details below for installation and usage instructions.
+This package is under active development, but we encourage users to both try the modules with
+pre-trained modules highlighted below, and try their hand at making their own DeepNeuro modules
+using the tutorials below.
 
 Installation
 ------------
 
-1. Install the Docker Engine Utility for NVIDIA GPUs, AKA nvidia-docker. You can find installation
+1. Install Docker from Docker's website here: https://www.docker.com/get-started. Follow
+   instructions on that link to get Docker set up properly on your workstation.
+
+2. Install the Docker Engine Utility for NVIDIA GPUs, AKA nvidia-docker. You can find installation
    instructions at their Github page, here: https://github.com/NVIDIA/nvidia-docker
 
-2. Pull the DeepNeuro Docker container from
+3. Pull the DeepNeuro Docker container from
    https://hub.docker.com/r/qtimlab/deepneuro\_segment\_gbm/. Use the command "docker pull
-   qtimlab/deepneuro-segment\_gbm"
+   qtimlab/deepneuro"
 
-3. If you want to inspect the code, or run your Docker container with an DeepNeuro's python wrappers
-   and command line tools, clone this repository ("git clone
-   https://github.com/QTIM-Lab/DeepNeuro"), and install with the command "python setup.py install"
-   in the directory you just cloned in to.
+4. If you want to run DeepNeuro outside of a Docker container, you can install the DeepNeuro Python
+   package locally using the pip package manager. On the command line, run ``pip install deepneuro``
+
+Tutorials
+---------
+
+.. raw:: html
+
+   <p align="center">
+
+.. raw:: html
+
+   </p>
+
+   <p align="center">
+
+.. raw:: html
+
+   </p>
+
+   <p align="center">
+
+.. raw:: html
+
+   </p>
 
 Modules
 -------
 
 .. raw:: html
+
+   <p align="center">
+
+.. raw:: html
+
+   </p>
+
+   <p align="center">
+
+.. raw:: html
+
+   </p>
 
    <p align="center">
 
@@ -96,7 +134,9 @@ Acknowledgements
 
 The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's
 Hospital provided technical and hardware support for the development of DeepNeuro, including access
-to high-powered graphical processing units.
+to graphics processing units. The DeepNeuro project is also indebted to the following Github
+repository for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in
+early stages. Long live open source deep learning :)
 
 .. |Build Status| image:: https://travis-ci.org/QTIM-Lab/DeepNeuro.svg?branch=master
    :target: https://travis-ci.org/QTIM-Lab/DeepNeuro
