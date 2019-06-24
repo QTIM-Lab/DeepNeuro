@@ -99,6 +99,11 @@ Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy
   year={2018}
 }
 
+If you use the MRI skull-stripping or glioma segmentation modules, please cite:
+
+Chang, K., Beers, A.L., Bai, H.X., Brown, J.M., Ly, K.I., Li, X., Senders, J.T., Kavouridis, V.K., PUBLICATIONS 	Boaro, A., Su, C., Bi, W.L., Rapalino, O., Liao, W., Shen, Q., Zhou, H., Xiao, B., Wang, Y., Zhang, P.J., Pinho, M.C., Wen, P.Y., Batchelor, T.T., Boxerman, J.L., Arnaout, O., Rosen, B.R., Gerstner, E.R., Yang, L., Huang, R.Y., and Kalpathy-Cramer, J., 2019. Automatic assessment of glioma burden: A deep learning algorithm for fully automated volumetric and bi-dimensional measurement. Neuro-Oncology. DOI: 10.1093/neuonc/noz106. PMID: 31190077
+
+
 ## Acknowledgements
 
 The Center for Clinical Data Science at Massachusetts General Hospital and the Brigham and Woman's Hospital provided technical and hardware support for the development of DeepNeuro, including access to graphics processing units. The DeepNeuro project is also indebted to the following <a href="https://github.com/ellisdg/3DUnetCNN">Github repository</a> for the 3D UNet by user ellisdg, which formed the original kernel for much of its code in early stages. Long live open source deep learning :)
