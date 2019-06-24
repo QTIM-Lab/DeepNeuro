@@ -84,7 +84,7 @@ This package is under active development, but we encourage users to both try the
 
 ## Contact
 
-DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to abeers@mgh.harvard.edu. You can also submit a Github issue if you run into a bug.
+DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to qtimlab@gmail.com. You can also submit a Github issue if you run into a bug.
 
 ## Citation
 
