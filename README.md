@@ -92,13 +92,6 @@ If you use DeepNeuro in your published work, please cite:
 
 Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy-Cramer, J. (2018). <a href="https://arxiv.org/pdf/1808.04589.pdf">DeepNeuro: an open-source deep learning toolbox for neuroimaging</a>. arXiv preprint arXiv:1808.04589.
 
-@article{beers2018deepneuro,
-  title={DeepNeuro: an open-source deep learning toolbox for neuroimaging},
-  author={Beers, Andrew and Brown, James and Chang, Ken and Hoebel, Katharina and Gerstner, Elizabeth and Rosen, Bruce and Kalpathy-Cramer, Jayashree},
-  journal={arXiv preprint arXiv:1808.04589},
-  year={2018}
-}
-
 If you use the MRI skull-stripping or glioblastoma segmentation modules, please cite:
 
 Chang, K., Beers, A.L., Bai, H.X., Brown, J.M., Ly, K.I., Li, X., Senders, J.T., Kavouridis, V.K., Boaro, A., Su, C., Bi, W.L., Rapalino, O., Liao, W., Shen, Q., Zhou, H., Xiao, B., Wang, Y., Zhang, P.J., Pinho, M.C., Wen, P.Y., Batchelor, T.T., Boxerman, J.L., Arnaout, O., Rosen, B.R., Gerstner, E.R., Yang, L., Huang, R.Y., and Kalpathy-Cramer, J., 2019. <a href="https://academic.oup.com/neuro-oncology/advance-article/doi/10.1093/neuonc/noz106/5514498?searchresult=1">Automatic assessment of glioma burden: A deep learning algorithm for fully automated volumetric and bi-dimensional measurement</a>. Neuro-Oncology. DOI: 10.1093/neuonc/noz106. PMID: 31190077
