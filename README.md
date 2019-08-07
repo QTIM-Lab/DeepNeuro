@@ -82,10 +82,6 @@ This package is under active development, but we encourage users to both try the
 </a>
 </p>
 
-## Contact
-
-DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to qtimlab@gmail.com. You can also submit a Github issue if you run into a bug.
-
 ## Citation
 
 If you use DeepNeuro in your published work, please cite:
@@ -96,6 +92,9 @@ If you use the MRI skull-stripping or glioblastoma segmentation modules, please 
 
 Chang, K., Beers, A.L., Bai, H.X., Brown, J.M., Ly, K.I., Li, X., Senders, J.T., Kavouridis, V.K., Boaro, A., Su, C., Bi, W.L., Rapalino, O., Liao, W., Shen, Q., Zhou, H., Xiao, B., Wang, Y., Zhang, P.J., Pinho, M.C., Wen, P.Y., Batchelor, T.T., Boxerman, J.L., Arnaout, O., Rosen, B.R., Gerstner, E.R., Yang, L., Huang, R.Y., and Kalpathy-Cramer, J., 2019. <a href="https://academic.oup.com/neuro-oncology/advance-article/doi/10.1093/neuonc/noz106/5514498?searchresult=1">Automatic assessment of glioma burden: A deep learning algorithm for fully automated volumetric and bi-dimensional measurement</a>. Neuro-Oncology. DOI: 10.1093/neuonc/noz106. PMID: 31190077
 
+## Contact
+
+DeepNeuro is under active development, and you may run into errors or want additional features. Send any questions or requests for methods to qtimlab@gmail.com. You can also submit a Github issue if you run into a bug.
 
 ## Acknowledgements
 
