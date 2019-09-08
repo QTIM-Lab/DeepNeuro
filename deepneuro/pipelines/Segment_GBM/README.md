@@ -98,7 +98,7 @@ predict_GBM(output_folder,
                 save_all_steps=False, 
                 output_wholetumor_filename='wholetumor_segmentation.nii.gz', 
                 output_enhancing_filename='enhancing_segmentation.nii.gz',
-                quiet=False):
+                quiet=False)
 ```
 
 The parameters in this Python function should correspond to the parameters for the Docker/Singularity containers above.
