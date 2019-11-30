@@ -1,6 +1,6 @@
 # Segment_GBM
 
-This command-line module creates segmentations of "whole tumor" (edema + contrast-enhancing + necrosis) and contrasting-enhancing tumor given pre-contrast T1, post-contrast T1, and FLAIR input volumes. These segmentations are created by deep neural networks trained on hundreds of public and private datasets of pre-operative high- and low-grade GBMs. The following pre-processing steps are included in module: N4Bias Correction (3DSlicer), Image Registration (3DSlicer), Skull-Stripping (DeepNeuro), and Zero-Mean normalization. This module can take in as input NIfTI files (.nii.gz) and DICOM directories (/\*.dcm). This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
+This command-line module creates segmentations of "whole tumor" (edema + contrast-enhancing + necrosis) and contrasting-enhancing tumor given pre-contrast T1, post-contrast T1, and FLAIR input volumes. These segmentations are created by deep neural networks trained on hundreds of public and private datasets of post-operative GBMs. The following pre-processing steps are included in module: N4Bias Correction (3DSlicer), Image Registration (3DSlicer), Skull-Stripping (DeepNeuro), and Zero-Mean normalization. This module can take in as input NIfTI files (.nii.gz) and DICOM directories (/\*.dcm). This module was developed at the Quantitative Tumor Imaging Lab at the Martinos Center (MGH, MIT/Harvard HST).
 
 ## Table of Contents
 - [Local Command-Line Usage](#command-line-usage)
