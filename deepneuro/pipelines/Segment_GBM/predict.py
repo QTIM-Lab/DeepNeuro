@@ -53,7 +53,6 @@ def predict_GBM(output_folder,
                         'batch_size': 50,
                         'patch_overlaps': 6,
                         'output_patch_shape': (56, 56, 6, 1),
-                        'input_channels': [0, 1],
                         'case_in_filename': False,
                         'verbose': verbose}
 
