@@ -86,7 +86,7 @@ This package is under active development, but we encourage users to both try the
 
 If you use DeepNeuro in your published work, please cite:
 
-Beers, A., Brown, J., Chang, K., Hoebel, K., Gerstner, E., Rosen, B., & Kalpathy-Cramer, J. (2018). <a href="https://arxiv.org/pdf/1808.04589.pdf">DeepNeuro: an open-source deep learning toolbox for neuroimaging</a>. arXiv preprint arXiv:1808.04589.
+Beers, A., Brown, J., Chang, K., Hoebel, K., Patel, J., Ly, K. Ina, Tolaney, S.M., Brastianos, P., Rosen, B., Gerstner, E., and Kalpathy-Cramer, J. (2020). <a href="https://link.springer.com/article/10.1007/s12021-020-09477-5">DeepNeuro: an open-source deep learning toolbox for neuroimaging</a>. Neuroinformatics. DOI: 10.1007/s12021-020-09477-5. PMID: 32578020
 
 If you use the MRI skull-stripping or glioblastoma segmentation modules, please cite:
 
