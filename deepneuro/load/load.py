@@ -16,10 +16,10 @@ data_dict = {'skullstrip_mri': [os.path.join(current_dir, 'SkullStripping', 'Sku
                 'https://www.dropbox.com/s/cyddw4tt380u7j9/Skullstrip_MRI_Model.h5?dl=1'],
 
                 'gbm_wholetumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Wholetumor_Model.h5'), 
-                'https://www.dropbox.com/s/tmnnowda0vl6rmk/Segment_GBM_Wholetumor_Model.h5?dl=1'],
+                'https://www.dropbox.com/s/0ovo3q9neky2zhy/Segment_GBM_Wholetumor_Model.h5?dl=1'],
 
                 'gbm_enhancingtumor_mri': [os.path.join(current_dir, 'Segment_GBM', 'Segment_GBM_Enhancing_Model.h5'),
-                 'https://www.dropbox.com/s/gv2hjgrt5ufooew/Segment_GBM_Enhancing_Model.h5?dl=1'],
+                 'https://www.dropbox.com/s/yz1gyld4ie6apjh/Segment_GBM_Enhancing_Model.h5?dl=1'],
 
                 'mets_enhancing': [os.path.join(current_dir, 'Segment_Mets', 'Segment_Mets_Model.h5'), 
                 'https://www.dropbox.com/s/p4xzes20g0fviye/Brain_Mets_Segmentation_Model.h5?dl=1'],
